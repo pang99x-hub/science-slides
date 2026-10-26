@@ -357,6 +357,8 @@ div.boardhandle i.fa-chevron-down::before { content: "▼"; color: var(--paper-2
 @media (max-width: 600px) and (orientation: portrait) {
   .toolbar { left: 50%; top: auto; bottom: max(10px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); flex-direction: row; gap: 2px; padding: 4px; opacity: .92; }
   .toolbar a.home { margin: 0 7px 0 0; }
+  .reveal .controls { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+  .reveal .slide-number { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); right: 110px; }
   .toolbar a.home::after { left: auto; right: -5px; top: 8px; bottom: 8px; width: 1.5px; height: auto; }
   body::after { content: "가로로 돌리면 크게 보여요"; position: fixed; left: 50%; top: max(10px, env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 45; background: var(--ink); color: var(--paper-2); font: 600 15px var(--f-body); padding: 6px 14px; border-radius: 999px; white-space: nowrap; pointer-events: none; animation: rotate-hint 6s ease forwards; }
   @keyframes rotate-hint { 0%, 80% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
@@ -3267,6 +3269,9 @@ const initChalkboard = function ( Reveal ) {
       center: false, hash: true, controls: true, controlsTutorial: false, progress: true,
       slideNumber: 'c/t', transition: 'fade', transitionSpeed: 'fast', backgroundTransition: 'none',
       viewDistance: 3,
+      // 좁은 세로 화면의 «스크롤 보기»를 끈다. 켜 두면 ① 보이는 장과 현재 장이 어긋나 그림이 시작되지 않고
+      // ② 가로로 돌릴 때 reveal이 장 HTML을 통째로 다시 만들어 장 모듈(캔버스·조작)이 끊긴다(2026-10-27 휴대폰에서 확인)
+      scrollActivationWidth: null,
       chalkboard: {
         theme: 'whiteboard', boardmarkerWidth: 5, colorButtons: true,
         toggleChalkboardButton: false, toggleNotesButton: false, transition: 300,
