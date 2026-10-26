@@ -1,0 +1,53 @@
+{
+  "units": [
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "2-2-2",
+      "unitTitle": "발전과 에너지원",
+      "area": "Ⅱ. 환경과 에너지 › 2. 에너지",
+      "standard": "[10통과2-02-05]",
+      "standardText": "발전기에서 운동 에너지가 전기 에너지로 전환되는 과정을 이해하고, 열원으로서 화석 연료, 핵에너지를 이용하는 발전소가 인간 생활에 미치는 영향을 조사·발표할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "전기 에너지의 생산",
+          "question": "소형 발전기는 어떻게 전기를 만들까?",
+          "pages": "102~103",
+          "slides": 7,
+          "teacher": "tongsci2/2-2-2/1/teacher.html",
+          "student": "tongsci2/2-2-2/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "전자기 유도",
+          "question": "전지 없는 코일에 전류가 흐르는 까닭은?",
+          "pages": "104~105",
+          "slides": 8,
+          "teacher": "tongsci2/2-2-2/2/teacher.html",
+          "student": "tongsci2/2-2-2/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "발전기",
+          "question": "전기를 계속 만들려면?",
+          "pages": "106~107",
+          "slides": 7,
+          "teacher": "tongsci2/2-2-2/3/teacher.html",
+          "student": "tongsci2/2-2-2/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "화력 발전과 핵발전",
+          "question": "우리 집 전기는 무엇으로 만들까?",
+          "pages": "108~109",
+          "slides": 7,
+          "teacher": "tongsci2/2-2-2/4/teacher.html",
+          "student": "tongsci2/2-2-2/4/student.html"
+        }
+      ],
+      "updated": "2026-10-26"
+    }
+  ]
+}
