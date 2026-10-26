@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { joinPage, teachPage } from './pages.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = JSON.parse(readFileSync(join(here, 'site.json'), 'utf8'));
@@ -120,6 +121,7 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
     <ul>
       <li><b>교사용</b>에는 장마다 발표자 메모(발문·예시 답·지도 유의점)가 있다. <kbd>S</kbd> 발표자 화면</li>
       <li><kbd>→</kbd> 다음 단계 · <kbd>F</kbd> 전체 화면 · <kbd>C</kbd> 판서 · <kbd>B</kbd> 칠판 · <kbd>Esc</kbd> 한눈에 보기</li>
+      <li><b><a href="teach.html">선생님 페이지</a></b>: 반마다 수업방을 한 번 만들고 학생 링크를 클래스룸에 올려 두면, 수업 때 반과 차시만 누르면 된다.</li>
       <li><b>수업방</b>: 사람 모양 단추 → «수업방 열기». 참여 코드·QR을 프로젝터로 띄우면 학생 화면이 선생님이 넘기는 장을 따라온다(«모두 따라오기 / 자유롭게», 잠그기). 학생이 예측·○×를 누르면 보기마다 고른 수가 뜨고, «한 낱말 묻기»로 낱말 구름을 띄울 수 있다. 학생 이름·기록은 남지 않는다.</li>
       <li>파일 하나에 다 들어 있어 내려받으면 인터넷 없이도 열린다(글꼴만 기본 글꼴로 바뀌고, 수업방은 인터넷이 있어야 한다).</li>
     </ul>
@@ -137,5 +139,8 @@ ${units.map(unitHtml).join('\n')}
 </html>
 `;
 writeFileSync(join(here, 'index.html'), html);
+writeFileSync(join(here, 'join.html'), joinPage(site, units));
+writeFileSync(join(here, 'teach.html'), teachPage(site, units));
 writeFileSync(join(here, '.nojekyll'), '');
+console.log(`반 수업방 쪽 join.html · teach.html`);
 console.log(`자료실 첫 화면 index.html · 단원 ${units.length}개 · 차시 ${units.reduce((a, u) => a + u.lessons.length, 0)}개`);
