@@ -849,6 +849,25 @@ table.dirt td.done { color: var(--ink); }
 .rc-input { font: 800 44px/1 var(--f-display); letter-spacing: .3em; width: 6.2em; padding: 6px 14px; border: 3px solid var(--ink); border-radius: 10px; background: var(--paper); color: var(--ink); text-align: center; }
 .rc-input:focus-visible, .rc-btn:focus-visible, .rc-seg button:focus-visible, .room-badge button:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 @media print { .room-badge, .room-overlay { display: none !important; } }
+/* 응답 모으기: 선생님 화면의 «고른 학생 수» (슬라이드 판 안이라 1920 기준 크기) */
+.live-n { position: absolute; top: -14px; right: -14px; min-width: 34px; height: 34px; padding: 0 9px; border-radius: 999px; background: var(--current); color: #fff; font: 700 20px/34px var(--f-body); text-align: center; box-shadow: 0 0 0 3px var(--paper-2); pointer-events: none; z-index: 2; }
+.live-n.zero { background: var(--ink-3); }
+.predict.live .option .tally .tb { display: none; }
+.predict.live .option .tally span { font-weight: 700; color: var(--current); }
+.room-badge .rb-flash { font-weight: 700; color: var(--accent); }
+/* 한 낱말로 답하기 */
+.room-card.wide { width: min(1500px, 100%); }
+.room-card .rc-q { font: 800 clamp(26px, 5vh, 48px)/1.2 var(--f-display); }
+.rc-cloud { position: relative; height: clamp(220px, 52vh, 620px); background: var(--paper); border: 2px dashed var(--rule); border-radius: 12px; }
+.rc-cloud canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rc-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--ink-3); font-size: 22px; }
+.rc-words { display: flex; flex-wrap: wrap; gap: 6px; max-height: 18vh; overflow: auto; }
+.rc-words button { font: 600 15px/1 var(--f-body); padding: 7px 12px; border: 1.5px solid var(--rule); border-radius: 999px; background: var(--paper-2); color: var(--ink); cursor: pointer; }
+.rc-words button:hover { border-color: var(--stamp); color: var(--stamp); }
+.rc-words b { color: var(--current); }
+.rc-input.rc-prompt { font: 600 24px/1.3 var(--f-body); letter-spacing: 0; width: min(640px, 100%); text-align: left; }
+.rc-input.rc-word { font: 700 30px/1.2 var(--f-body); letter-spacing: 0; width: min(360px, 100%); text-align: left; }
+.rc-msg.ok { color: var(--accent); }
 
 </style>
 
@@ -5691,10 +5710,1258 @@ var qrcode = function() {
     return qrcode;
 }));
 </script>
+<script>/*!
+ * wordcloud2.js
+ * http://timdream.org/wordcloud2.js/
+ *
+ * Copyright 2011 - 2019 Tim Guan-tin Chien and contributors.
+ * Released under the MIT license
+ */
+
+'use strict'
+
+// setImmediate
+if (!window.setImmediate) {
+  window.setImmediate = (function setupSetImmediate () {
+    return window.msSetImmediate ||
+    window.webkitSetImmediate ||
+    window.mozSetImmediate ||
+    window.oSetImmediate ||
+    (function setupSetZeroTimeout () {
+      if (!window.postMessage || !window.addEventListener) {
+        return null
+      }
+
+      var callbacks = [undefined]
+      var message = 'zero-timeout-message'
+
+      // Like setTimeout, but only takes a function argument.  There's
+      // no time argument (always zero) and no arguments (you have to
+      // use a closure).
+      var setZeroTimeout = function setZeroTimeout (callback) {
+        var id = callbacks.length
+        callbacks.push(callback)
+        window.postMessage(message + id.toString(36), '*')
+
+        return id
+      }
+
+      window.addEventListener('message', function setZeroTimeoutMessage (evt) {
+        // Skipping checking event source, retarded IE confused this window
+        // object with another in the presence of iframe
+        if (typeof evt.data !== 'string' ||
+            evt.data.substr(0, message.length) !== message/* ||
+            evt.source !== window */) {
+          return
+        }
+
+        evt.stopImmediatePropagation()
+
+        var id = parseInt(evt.data.substr(message.length), 36)
+        if (!callbacks[id]) {
+          return
+        }
+
+        callbacks[id]()
+        callbacks[id] = undefined
+      }, true)
+
+      /* specify clearImmediate() here since we need the scope */
+      window.clearImmediate = function clearZeroTimeout (id) {
+        if (!callbacks[id]) {
+          return
+        }
+
+        callbacks[id] = undefined
+      }
+
+      return setZeroTimeout
+    })() ||
+    // fallback
+    function setImmediateFallback (fn) {
+      window.setTimeout(fn, 0)
+    }
+  })()
+}
+
+if (!window.clearImmediate) {
+  window.clearImmediate = (function setupClearImmediate () {
+    return window.msClearImmediate ||
+    window.webkitClearImmediate ||
+    window.mozClearImmediate ||
+    window.oClearImmediate ||
+    // "clearZeroTimeout" is implement on the previous block ||
+    // fallback
+    function clearImmediateFallback (timer) {
+      window.clearTimeout(timer)
+    }
+  })()
+}
+
+(function (global) {
+  // Check if WordCloud can run on this browser
+  var isSupported = (function isSupported () {
+    var canvas = document.createElement('canvas')
+    if (!canvas || !canvas.getContext) {
+      return false
+    }
+
+    var ctx = canvas.getContext('2d')
+    if (!ctx) {
+      return false
+    }
+    if (!ctx.getImageData) {
+      return false
+    }
+    if (!ctx.fillText) {
+      return false
+    }
+
+    if (!Array.prototype.some) {
+      return false
+    }
+    if (!Array.prototype.push) {
+      return false
+    }
+
+    return true
+  }())
+
+  // Find out if the browser impose minium font size by
+  // drawing small texts on a canvas and measure it's width.
+  var minFontSize = (function getMinFontSize () {
+    if (!isSupported) {
+      return
+    }
+
+    var ctx = document.createElement('canvas').getContext('2d')
+
+    // start from 20
+    var size = 20
+
+    // two sizes to measure
+    var hanWidth, mWidth
+
+    while (size) {
+      ctx.font = size.toString(10) + 'px sans-serif'
+      if ((ctx.measureText('\uFF37').width === hanWidth) &&
+          (ctx.measureText('m').width) === mWidth) {
+        return (size + 1)
+      }
+
+      hanWidth = ctx.measureText('\uFF37').width
+      mWidth = ctx.measureText('m').width
+
+      size--
+    }
+
+    return 0
+  })()
+
+  var getItemExtraData = function (item) {
+    if (Array.isArray(item)) {
+      var itemCopy = item.slice()
+      // remove data we already have (word and weight)
+      itemCopy.splice(0, 2)
+      return itemCopy
+    } else {
+      return []
+    }
+  }
+
+  // Based on http://jsfromhell.com/array/shuffle
+  var shuffleArray = function shuffleArray (arr) {
+    for (var j, x, i = arr.length; i;) {
+      j = Math.floor(Math.random() * i)
+      x = arr[--i]
+      arr[i] = arr[j]
+      arr[j] = x
+    }
+    return arr
+  }
+
+  var timer = {};
+  var WordCloud = function WordCloud (elements, options) {
+    if (!isSupported) {
+      return
+    }
+
+    var timerId = Math.floor(Math.random() * Date.now())
+
+    if (!Array.isArray(elements)) {
+      elements = [elements]
+    }
+
+    elements.forEach(function (el, i) {
+      if (typeof el === 'string') {
+        elements[i] = document.getElementById(el)
+        if (!elements[i]) {
+          throw new Error('The element id specified is not found.')
+        }
+      } else if (!el.tagName && !el.appendChild) {
+        throw new Error('You must pass valid HTML elements, or ID of the element.')
+      }
+    })
+
+    /* Default values to be overwritten by options object */
+    var settings = {
+      list: [],
+      fontFamily: '"Trebuchet MS", "Heiti TC", "微軟正黑體", ' +
+                  '"Arial Unicode MS", "Droid Fallback Sans", sans-serif',
+      fontWeight: 'normal',
+      color: 'random-dark',
+      minSize: 0, // 0 to disable
+      weightFactor: 1,
+      clearCanvas: true,
+      backgroundColor: '#fff', // opaque white = rgba(255, 255, 255, 1)
+
+      gridSize: 8,
+      drawOutOfBound: false,
+      shrinkToFit: false,
+      origin: null,
+
+      drawMask: false,
+      maskColor: 'rgba(255,0,0,0.3)',
+      maskGapWidth: 0.3,
+
+      wait: 0,
+      abortThreshold: 0, // disabled
+      abort: function noop () {},
+
+      minRotation: -Math.PI / 2,
+      maxRotation: Math.PI / 2,
+      rotationSteps: 0,
+
+      shuffle: true,
+      rotateRatio: 0.1,
+
+      shape: 'circle',
+      ellipticity: 0.65,
+
+      classes: null,
+
+      hover: null,
+      click: null
+    }
+
+    if (options) {
+      for (var key in options) {
+        if (key in settings) {
+          settings[key] = options[key]
+        }
+      }
+    }
+
+    /* Convert weightFactor into a function */
+    if (typeof settings.weightFactor !== 'function') {
+      var factor = settings.weightFactor
+      settings.weightFactor = function weightFactor (pt) {
+        return pt * factor // in px
+      }
+    }
+
+    /* Convert shape into a function */
+    if (typeof settings.shape !== 'function') {
+      switch (settings.shape) {
+        case 'circle':
+        /* falls through */
+        default:
+          // 'circle' is the default and a shortcut in the code loop.
+          settings.shape = 'circle'
+          break
+
+        case 'cardioid':
+          settings.shape = function shapeCardioid (theta) {
+            return 1 - Math.sin(theta)
+          }
+          break
+
+          /*
+          To work out an X-gon, one has to calculate "m",
+          where 1/(cos(2*PI/X)+m*sin(2*PI/X)) = 1/(cos(0)+m*sin(0))
+          http://www.wolframalpha.com/input/?i=1%2F%28cos%282*PI%2FX%29%2Bm*sin%28
+          2*PI%2FX%29%29+%3D+1%2F%28cos%280%29%2Bm*sin%280%29%29
+          Copy the solution into polar equation r = 1/(cos(t') + m*sin(t'))
+          where t' equals to mod(t, 2PI/X)
+         */
+
+        case 'diamond':
+          // http://www.wolframalpha.com/input/?i=plot+r+%3D+1%2F%28cos%28mod+
+          // %28t%2C+PI%2F2%29%29%2Bsin%28mod+%28t%2C+PI%2F2%29%29%29%2C+t+%3D
+          // +0+..+2*PI
+          settings.shape = function shapeSquare (theta) {
+            var thetaPrime = theta % (2 * Math.PI / 4)
+            return 1 / (Math.cos(thetaPrime) + Math.sin(thetaPrime))
+          }
+          break
+
+        case 'square':
+          // http://www.wolframalpha.com/input/?i=plot+r+%3D+min(1%2Fabs(cos(t
+          // )),1%2Fabs(sin(t)))),+t+%3D+0+..+2*PI
+          settings.shape = function shapeSquare (theta) {
+            return Math.min(
+              1 / Math.abs(Math.cos(theta)),
+              1 / Math.abs(Math.sin(theta))
+            )
+          }
+          break
+
+        case 'triangle-forward':
+          // http://www.wolframalpha.com/input/?i=plot+r+%3D+1%2F%28cos%28mod+
+          // %28t%2C+2*PI%2F3%29%29%2Bsqrt%283%29sin%28mod+%28t%2C+2*PI%2F3%29
+          // %29%29%2C+t+%3D+0+..+2*PI
+          settings.shape = function shapeTriangle (theta) {
+            var thetaPrime = theta % (2 * Math.PI / 3)
+            return 1 / (Math.cos(thetaPrime) +
+                        Math.sqrt(3) * Math.sin(thetaPrime))
+          }
+          break
+
+        case 'triangle':
+        case 'triangle-upright':
+          settings.shape = function shapeTriangle (theta) {
+            var thetaPrime = (theta + Math.PI * 3 / 2) % (2 * Math.PI / 3)
+            return 1 / (Math.cos(thetaPrime) +
+                        Math.sqrt(3) * Math.sin(thetaPrime))
+          }
+          break
+
+        case 'pentagon':
+          settings.shape = function shapePentagon (theta) {
+            var thetaPrime = (theta + 0.955) % (2 * Math.PI / 5)
+            return 1 / (Math.cos(thetaPrime) +
+                        0.726543 * Math.sin(thetaPrime))
+          }
+          break
+
+        case 'star':
+          settings.shape = function shapeStar (theta) {
+            var thetaPrime = (theta + 0.955) % (2 * Math.PI / 10)
+            if ((theta + 0.955) % (2 * Math.PI / 5) - (2 * Math.PI / 10) >= 0) {
+              return 1 / (Math.cos((2 * Math.PI / 10) - thetaPrime) +
+                          3.07768 * Math.sin((2 * Math.PI / 10) - thetaPrime))
+            } else {
+              return 1 / (Math.cos(thetaPrime) +
+                          3.07768 * Math.sin(thetaPrime))
+            }
+          }
+          break
+      }
+    }
+
+    /* Make sure gridSize is a whole number and is not smaller than 4px */
+    settings.gridSize = Math.max(Math.floor(settings.gridSize), 4)
+
+    /* shorthand */
+    var g = settings.gridSize
+    var maskRectWidth = g - settings.maskGapWidth
+
+    /* normalize rotation settings */
+    var rotationRange = Math.abs(settings.maxRotation - settings.minRotation)
+    var rotationSteps = Math.abs(Math.floor(settings.rotationSteps))
+    var minRotation = Math.min(settings.maxRotation, settings.minRotation)
+
+    /* information/object available to all functions, set when start() */
+    var grid, // 2d array containing filling information
+      ngx, ngy, // width and height of the grid
+      center, // position of the center of the cloud
+      maxRadius
+
+    /* timestamp for measuring each putWord() action */
+    var escapeTime
+
+    /* function for getting the color of the text */
+    var getTextColor
+    function randomHslColor (min, max) {
+      return 'hsl(' +
+        (Math.random() * 360).toFixed() + ',' +
+        (Math.random() * 30 + 70).toFixed() + '%,' +
+        (Math.random() * (max - min) + min).toFixed() + '%)'
+    }
+    switch (settings.color) {
+      case 'random-dark':
+        getTextColor = function getRandomDarkColor () {
+          return randomHslColor(10, 50)
+        }
+        break
+
+      case 'random-light':
+        getTextColor = function getRandomLightColor () {
+          return randomHslColor(50, 90)
+        }
+        break
+
+      default:
+        if (typeof settings.color === 'function') {
+          getTextColor = settings.color
+        }
+        break
+    }
+
+    /* function for getting the font-weight of the text */
+    var getTextFontWeight
+    if (typeof settings.fontWeight === 'function') {
+      getTextFontWeight = settings.fontWeight
+    }
+
+    /* function for getting the classes of the text */
+    var getTextClasses = null
+    if (typeof settings.classes === 'function') {
+      getTextClasses = settings.classes
+    }
+
+    /* Interactive */
+    var interactive = false
+    var infoGrid = []
+    var hovered
+
+    var getInfoGridFromMouseTouchEvent =
+    function getInfoGridFromMouseTouchEvent (evt) {
+      var canvas = evt.currentTarget
+      var rect = canvas.getBoundingClientRect()
+      var clientX
+      var clientY
+      /** Detect if touches are available */
+      if (evt.touches) {
+        clientX = evt.touches[0].clientX
+        clientY = evt.touches[0].clientY
+      } else {
+        clientX = evt.clientX
+        clientY = evt.clientY
+      }
+
+      var eventXvalue = clientX - rect.left
+      var eventX = eventXvalue < 0 ? 0 : eventXvalue
+      var eventY = clientY - rect.top
+
+      var x = Math.floor(eventX * ((canvas.width / rect.width) || 1) / g)
+      var y = Math.floor(eventY * ((canvas.height / rect.height) || 1) / g)
+      
+      if (!infoGrid[x]) {
+        return null
+      }
+
+      return infoGrid[x][y]
+    }
+
+    var wordcloudhover = function wordcloudhover (evt) {
+      var info = getInfoGridFromMouseTouchEvent(evt)
+
+      if (hovered === info) {
+        return
+      }
+
+      hovered = info
+      if (!info) {
+        settings.hover(undefined, undefined, evt)
+
+        return
+      }
+
+      settings.hover(info.item, info.dimension, evt)
+    }
+
+    var wordcloudclick = function wordcloudclick (evt) {
+      var info = getInfoGridFromMouseTouchEvent(evt)
+      if (!info) {
+        return
+      }
+
+      settings.click(info.item, info.dimension, evt)
+      evt.preventDefault()
+    }
+
+    /* Get points on the grid for a given radius away from the center */
+    var pointsAtRadius = []
+    var getPointsAtRadius = function getPointsAtRadius (radius) {
+      if (pointsAtRadius[radius]) {
+        return pointsAtRadius[radius]
+      }
+
+      // Look for these number of points on each radius
+      var T = radius * 8
+
+      // Getting all the points at this radius
+      var t = T
+      var points = []
+
+      if (radius === 0) {
+        points.push([center[0], center[1], 0])
+      }
+
+      while (t--) {
+        // distort the radius to put the cloud in shape
+        var rx = 1
+        if (settings.shape !== 'circle') {
+          rx = settings.shape(t / T * 2 * Math.PI) // 0 to 1
+        }
+
+        // Push [x, y, t] t is used solely for getTextColor()
+        points.push([
+          center[0] + radius * rx * Math.cos(-t / T * 2 * Math.PI),
+          center[1] + radius * rx * Math.sin(-t / T * 2 * Math.PI) *
+            settings.ellipticity,
+          t / T * 2 * Math.PI])
+      }
+
+      pointsAtRadius[radius] = points
+      return points
+    }
+
+    /* Return true if we had spent too much time */
+    var exceedTime = function exceedTime () {
+      return ((settings.abortThreshold > 0) &&
+        ((new Date()).getTime() - escapeTime > settings.abortThreshold))
+    }
+
+    /* Get the deg of rotation according to settings, and luck. */
+    var getRotateDeg = function getRotateDeg () {
+      if (settings.rotateRatio === 0) {
+        return 0
+      }
+
+      if (Math.random() > settings.rotateRatio) {
+        return 0
+      }
+
+      if (rotationRange === 0) {
+        return minRotation
+      }
+
+      if (rotationSteps > 0) {
+        // Min rotation + zero or more steps * span of one step
+        return minRotation +
+          Math.floor(Math.random() * rotationSteps) *
+          rotationRange / (rotationSteps - 1)
+      } else {
+        return minRotation + Math.random() * rotationRange
+      }
+    }
+
+    var getTextInfo = function getTextInfo (word, weight, rotateDeg, extraDataArray) {
+      // calculate the acutal font size
+      // fontSize === 0 means weightFactor function wants the text skipped,
+      // and size < minSize means we cannot draw the text.
+      var debug = false
+      var fontSize = settings.weightFactor(weight)
+      if (fontSize <= settings.minSize) {
+        return false
+      }
+
+      // Scale factor here is to make sure fillText is not limited by
+      // the minium font size set by browser.
+      // It will always be 1 or 2n.
+      var mu = 1
+      if (fontSize < minFontSize) {
+        mu = (function calculateScaleFactor () {
+          var mu = 2
+          while (mu * fontSize < minFontSize) {
+            mu += 2
+          }
+          return mu
+        })()
+      }
+
+      // Get fontWeight that will be used to set fctx.font
+      var fontWeight
+      if (getTextFontWeight) {
+        fontWeight = getTextFontWeight(word, weight, fontSize, extraDataArray)
+      } else {
+        fontWeight = settings.fontWeight
+      }
+
+      var fcanvas = document.createElement('canvas')
+      var fctx = fcanvas.getContext('2d', { willReadFrequently: true })
+
+      fctx.font = fontWeight + ' ' +
+        (fontSize * mu).toString(10) + 'px ' + settings.fontFamily
+
+      // Estimate the dimension of the text with measureText().
+      var fw = fctx.measureText(word).width / mu
+      var fh = Math.max(fontSize * mu,
+        fctx.measureText('m').width,
+        fctx.measureText('\uFF37').width
+      ) / mu
+
+      // Create a boundary box that is larger than our estimates,
+      // so text don't get cut of (it sill might)
+      var boxWidth = fw + fh * 2
+      var boxHeight = fh * 3
+      var fgw = Math.ceil(boxWidth / g)
+      var fgh = Math.ceil(boxHeight / g)
+      boxWidth = fgw * g
+      boxHeight = fgh * g
+
+      // Calculate the proper offsets to make the text centered at
+      // the preferred position.
+
+      // This is simply half of the width.
+      var fillTextOffsetX = -fw / 2
+      // Instead of moving the box to the exact middle of the preferred
+      // position, for Y-offset we move 0.4 instead, so Latin alphabets look
+      // vertical centered.
+      var fillTextOffsetY = -fh * 0.4
+
+      // Calculate the actual dimension of the canvas, considering the rotation.
+      var cgh = Math.ceil((boxWidth * Math.abs(Math.sin(rotateDeg)) +
+                           boxHeight * Math.abs(Math.cos(rotateDeg))) / g)
+      var cgw = Math.ceil((boxWidth * Math.abs(Math.cos(rotateDeg)) +
+                           boxHeight * Math.abs(Math.sin(rotateDeg))) / g)
+      var width = cgw * g
+      var height = cgh * g
+
+      fcanvas.setAttribute('width', width)
+      fcanvas.setAttribute('height', height)
+
+      if (debug) {
+        // Attach fcanvas to the DOM
+        document.body.appendChild(fcanvas)
+        // Save it's state so that we could restore and draw the grid correctly.
+        fctx.save()
+      }
+
+      // Scale the canvas with |mu|.
+      fctx.scale(1 / mu, 1 / mu)
+      fctx.translate(width * mu / 2, height * mu / 2)
+      fctx.rotate(-rotateDeg)
+
+      // Once the width/height is set, ctx info will be reset.
+      // Set it again here.
+      fctx.font = fontWeight + ' ' +
+        (fontSize * mu).toString(10) + 'px ' + settings.fontFamily
+
+      // Fill the text into the fcanvas.
+      // XXX: We cannot because textBaseline = 'top' here because
+      // Firefox and Chrome uses different default line-height for canvas.
+      // Please read https://bugzil.la/737852#c6.
+      // Here, we use textBaseline = 'middle' and draw the text at exactly
+      // 0.5 * fontSize lower.
+      fctx.fillStyle = '#000'
+      fctx.textBaseline = 'middle'
+      fctx.fillText(
+        word, fillTextOffsetX * mu,
+        (fillTextOffsetY + fontSize * 0.5) * mu
+      )
+
+      // Get the pixels of the text
+      var imageData = fctx.getImageData(0, 0, width, height).data
+
+      if (exceedTime()) {
+        return false
+      }
+
+      if (debug) {
+        // Draw the box of the original estimation
+        fctx.strokeRect(
+          fillTextOffsetX * mu,
+          fillTextOffsetY, fw * mu, fh * mu
+        )
+        fctx.restore()
+      }
+
+      // Read the pixels and save the information to the occupied array
+      var occupied = []
+      var gx = cgw
+      var gy, x, y
+      var bounds = [cgh / 2, cgw / 2, cgh / 2, cgw / 2]
+      while (gx--) {
+        gy = cgh
+        while (gy--) {
+          y = g
+          /* eslint no-labels: ["error", { "allowLoop": true }] */
+          singleGridLoop: while (y--) {
+            x = g
+            while (x--) {
+              if (imageData[((gy * g + y) * width +
+                (gx * g + x)) * 4 + 3]) {
+                occupied.push([gx, gy])
+
+                if (gx < bounds[3]) {
+                  bounds[3] = gx
+                }
+                if (gx > bounds[1]) {
+                  bounds[1] = gx
+                }
+                if (gy < bounds[0]) {
+                  bounds[0] = gy
+                }
+                if (gy > bounds[2]) {
+                  bounds[2] = gy
+                }
+
+                if (debug) {
+                  fctx.fillStyle = 'rgba(255, 0, 0, 0.5)'
+                  fctx.fillRect(gx * g, gy * g, g - 0.5, g - 0.5)
+                }
+                break singleGridLoop
+              }
+            }
+          }
+          if (debug) {
+            fctx.fillStyle = 'rgba(0, 0, 255, 0.5)'
+            fctx.fillRect(gx * g, gy * g, g - 0.5, g - 0.5)
+          }
+        }
+      }
+
+      if (debug) {
+        fctx.fillStyle = 'rgba(0, 255, 0, 0.5)'
+        fctx.fillRect(
+          bounds[3] * g,
+          bounds[0] * g,
+          (bounds[1] - bounds[3] + 1) * g,
+          (bounds[2] - bounds[0] + 1) * g
+        )
+      }
+
+      // Return information needed to create the text on the real canvas
+      return {
+        mu: mu,
+        occupied: occupied,
+        bounds: bounds,
+        gw: cgw,
+        gh: cgh,
+        fillTextOffsetX: fillTextOffsetX,
+        fillTextOffsetY: fillTextOffsetY,
+        fillTextWidth: fw,
+        fillTextHeight: fh,
+        fontSize: fontSize
+      }
+    }
+
+    /* Determine if there is room available in the given dimension */
+    var canFitText = function canFitText (gx, gy, gw, gh, occupied) {
+      // Go through the occupied points,
+      // return false if the space is not available.
+      var i = occupied.length
+      while (i--) {
+        var px = gx + occupied[i][0]
+        var py = gy + occupied[i][1]
+
+        if (px >= ngx || py >= ngy || px < 0 || py < 0) {
+          if (!settings.drawOutOfBound) {
+            return false
+          }
+          continue
+        }
+
+        if (!grid[px][py]) {
+          return false
+        }
+      }
+      return true
+    }
+
+    /* Actually draw the text on the grid */
+    var drawText = function drawText (gx, gy, info, word, weight, distance, theta, rotateDeg, attributes, extraDataArray) {
+      var fontSize = info.fontSize
+      var color
+      if (getTextColor) {
+        color = getTextColor(word, weight, fontSize, distance, theta, extraDataArray)
+      } else {
+        color = settings.color
+      }
+
+      // get fontWeight that will be used to set ctx.font and font style rule
+      var fontWeight
+      if (getTextFontWeight) {
+        fontWeight = getTextFontWeight(word, weight, fontSize, extraDataArray)
+      } else {
+        fontWeight = settings.fontWeight
+      }
+
+      var classes
+      if (getTextClasses) {
+        classes = getTextClasses(word, weight, fontSize, extraDataArray)
+      } else {
+        classes = settings.classes
+      }
+
+      elements.forEach(function (el) {
+        if (el.getContext) {
+          var ctx = el.getContext('2d')
+          var mu = info.mu
+
+          // Save the current state before messing it
+          ctx.save()
+          ctx.scale(1 / mu, 1 / mu)
+
+          ctx.font = fontWeight + ' ' +
+                     (fontSize * mu).toString(10) + 'px ' + settings.fontFamily
+          ctx.fillStyle = color
+
+          // Translate the canvas position to the origin coordinate of where
+          // the text should be put.
+          ctx.translate(
+            (gx + info.gw / 2) * g * mu,
+            (gy + info.gh / 2) * g * mu
+          )
+
+          if (rotateDeg !== 0) {
+            ctx.rotate(-rotateDeg)
+          }
+
+          // Finally, fill the text.
+
+          // XXX: We cannot because textBaseline = 'top' here because
+          // Firefox and Chrome uses different default line-height for canvas.
+          // Please read https://bugzil.la/737852#c6.
+          // Here, we use textBaseline = 'middle' and draw the text at exactly
+          // 0.5 * fontSize lower.
+          ctx.textBaseline = 'middle'
+          ctx.fillText(
+            word, info.fillTextOffsetX * mu,
+            (info.fillTextOffsetY + fontSize * 0.5) * mu
+          )
+
+          // The below box is always matches how <span>s are positioned
+          /* ctx.strokeRect(info.fillTextOffsetX, info.fillTextOffsetY,
+            info.fillTextWidth, info.fillTextHeight) */
+
+          // Restore the state.
+          ctx.restore()
+        } else {
+          // drawText on DIV element
+          var span = document.createElement('span')
+          var transformRule = ''
+          transformRule = 'rotate(' + (-rotateDeg / Math.PI * 180) + 'deg) '
+          if (info.mu !== 1) {
+            transformRule +=
+              'translateX(-' + (info.fillTextWidth / 4) + 'px) ' +
+              'scale(' + (1 / info.mu) + ')'
+          }
+          var styleRules = {
+            position: 'absolute',
+            display: 'block',
+            font: fontWeight + ' ' +
+              (fontSize * info.mu) + 'px ' + settings.fontFamily,
+            left: ((gx + info.gw / 2) * g + info.fillTextOffsetX) + 'px',
+            top: ((gy + info.gh / 2) * g + info.fillTextOffsetY) + 'px',
+            width: info.fillTextWidth + 'px',
+            height: info.fillTextHeight + 'px',
+            lineHeight: fontSize + 'px',
+            whiteSpace: 'nowrap',
+            transform: transformRule,
+            webkitTransform: transformRule,
+            msTransform: transformRule,
+            transformOrigin: '50% 40%',
+            webkitTransformOrigin: '50% 40%',
+            msTransformOrigin: '50% 40%'
+          }
+          if (color) {
+            styleRules.color = color
+          }
+          span.textContent = word
+          for (var cssProp in styleRules) {
+            span.style[cssProp] = styleRules[cssProp]
+          }
+          if (attributes) {
+            for (var attribute in attributes) {
+              span.setAttribute(attribute, attributes[attribute])
+            }
+          }
+          if (classes) {
+            span.className += classes
+          }
+          el.appendChild(span)
+        }
+      })
+    }
+
+    /* Help function to updateGrid */
+    var fillGridAt = function fillGridAt (x, y, drawMask, dimension, item) {
+      if (x >= ngx || y >= ngy || x < 0 || y < 0) {
+        return
+      }
+
+      grid[x][y] = false
+
+      if (drawMask) {
+        var ctx = elements[0].getContext('2d')
+        ctx.fillRect(x * g, y * g, maskRectWidth, maskRectWidth)
+      }
+
+      if (interactive) {
+        infoGrid[x][y] = { item: item, dimension: dimension }
+      }
+    }
+
+    /* Update the filling information of the given space with occupied points.
+       Draw the mask on the canvas if necessary. */
+    var updateGrid = function updateGrid (gx, gy, gw, gh, info, item) {
+      var occupied = info.occupied
+      var drawMask = settings.drawMask
+      var ctx
+      if (drawMask) {
+        ctx = elements[0].getContext('2d')
+        ctx.save()
+        ctx.fillStyle = settings.maskColor
+      }
+
+      var dimension
+      if (interactive) {
+        var bounds = info.bounds
+        dimension = {
+          x: (gx + bounds[3]) * g,
+          y: (gy + bounds[0]) * g,
+          w: (bounds[1] - bounds[3] + 1) * g,
+          h: (bounds[2] - bounds[0] + 1) * g
+        }
+      }
+
+      var i = occupied.length
+      while (i--) {
+        var px = gx + occupied[i][0]
+        var py = gy + occupied[i][1]
+
+        if (px >= ngx || py >= ngy || px < 0 || py < 0) {
+          continue
+        }
+
+        fillGridAt(px, py, drawMask, dimension, item)
+      }
+
+      if (drawMask) {
+        ctx.restore()
+      }
+    }
+
+    /* putWord() processes each item on the list,
+       calculate it's size and determine it's position, and actually
+       put it on the canvas. */
+    var putWord = function putWord (item) {
+      var word, weight, attributes
+      if (Array.isArray(item)) {
+        word = item[0]
+        weight = item[1]
+      } else {
+        word = item.word
+        weight = item.weight
+        attributes = item.attributes
+      }
+      var rotateDeg = getRotateDeg()
+
+      var extraDataArray = getItemExtraData(item)
+
+      // get info needed to put the text onto the canvas
+      var info = getTextInfo(word, weight, rotateDeg, extraDataArray)
+
+      // not getting the info means we shouldn't be drawing this one.
+      if (!info) {
+        return false
+      }
+
+      if (exceedTime()) {
+        return false
+      }
+
+      // If drawOutOfBound is set to false,
+      // skip the loop if we have already know the bounding box of
+      // word is larger than the canvas.
+      if (!settings.drawOutOfBound && !settings.shrinkToFit) {
+        var bounds = info.bounds;
+        if ((bounds[1] - bounds[3] + 1) > ngx ||
+          (bounds[2] - bounds[0] + 1) > ngy) {
+          return false
+        }
+      }
+
+      // Determine the position to put the text by
+      // start looking for the nearest points
+      var r = maxRadius + 1
+
+      var tryToPutWordAtPoint = function (gxy) {
+        var gx = Math.floor(gxy[0] - info.gw / 2)
+        var gy = Math.floor(gxy[1] - info.gh / 2)
+        var gw = info.gw
+        var gh = info.gh
+
+        // If we cannot fit the text at this position, return false
+        // and go to the next position.
+        if (!canFitText(gx, gy, gw, gh, info.occupied)) {
+          return false
+        }
+
+        // Actually put the text on the canvas
+        drawText(gx, gy, info, word, weight,
+          (maxRadius - r), gxy[2], rotateDeg, attributes, extraDataArray)
+
+        // Mark the spaces on the grid as filled
+        updateGrid(gx, gy, gw, gh, info, item)
+
+        // Return true so some() will stop and also return true.
+        return true
+      }
+
+      while (r--) {
+        var points = getPointsAtRadius(maxRadius - r)
+
+        if (settings.shuffle) {
+          points = [].concat(points)
+          shuffleArray(points)
+        }
+
+        // Try to fit the words by looking at each point.
+        // array.some() will stop and return true
+        // when putWordAtPoint() returns true.
+        // If all the points returns false, array.some() returns false.
+        var drawn = points.some(tryToPutWordAtPoint)
+
+        if (drawn) {
+          // leave putWord() and return true
+          return true
+        }
+      }
+      if (settings.shrinkToFit) {
+        if (Array.isArray(item)) {
+          item[1] = item[1] * 3 / 4
+        } else {
+          item.weight = item.weight * 3 / 4
+        }
+        return putWord(item)
+      }
+      // we tried all distances but text won't fit, return false
+      return false
+    }
+
+    /* Send DOM event to all elements. Will stop sending event and return
+       if the previous one is canceled (for cancelable events). */
+    var sendEvent = function sendEvent (type, cancelable, details) {
+      if (cancelable) {
+        return !elements.some(function (el) {
+          var event = new CustomEvent(type, {
+            detail: details || {}
+          })
+          return !el.dispatchEvent(event)
+        }, this)
+      } else {
+        elements.forEach(function (el) {
+          var event = new CustomEvent(type, {
+            detail: details || {}
+          })
+          el.dispatchEvent(event)
+        }, this)
+      }
+    }
+
+    /* Start drawing on a canvas */
+    var start = function start () {
+      // For dimensions, clearCanvas etc.,
+      // we only care about the first element.
+      var canvas = elements[0]
+
+      if (canvas.getContext) {
+        ngx = Math.ceil(canvas.width / g)
+        ngy = Math.ceil(canvas.height / g)
+      } else {
+        var rect = canvas.getBoundingClientRect()
+        ngx = Math.ceil(rect.width / g)
+        ngy = Math.ceil(rect.height / g)
+      }
+
+      // Sending a wordcloudstart event which cause the previous loop to stop.
+      // Do nothing if the event is canceled.
+      if (!sendEvent('wordcloudstart', true)) {
+        return
+      }
+
+      // Determine the center of the word cloud
+      center = (settings.origin)
+        ? [settings.origin[0] / g, settings.origin[1] / g]
+        : [ngx / 2, ngy / 2]
+
+      // Maxium radius to look for space
+      maxRadius = Math.floor(Math.sqrt(ngx * ngx + ngy * ngy))
+
+      /* Clear the canvas only if the clearCanvas is set,
+         if not, update the grid to the current canvas state */
+      grid = []
+
+      var gx, gy, i
+      if (!canvas.getContext || settings.clearCanvas) {
+        elements.forEach(function (el) {
+          if (el.getContext) {
+            var ctx = el.getContext('2d')
+            ctx.fillStyle = settings.backgroundColor
+            ctx.clearRect(0, 0, ngx * (g + 1), ngy * (g + 1))
+            ctx.fillRect(0, 0, ngx * (g + 1), ngy * (g + 1))
+          } else {
+            el.textContent = ''
+            el.style.backgroundColor = settings.backgroundColor
+            el.style.position = 'relative'
+          }
+        })
+
+        /* fill the grid with empty state */
+        gx = ngx
+        while (gx--) {
+          grid[gx] = []
+          gy = ngy
+          while (gy--) {
+            grid[gx][gy] = true
+          }
+        }
+      } else {
+        /* Determine bgPixel by creating
+           another canvas and fill the specified background color. */
+        var bctx = document.createElement('canvas').getContext('2d')
+
+        bctx.fillStyle = settings.backgroundColor
+        bctx.fillRect(0, 0, 1, 1)
+        var bgPixel = bctx.getImageData(0, 0, 1, 1).data
+
+        /* Read back the pixels of the canvas we got to tell which part of the
+           canvas is empty.
+           (no clearCanvas only works with a canvas, not divs) */
+        var imageData =
+          canvas.getContext('2d').getImageData(0, 0, ngx * g, ngy * g).data
+
+        gx = ngx
+        var x, y
+        while (gx--) {
+          grid[gx] = []
+          gy = ngy
+          while (gy--) {
+            y = g
+            /* eslint no-labels: ["error", { "allowLoop": true }] */
+            singleGridLoop: while (y--) {
+              x = g
+              while (x--) {
+                i = 4
+                while (i--) {
+                  if (imageData[((gy * g + y) * ngx * g +
+                                 (gx * g + x)) * 4 + i] !== bgPixel[i]) {
+                    grid[gx][gy] = false
+                    break singleGridLoop
+                  }
+                }
+              }
+            }
+            if (grid[gx][gy] !== false) {
+              grid[gx][gy] = true
+            }
+          }
+        }
+
+        imageData = bctx = bgPixel = undefined
+      }
+
+      // fill the infoGrid with empty state if we need it
+      if (settings.hover || settings.click) {
+        interactive = true
+
+        /* fill the grid with empty state */
+        gx = ngx + 1
+        while (gx--) {
+          infoGrid[gx] = []
+        }
+
+        if (settings.hover) {
+          canvas.addEventListener('mousemove', wordcloudhover)
+        }
+
+        if (settings.click) {
+          canvas.addEventListener('click', wordcloudclick)
+          canvas.style.webkitTapHighlightColor = 'rgba(0, 0, 0, 0)'
+        }
+
+        canvas.addEventListener('wordcloudstart', function stopInteraction () {
+          canvas.removeEventListener('wordcloudstart', stopInteraction)
+          canvas.removeEventListener('mousemove', wordcloudhover)
+          canvas.removeEventListener('click', wordcloudclick)
+          hovered = undefined
+        })
+      }
+
+      i = 0
+      var loopingFunction, stoppingFunction
+      if (settings.wait !== 0) {
+        loopingFunction = window.setTimeout
+        stoppingFunction = window.clearTimeout
+      } else {
+        loopingFunction = window.setImmediate
+        stoppingFunction = window.clearImmediate
+      }
+
+      var addEventListener = function addEventListener (type, listener) {
+        elements.forEach(function (el) {
+          el.addEventListener(type, listener)
+        }, this)
+      }
+
+      var removeEventListener = function removeEventListener (type, listener) {
+        elements.forEach(function (el) {
+          el.removeEventListener(type, listener)
+        }, this)
+      }
+
+      var anotherWordCloudStart = function anotherWordCloudStart () {
+        removeEventListener('wordcloudstart', anotherWordCloudStart)
+        stoppingFunction(timer[timerId])
+      }
+
+      addEventListener('wordcloudstart', anotherWordCloudStart)
+      timer[timerId] = loopingFunction(function loop () {
+        if (i >= settings.list.length) {
+          stoppingFunction(timer[timerId])
+          sendEvent('wordcloudstop', false)
+          removeEventListener('wordcloudstart', anotherWordCloudStart)
+          delete timer[timerId];
+          return
+        }
+        escapeTime = (new Date()).getTime()
+        var drawn = putWord(settings.list[i])
+        var canceled = !sendEvent('wordclouddrawn', true, {
+          item: settings.list[i],
+          drawn: drawn
+        })
+        if (exceedTime() || canceled) {
+          stoppingFunction(timer[timerId])
+          settings.abort()
+          sendEvent('wordcloudabort', false)
+          sendEvent('wordcloudstop', false)
+          removeEventListener('wordcloudstart', anotherWordCloudStart)
+          delete timer[timerId]
+          return
+        }
+        i++
+        timer[timerId] = loopingFunction(loop, settings.wait)
+      }, settings.wait)
+    }
+
+    // All set, start the drawing
+    start()
+  }
+
+  WordCloud.isSupported = isSupported
+  WordCloud.minFontSize = minFontSize
+  WordCloud.stop = function stop () {
+    if (timer) {
+      for (var timerId in timer) {
+        window.clearImmediate(timer[timerId])
+      }
+    }
+  }
+
+  // Expose the library as an AMD module
+  if (typeof define === 'function' && define.amd) { // eslint-disable-line no-undef
+    global.WordCloud = WordCloud
+    define('wordcloud', [], function () { return WordCloud }) // eslint-disable-line no-undef
+  } else if (typeof module !== 'undefined' && module.exports) { // eslint-disable-line no-undef
+    module.exports = WordCloud // eslint-disable-line no-undef
+  } else {
+    global.WordCloud = WordCloud
+  }
+})(this) // jshint ignore:line
+</script>
 <script>/* 수업방(2단계): 선생님이 넘기는 장·단계를 같은 방 학생 화면이 따라온다.
    교사용(<html data-role="teacher">, 아티팩트처럼 표시가 없어도 교사용으로 본다)은 방을 열고 참여 코드·QR을 띄운다.
    학생용(data-role="student")은 코드를 넣거나 주소의 ?room=1234로 들어와 따라간다.
-   워커 주소는 빌드가 https://science-room.pang99x.workers.dev 자리에 넣는다(시험 때는 ?roomapi=로 바꾼다). 주소가 없으면 아무것도 붙이지 않는다. */
+   워커 주소는 빌드가 https://science-room.pang99x.workers.dev 자리에 넣는다(시험 때는 ?roomapi=로 바꾼다). 주소가 없으면 아무것도 붙이지 않는다.
+   응답 모으기(3단계): 예측 보기·○×·여러 개 고르기를 학생이 누르면 이름 없이 답만 방에 보내고,
+   선생님 화면에는 보기마다 고른 학생 수가 뜬다. 문항은 아래 ASKS 모양으로 찾아 장 id로 이름을 붙인다.
+   한 낱말로 답하기: 선생님이 아무 장에서나 질문을 띄우면 학생 기기에 입력 칸이 뜨고, 선생님 화면에
+   낱말 구름(wordcloud2.js, MIT)이 자란다. 낱말을 누르면 숨긴다. */
 (function () {
   'use strict';
   const qs = new URLSearchParams(location.search);
@@ -5704,6 +6971,14 @@ var qrcode = function() {
   const ROLE = document.documentElement.dataset.role === 'student' ? 'student' : 'teacher';
   const STUDENT_URL = 'https://pang99x-hub.github.io/science-slides/tongsci2/2-2-2/4/student.html';
   const SAVE_KEY = 'science-room:' + location.pathname;
+  // 학생 기기 표시(다시 연결해도 같은 학생으로 세려고). 이름·기기 정보와는 상관없는 임의 문자열
+  const CID = (() => {
+    try {
+      let c = localStorage.getItem('science-room:cid');
+      if (!c) { c = 's-' + Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join(''); localStorage.setItem('science-room:cid', c); }
+      return c;
+    } catch { return 's-' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  })();
   const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6"/><path d="M18 14.5c1.9.8 3 2.9 3 5.5"/></svg>';
 
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -5715,14 +6990,15 @@ var qrcode = function() {
 
   // ---------- 연결 ----------
   let ws = null, room = null, retry = 0, retryTimer = 0, leaving = false;
-  let state = { follow: true, locked: false, students: 0, pos: { h: 0, f: -1 } };
+  let state = { follow: true, locked: false, students: 0, pos: { h: 0, f: -1 }, ask: null };
+  const words = new Map();                            // 낱말 문항 → { counts, n } (선생님)
   let applying = 0;                                   // 방에서 온 넘김을 적용하는 중(그동안 일어난 넘김 사건은 내 것이 아니다)
 
   function connect() {
     clearTimeout(retryTimer);
-    const q = ROLE === 'teacher' ? `?role=teacher&key=${encodeURIComponent(room.key)}` : '?role=student';
+    const q = ROLE === 'teacher' ? `?role=teacher&key=${encodeURIComponent(room.key)}` : `?role=student&cid=${CID}`;
     ws = new WebSocket(`${WS}/rooms/${room.code}/ws${q}`);
-    ws.onopen = () => { retry = 0; ui.status('ok'); if (ROLE === 'teacher') sendPos(); };
+    ws.onopen = () => { retry = 0; ui.status('ok'); if (ROLE === 'teacher') sendPos(); else asks.sendAll(); };
     ws.onmessage = (e) => { let m; try { m = JSON.parse(e.data); } catch { return; } onMessage(m); };
     ws.onclose = (e) => {
       ws = null;
@@ -5751,7 +7027,19 @@ var qrcode = function() {
   }
 
   function onMessage(m) {
-    if (m.t === 'state') { state = { ...state, ...m }; if (ROLE === 'student') { lockNav(); if (following()) apply(m.pos); } else if (ui.panelOpen) ui.panel(); }
+    if (m.t === 'tally') { if (m.q.startsWith('w-')) { words.set(m.q, m); ui.cloudDraw(); } else asks.show(m.q, m); return; }
+    if (m.t === 'reset') { asks.reset(); words.clear(); ui.cloudDraw(); ui.wordSent = null; return; }
+    if (m.t === 'ask') { state.ask = { id: m.id, prompt: m.prompt, open: m.open }; ui.askChanged(); ui.badge(); return; }
+    if (m.t === 'state') {
+      state = { ...state, ...m, ask: m.ask || null };
+      if (ROLE === 'student') { lockNav(); if (following()) apply(m.pos); }
+      else {
+        asks.clear(); words.clear();
+        for (const [q, t] of Object.entries(m.tallies || {})) { if (q.startsWith('w-')) words.set(q, t); else asks.show(q, t); }
+        if (ui.panelOpen && !ui.cloudOpen) ui.panel();
+      }
+      ui.askChanged();
+    }
     else if (m.t === 'pos') { state.pos = { h: m.h, f: m.f }; if (ROLE === 'teacher' || following()) apply(state.pos); }
     else if (m.t === 'follow') { state.follow = m.on; if (ROLE === 'student') { if (m.on) solo = false; lockNav(); if (following()) apply(state.pos); } }
     else if (m.t === 'locked') state.locked = m.on;
@@ -5785,14 +7073,103 @@ var qrcode = function() {
     if (ws) try { ws.close(); } catch {}
     ws = null; room = null; solo = false;
     if (ROLE === 'teacher') store.set(null);
-    state = { follow: true, locked: false, students: 0, pos: state.pos };
-    lockNav(); ui.closePanel(); ui.badge(msg);
+    state = { follow: true, locked: false, students: 0, pos: state.pos, ask: null };
+    asks.clear(); words.clear(); lockNav(); ui.closePanel(); ui.badge(msg);
   }
+
+  // ---------- 응답 모으기 ----------
+  // [문항 묶음 선택자, 하나/여럿, 이름]  같은 장에 같은 모양이 여럿이면 순서 번호를 붙인다
+  const ASKS = [
+    ['.qs li .ox', 'one', (sec, i) => `${sec}-q${i + 1}`],
+    ['.pred[data-row] .seg', 'one', (sec, i, g) => `${sec}-pred${g.closest('.pred').dataset.row}`],
+    ['.options', 'one', (sec) => `${sec}-flap`],
+    ['.share-opts', 'one', (sec) => `${sec}-share`],
+    ['.chips', 'many', (sec) => `${sec}-factors`],
+  ];
+  const valueOf = (b) => b.dataset.v ?? b.dataset.key ?? b.dataset.k;
+  const asks = {
+    groups: new Map(),                                  // 문항 이름 → { g, mode, items }
+    sent: new Map(),
+    find() {
+      for (const [sel, mode, name] of ASKS) {
+        const seen = new Map();
+        document.querySelectorAll('.reveal .slides > section').forEach((sec) => {
+          sec.querySelectorAll(sel).forEach((g) => {
+            const i = seen.get(sec.id) || 0; seen.set(sec.id, i + 1);
+            const q = name(sec.id, i, g);
+            const items = [...g.querySelectorAll('[data-v],[data-key],[data-k]')].filter((b) => valueOf(b));
+            if (!items.length || this.groups.has(q)) return;
+            g.dataset.ask = q;
+            this.groups.set(q, { g, mode, items });
+            if (ROLE === 'student') {
+              const later = () => setTimeout(() => this.send(q), 0);   // 장 모듈이 고른 표시를 바꾼 뒤에 읽는다
+              g.addEventListener('click', later);
+              g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') later(); });
+            }
+          });
+        });
+      }
+    },
+    value(q) {
+      const { items, mode } = this.groups.get(q);
+      const on = items.filter((b) => b.getAttribute('aria-pressed') === 'true' || b.classList.contains('pick')).map(valueOf);
+      if (!on.length) return null;
+      return mode === 'many' ? [...new Set(on)].sort().join(',') : on[on.length - 1];
+    },
+    send(q) {
+      if (!room || ROLE !== 'student') return;
+      const v = this.value(q);
+      if (this.sent.get(q) === v || (v === null && !this.sent.has(q))) return;
+      this.sent.set(q, v);
+      send({ t: 'ans', q, v });
+      if (v !== null) ui.flash('답을 보냈어요');
+    },
+    sendAll() { this.sent.clear(); for (const q of this.groups.keys()) this.send(q); },
+    reset() { this.sent.clear(); if (ROLE === 'teacher') this.clear(); },
+    // 선생님: 보기마다 고른 학생 수. 덮개처럼 집계 칸(.tally)이 있으면 그 칸과 막대를 쓴다
+    show(q, { counts = {}, n = 0 }) {
+      if (ROLE !== 'teacher') return;
+      const grp = this.groups.get(q); if (!grp) return;
+      grp.g.classList.add('live');
+      const predict = grp.g.closest('.predict');
+      if (predict) predict.classList.add('tallying', 'live');
+      for (const b of grp.items) {
+        const c = counts[valueOf(b)] || 0;
+        const span = b.querySelector('.tally span');
+        if (span) {
+          span.textContent = c;
+          const bar = b.querySelector('.bar i'); if (bar) bar.style.width = (n ? c / n * 100 : 0) + '%';
+          continue;
+        }
+        let pill = b.querySelector(':scope > .live-n');
+        if (!pill) {
+          if (getComputedStyle(b).position === 'static') b.style.position = 'relative';
+          pill = el('span', 'live-n'); pill.setAttribute('aria-label', '고른 학생 수'); b.appendChild(pill);
+        }
+        pill.textContent = c;
+        pill.classList.toggle('zero', !c);
+      }
+    },
+    clear() {
+      for (const { g, items } of this.groups.values()) {
+        g.classList.remove('live');
+        const predict = g.closest('.predict'); if (predict) predict.classList.remove('live');
+        for (const b of items) { const p = b.querySelector(':scope > .live-n'); if (p) p.remove(); }
+      }
+    },
+  };
 
   // ---------- 화면 ----------
   const ui = {
     panelOpen: false, box: null, badgeEl: null,
     status(s) { this.conn = s; this.badge(); },
+    flash(text) {
+      if (!this.badgeEl || this.badgeEl.hidden) return;
+      let f = this.badgeEl.querySelector('.rb-flash');
+      if (!f) { f = el('span', 'rb-flash'); this.badgeEl.prepend(f); }
+      f.textContent = text; clearTimeout(this.flashT);
+      this.flashT = setTimeout(() => f.remove(), 1600);
+    },
     badge(msg) {
       if (!this.badgeEl) { this.badgeEl = el('div', 'room-badge'); document.body.appendChild(this.badgeEl); }
       const b = this.badgeEl;
@@ -5804,15 +7181,22 @@ var qrcode = function() {
       }
       b.hidden = false;
       const lost = this.conn === 'lost' ? ' · <b class="rb-lost">다시 연결 중…</b>' : '';
+      const asking = state.ask && state.ask.open;
       if (ROLE === 'teacher') {
-        b.innerHTML = `<button type="button" class="rb-open" title="수업방 패널 열기"><b>수업방 ${room.code}</b> · 학생 ${state.students}명 · ${state.follow ? '모두 따라오기' : '자유롭게'}${state.locked ? ' · 잠김' : ''}${lost}</button>`;
+        b.innerHTML = `<button type="button" class="rb-open" title="수업방 패널 열기"><b>수업방 ${room.code}</b> · 학생 ${state.students}명 · ${state.follow ? '모두 따라오기' : '자유롭게'}${state.locked ? ' · 잠김' : ''}${lost}</button>`
+          + (asking ? '<button type="button" class="rb-toggle" data-a="cloud">낱말 구름</button>' : '');
         b.querySelector('.rb-open').onclick = () => this.panel();
+        const c = b.querySelector('[data-a="cloud"]'); if (c) c.onclick = () => this.cloud();
       } else if (state.follow) {
         b.innerHTML = `<span class="rb-text"><b>수업방 ${room.code}</b> · 선생님 화면을 따라가는 중${lost}</span>`;
       } else {
         b.innerHTML = `<span class="rb-text"><b>수업방 ${room.code}</b> · ${solo ? '혼자 보는 중' : '선생님 화면을 따라가는 중'}${lost}</span>`
           + `<button type="button" class="rb-toggle">${solo ? '다시 따라가기' : '혼자 보기'}</button>`;
         b.querySelector('.rb-toggle').onclick = () => { solo = !solo; if (!solo) apply(state.pos); this.badge(); };
+      }
+      if (ROLE === 'student' && asking && !this.box) {
+        b.insertAdjacentHTML('beforeend', '<button type="button" class="rb-toggle" data-a="word">낱말 답하기</button>');
+        b.querySelector('[data-a="word"]').onclick = () => this.wordBox();
       }
       b.insertAdjacentHTML('beforeend', `<button type="button" class="rb-leave" title="${ROLE === 'teacher' ? '방 닫기' : '방에서 나가기'}" aria-label="${ROLE === 'teacher' ? '방 닫기' : '방에서 나가기'}">×</button>`);
       b.querySelector('.rb-leave').onclick = () => {
@@ -5837,7 +7221,94 @@ var qrcode = function() {
       document.body.appendChild(o); this.box = o; this.panelOpen = true;
       return o;
     },
-    closePanel() { if (this.box) this.box.remove(); this.box = null; this.panelOpen = false; },
+    closePanel() { if (this.box) this.box.remove(); this.box = null; this.panelOpen = false; this.cloudOpen = false; },
+
+    // ---- 한 낱말로 답하기 ----
+    askChanged() {
+      const a = state.ask;
+      if (ROLE === 'student') {
+        if (a && a.open) { if (this.wordAsk !== a.id) { this.wordAsk = a.id; this.wordSent = null; this.wordBox(); } }
+        else if (this.wordOpen) { this.closePanel(); this.wordOpen = false; this.flash('질문이 마감됐어요'); }
+      } else if (this.cloudOpen) this.cloud();
+      this.badge();
+    },
+    wordBox() {
+      const a = state.ask; if (!a || !a.open) return;
+      const o = this.overlay(`<h2 class="rc-q">${esc(a.prompt)}</h2><p class="rc-lead">한 낱말(12자 안)로 써서 보내요. 이름은 가지 않아요.</p>
+        <form class="rc-form"><input class="rc-input rc-word" maxlength="12" autocomplete="off" aria-label="한 낱말 답"><button type="submit" class="rc-btn main">보내기</button></form>
+        <p class="rc-msg ok" aria-live="polite">${this.wordSent ? `보냈어요: <b>${esc(this.wordSent)}</b> · 바꾸려면 다시 써서 보내요` : ''}</p>
+        <div class="rc-row"><button type="button" class="rc-btn" data-a="hide">닫기</button></div>`);
+      this.wordOpen = true;
+      const input = o.querySelector('.rc-word'); input.focus();
+      o.querySelector('[data-a="hide"]').onclick = () => { this.closePanel(); this.wordOpen = false; this.badge(); };
+      o.querySelector('.rc-form').onsubmit = (e) => {
+        e.preventDefault();
+        const v = input.value.replace(/\s+/g, ' ').trim();
+        const msg = o.querySelector('.rc-msg');
+        if (!/^[\p{L}\p{N}][\p{L}\p{N} ]{0,11}$/u.test(v)) { msg.textContent = '글자나 숫자로 12자 안에서 써 주세요.'; return; }
+        send({ t: 'ans', q: 'w-' + state.ask.id, v });
+        this.wordSent = v; input.value = '';
+        msg.innerHTML = `보냈어요: <b>${esc(v)}</b> · 바꾸려면 다시 써서 보내요`;
+      };
+    },
+    askForm() {
+      const o = this.overlay(`<h2>한 낱말 묻기</h2><p class="rc-lead">학생 기기에 질문과 입력 칸이 뜨고, 답이 이 화면에 낱말 구름으로 모여요.</p>
+        <form class="rc-form"><input class="rc-input rc-prompt" maxlength="60" autocomplete="off" aria-label="질문" placeholder="예: 발전소 하면 떠오르는 낱말은?"><button type="submit" class="rc-btn main">띄우기</button></form>
+        <p class="rc-msg" aria-live="polite"></p><div class="rc-row"><button type="button" class="rc-btn" data-a="back">돌아가기</button></div>`);
+      const input = o.querySelector('.rc-prompt'); input.focus();
+      o.querySelector('[data-a="back"]').onclick = () => this.panel();
+      o.querySelector('.rc-form').onsubmit = (e) => {
+        e.preventDefault();
+        const prompt = input.value.trim();
+        if (!prompt) { o.querySelector('.rc-msg').textContent = '질문을 써 주세요.'; return; }
+        state.ask = { id: 'k' + Date.now().toString(36), prompt, open: true };
+        send({ t: 'ask', ...state.ask });
+        this.cloud(); this.badge();
+      };
+    },
+    cloud() {
+      const a = state.ask; if (!a) { this.askForm(); return; }
+      const o = this.overlay(`<h2 class="rc-q">${esc(a.prompt)}</h2>
+        <div class="rc-cloud"><canvas aria-label="학생 답 낱말 구름"></canvas><p class="rc-empty">학생 답을 기다리는 중…</p></div>
+        <div class="rc-words" aria-label="받은 낱말(누르면 숨김)"></div>
+        <div class="rc-ctl"><span class="rc-count"></span>
+          <button type="button" class="rc-btn" data-a="open">${a.open ? '마감하기' : '다시 받기'}</button>
+          <button type="button" class="rc-btn" data-a="new">새 질문</button>
+          <button type="button" class="rc-btn main" data-a="hide">화면 닫기</button></div>`);
+      o.querySelector('.room-card').classList.add('wide');
+      this.cloudOpen = true; this.panelOpen = false;
+      o.querySelector('[data-a="open"]').onclick = () => { state.ask.open = !state.ask.open; send({ t: 'ask', ...state.ask }); this.cloud(); this.badge(); };
+      o.querySelector('[data-a="new"]').onclick = () => this.askForm();
+      o.querySelector('[data-a="hide"]').onclick = () => this.closePanel();
+      this.cloudDraw(true);
+    },
+    cloudDraw(now) {
+      if (ROLE !== 'teacher' || !this.cloudOpen || !this.box || !state.ask) return;
+      clearTimeout(this.cloudT);
+      if (!now && Date.now() - (this.cloudAt || 0) < 700) { this.cloudT = setTimeout(() => this.cloudDraw(true), 700); return; }
+      this.cloudAt = Date.now();
+      const q = 'w-' + state.ask.id, t = words.get(q) || { counts: {}, n: 0 };
+      const list = Object.entries(t.counts).sort((x, y) => y[1] - x[1]).slice(0, 60);
+      const box = this.box;
+      box.querySelector('.rc-count').innerHTML = `답한 학생 <b>${t.n}</b>명`;
+      box.querySelector('.rc-empty').hidden = list.length > 0;
+      const chips = box.querySelector('.rc-words');
+      chips.innerHTML = list.map(([w, c]) => `<button type="button" data-w="${esc(w)}" title="눌러서 숨기기">${esc(w)} <b>${c}</b> ×</button>`).join('');
+      chips.querySelectorAll('[data-w]').forEach((b) => b.onclick = () => send({ t: 'hide', q, v: b.dataset.w }));
+      const cv = box.querySelector('.rc-cloud canvas');
+      const r = cv.parentElement.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+      if (!window.WordCloud || !WordCloud.isSupported || !list.length) { cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); return; }
+      const css = getComputedStyle(document.documentElement), tok = (k) => css.getPropertyValue('--' + k).trim();
+      const colors = [tok('ink'), tok('accent'), tok('current'), tok('field'), tok('s'), tok('n')];
+      const max = list[0][1], base = Math.min(cv.width, cv.height) / 5.2;
+      WordCloud(cv, {
+        list, rotateRatio: 0, shuffle: false, gridSize: Math.round(8 * dpr), shrinkToFit: true, drawOutOfBound: false,
+        fontFamily: css.getPropertyValue('--f-display') || 'sans-serif', fontWeight: 800, backgroundColor: 'rgba(0,0,0,0)',
+        weightFactor: (c) => Math.max(14 * dpr, base * (0.35 + 0.65 * c / max)),
+        color: (w) => colors[[...w].reduce((h, ch) => Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0, 2166136261) % colors.length],   // 같은 낱말은 늘 같은 색
+      });
+    },
 
     // 교사: 방 열기 / 코드·QR 패널
     panel() {
@@ -5870,11 +7341,19 @@ var qrcode = function() {
           <span class="rc-count"></span>
           <div class="rc-seg" role="group" aria-label="학생 화면"><button type="button" data-f="1">모두 따라오기</button><button type="button" data-f="0">자유롭게</button></div>
           <button type="button" class="rc-btn" data-a="lock"></button>
+          <button type="button" class="rc-btn" data-a="word">한 낱말 묻기</button>
+          <button type="button" class="rc-btn" data-a="reset">응답 모두 지우기</button>
           <button type="button" class="rc-btn main" data-a="hide">화면에서 숨기기</button>
         </div>`);
       o.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { state.follow = b.dataset.f === '1'; send({ t: 'follow', on: state.follow }); this.panelCounts(); this.badge(); });
       o.querySelector('[data-a="lock"]').onclick = () => { state.locked = !state.locked; send({ t: 'lock', on: state.locked }); this.panelCounts(); this.badge(); };
       o.querySelector('[data-a="hide"]').onclick = () => this.closePanel();
+      o.querySelector('[data-a="word"]').onclick = () => (state.ask ? this.cloud() : this.askForm());
+      o.querySelector('[data-a="reset"]').onclick = (e) => {
+        const b = e.currentTarget;
+        if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = '한 번 더 누르면 지워져요'; setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = '응답 모두 지우기'; } }, 3000); return; }
+        send({ t: 'reset' }); delete b.dataset.armed; b.textContent = '지웠어요';
+      };
       this.panelCounts();
     },
     panelCounts() {
@@ -5925,6 +7404,7 @@ var qrcode = function() {
       bar.appendChild(btn);
     }
     for (const ev of ['slidechanged', 'fragmentshown', 'fragmenthidden']) Reveal.on(ev, onLocalMove);
+    asks.find();
     if (ROLE === 'teacher') {
       const saved = store.get();
       if (saved && saved.code && saved.key) {
