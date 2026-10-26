@@ -3,6 +3,28 @@
     {
       "subject": "통합과학2",
       "subjectSlug": "tongsci2",
+      "unit": "2-2-1",
+      "unitTitle": "태양 에너지의 생성과 전환",
+      "area": "Ⅱ. 환경과 에너지 › 2. 에너지",
+      "standard": "[10통과2-02-04]",
+      "standardText": "태양에서 수소 핵융합 반응을 통해 질량 일부가 에너지로 바뀌고, 그중 일부가 지구에서 에너지 흐름을 일으키며 다양한 에너지로 전환되는 과정을 추론할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "태양 에너지의 생성",
+          "question": "태양은 무엇으로 에너지를 만들까?",
+          "pages": "98~99",
+          "slides": 7,
+          "teacher": "tongsci2/2-2-1/1/teacher.html",
+          "student": "tongsci2/2-2-1/1/student.html"
+        }
+      ],
+      "updated": "2026-10-26"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
       "unit": "2-2-2",
       "unitTitle": "발전과 에너지원",
       "area": "Ⅱ. 환경과 에너지 › 2. 에너지",

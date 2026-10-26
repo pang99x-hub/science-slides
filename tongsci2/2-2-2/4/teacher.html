@@ -353,6 +353,14 @@ div.palette i.fa-square::before, div.palette i.fa.fa-square::before { content: "
 div.boardhandle i.fa-chevron-up::before { content: "▲"; color: var(--paper-2); }
 div.boardhandle i.fa-chevron-down::before { content: "▼"; color: var(--paper-2); }
 
+/* 휴대폰 세로(reveal 스크롤 보기): 도구 막대를 아래쪽 가로줄로 옮겨 슬라이드를 가리지 않게, 가로로 돌리라는 안내를 잠깐 */
+@media (max-width: 600px) and (orientation: portrait) {
+  .toolbar { left: 50%; top: auto; bottom: max(10px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); flex-direction: row; gap: 2px; padding: 4px; opacity: .92; }
+  .toolbar a.home { margin: 0 7px 0 0; }
+  .toolbar a.home::after { left: auto; right: -5px; top: 8px; bottom: 8px; width: 1.5px; height: auto; }
+  body::after { content: "가로로 돌리면 크게 보여요"; position: fixed; left: 50%; top: max(10px, env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 45; background: var(--ink); color: var(--paper-2); font: 600 15px var(--f-body); padding: 6px 14px; border-radius: 999px; white-space: nowrap; pointer-events: none; animation: rotate-hint 6s ease forwards; }
+  @keyframes rotate-hint { 0%, 80% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+}
 @media (prefers-reduced-motion: reduce) {
   .mark { transition: none; }
 }
@@ -853,6 +861,9 @@ table.dirt td.done { color: var(--ink); }
 /* 응답 모으기: 선생님 화면의 «고른 학생 수» (슬라이드 판 안이라 1920 기준 크기) */
 .live-n { position: absolute; top: -14px; right: -14px; min-width: 34px; height: 34px; padding: 0 9px; border-radius: 999px; background: var(--current); color: #fff; font: 700 20px/34px var(--f-body); text-align: center; box-shadow: 0 0 0 3px var(--paper-2); pointer-events: none; z-index: 2; }
 .live-n.zero { background: var(--ink-3); }
+/* 칸이 붙은 단추 묶음(.seg)은 넘친 부분이 잘리므로 수를 글자 옆(좁은 6칸은 글자 아래)에 붙인다 */
+.seg button .live-n { position: static; display: inline-block; vertical-align: 2px; margin-left: 8px; min-width: 28px; height: 28px; padding: 0 7px; font-size: 17px; line-height: 28px; box-shadow: none; }
+.seg.seg6 button .live-n { display: block; margin: 5px auto 0; width: fit-content; }
 .predict.live .option .tally .tb { display: none; }
 .predict.live .option .tally span { font-weight: 700; color: var(--current); }
 .room-badge .rb-flash { font-weight: 700; color: var(--accent); }
