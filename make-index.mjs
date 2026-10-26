@@ -1,12 +1,14 @@
 // 자료실 첫 화면(index.html)을 site.json과 lessons.json으로 만든다. 단원 빌드가 끝날 때마다 불린다.
 //   node make-index.mjs
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = JSON.parse(readFileSync(join(here, 'site.json'), 'utf8'));
 const { units } = existsSync(join(here, 'lessons.json')) ? JSON.parse(readFileSync(join(here, 'lessons.json'), 'utf8')) : { units: [] };
+// 차시 폴더에 slides.pdf(tools/pdf.mjs가 만든 화면 모음)가 있으면 링크를 단다
+const pdfOf = (l) => { const p = posix.join(posix.dirname(l.student), 'slides.pdf'); return existsSync(join(here, p)) ? p : null; };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 const unitHtml = (u) => `
@@ -22,7 +24,7 @@ ${u.lessons.map((l) => `      <li class="lesson">
         <h3>${esc(l.title)}</h3>
         <p class="q">${esc(l.question)}</p>
         <p class="meta">${esc(u.textbook)} ${esc(l.pages)}쪽 기준 · ${l.slides}장</p>
-        <div class="go"><a class="btn main" href="${esc(l.student)}">학생용 열기</a><a class="btn" href="${esc(l.teacher)}">교사용</a></div>
+        <div class="go"><a class="btn main" href="${esc(l.student)}">학생용 열기</a><a class="btn" href="${esc(l.teacher)}">교사용</a>${pdfOf(l) ? `<a class="btn" href="${esc(pdfOf(l))}" title="장마다 마지막 단계까지 연 화면 모음(A4 가로, 인쇄용)">PDF</a>` : ''}</div>
       </li>`).join('\n')}
     </ol>
     <p class="upd">${esc(u.updated)} 고침</p>
@@ -109,6 +111,7 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
       <li>선생님이 알려 준 차시의 <b>학생용 열기</b>를 누른다.</li>
       <li>화면을 밀거나 화살표로 넘기고, 그림 속 자석·코일·단추를 직접 움직여 본다.</li>
       <li>휴대폰은 가로로 돌리면 크게 보인다.</li>
+      <li>복습하거나 인쇄하려면 <b>PDF</b>를 연다(장마다 정답까지 다 연 화면).</li>
     </ul>
   </div>
   <div class="card">
