@@ -962,6 +962,11 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .rc-w.new { opacity: 0; }
 .rc-ruler { position: absolute; left: -9999px; top: 0; visibility: hidden; white-space: nowrap; font: 800 100px/1 var(--f-display); letter-spacing: -.01em; }
 @media (prefers-reduced-motion: reduce) { .rc-w { transition: none; } }
+.rs-empty { margin: 0; padding: 10px 12px; border: 1.5px dashed var(--rule); border-radius: 10px; font-size: 15px; color: var(--ink-3); }
+.rc-size { display: inline-flex; align-items: center; gap: 6px; font: 700 15px/1 var(--f-body); color: var(--ink-2); }
+.rc-size input { width: 4.6em; min-height: 42px; padding: 0 10px; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper-2); color: var(--ink); font: 700 17px/1 var(--f-body); }
+.rc-size input:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
+.rc-size[hidden] { display: none; }
 
 </style>
 
@@ -7268,15 +7273,16 @@ if (!window.clearImmediate) {
     send({ t: 'lesson', ...state.lesson }); sendPos(); ui.badge();
   }
   // 선생님: 학생 표시(익명·번호만·번호와 이름)를 바꾼다. 번호를 받게 바꾸면 학생 기기에 번호 넣는 창이 뜬다
-  async function setIdMode(mode) {
+  async function roomSettings(body) {
     let j;
     try {
-      const r = await fetch(`${API}/rooms/${room.code}/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: room.key, idMode: mode }) });
+      const r = await fetch(`${API}/rooms/${room.code}/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: room.key, ...body }) });
       j = await r.json(); if (!r.ok || j.error) throw new Error(j.error);
     } catch (err) { throw new Error((err && err.message) || '바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); }
-    state.idMode = j.idMode; state.size = j.size;
-    try { const l = classes(), c = l.find((x) => x.code === room.code); if (c) { c.idMode = j.idMode; localStorage.setItem(CLASSES, JSON.stringify(l)); } } catch { /* 선생님 페이지 목록은 다음 로그인 때 맞춰진다 */ }
+    try { const l = classes(), c = l.find((x) => x.code === room.code); if (c) { c.idMode = j.idMode; c.size = j.size; localStorage.setItem(CLASSES, JSON.stringify(l)); } } catch { /* 선생님 페이지 목록은 다음 로그인 때 맞춰진다 */ }
+    return j;
   }
+  async function setIdMode(mode) { const j = await roomSettings({ idMode: mode }); state.idMode = j.idMode; state.size = j.size || null; }
   // 과목 방 선생님: 주소의 ?cls=도 같이 바꿔 새로 고쳐도 같은 반으로 붙게 한다
   function setCls(c) {
     teachCls = c || null;
@@ -7949,7 +7955,8 @@ if (!window.clearImmediate) {
           </section>
           <section class="rc-group rc-idm" aria-label="수업방"><h3>수업방</h3>
             <div class="rc-line"><div class="rc-seg" role="group" aria-label="학생 표시"><button type="button" data-m="anon">익명</button><button type="button" data-m="num">번호만</button><button type="button" data-m="numname">번호와 이름</button></div></div>
-            <div class="rc-line"><button type="button" class="rc-btn" data-a="lock"></button><span class="rc-idmsg" aria-live="polite"></span></div>
+            <div class="rc-line"><label class="rc-size" hidden>인원 <input type="number" inputmode="numeric" min="1" max="60" placeholder="안 정함" aria-label="반 인원(비우면 들어온 번호만)"></label><button type="button" class="rc-btn" data-a="lock"></button></div>
+            <span class="rc-idmsg" aria-live="polite"></span>
           </section>
         </div>
         <div class="rc-foot"><span class="rc-count"></span><button type="button" class="rc-btn main" data-a="hide">화면에서 숨기기</button></div>`);
@@ -7960,6 +7967,11 @@ if (!window.clearImmediate) {
         say('바꾸는 중…');
         setIdMode(b.dataset.m).then(() => { say(state.idMode === 'anon' ? '이제 이름 없이 들어와요' : '학생 기기에 번호 넣는 창이 떴어요'); this.panelCounts(); }).catch((err) => say(err.message));
       });
+      const sz = o.querySelector('.rc-size input');
+      sz.onchange = () => {
+        const say = (t) => { o.querySelector('.rc-idmsg').textContent = t; };
+        roomSettings({ size: sz.value }).then((j) => { state.size = j.size || null; say(j.size ? `인원 ${j.size}명: 안 들어온 번호도 보여요` : '인원을 비웠어요: 들어온 번호만 보여요'); this.panelCounts(); }).catch((err) => say(err.message));
+      };
       o.querySelector('[data-a="lock"]').onclick = () => { state.locked = !state.locked; send({ t: 'lock', on: state.locked }); this.panelCounts(); this.badge(); };
       o.querySelector('[data-a="hide"]').onclick = () => this.closePanel();
       o.querySelector('[data-a="word"]').onclick = () => (state.ask ? this.cloud() : this.askForm());
@@ -7981,6 +7993,9 @@ if (!window.clearImmediate) {
       if (wb) wb.innerHTML = `<span><b>${w.same}</b> 선생님과 같은 장</span><span><b>${w.slide}</b> 같은 차시 다른 장</span><span><b>${w.other}</b> 다른 차시</span><span><b>${w.list}</b> 차시 목록</span>`;
       this.box.querySelectorAll('.rc-idm [data-m]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === (state.idMode || 'anon'))));
       const at = this.box.querySelector('[data-a="attention"]'); if (at) { at.textContent = state.attention ? '주목 풀기' : '주목'; at.classList.toggle('warn', !!state.attention); }
+      this.box.querySelectorAll('[data-f]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.f === '1') === state.follow)));
+      const sw = this.box.querySelector('.rc-size'); if (sw) { sw.hidden = !state.idMode || state.idMode === 'anon'; const inp = sw.querySelector('input'); if (document.activeElement !== inp) inp.value = state.size || ''; }
+      const lk = this.box.querySelector('[data-a="lock"]'); if (lk) lk.textContent = state.locked ? '방 잠금 풀기' : '방 잠그기';   // 익명 방도(번호 칸과 상관없이)
       this.rosterDraw();
     },
     // 번호를 받는 반: 번호 칸마다 색(같은 장·같은 차시 다른 장·다른 곳·안 들어옴)과 답 수
@@ -7990,21 +8005,22 @@ if (!window.clearImmediate) {
       box.hidden = !on; if (!on) return;
       const my = Reveal.getIndices().h, by = new Map();
       for (const r of state.roster || []) { if (!inClass(r)) continue; if (!by.has(r.num)) by.set(r.num, []); by.get(r.num).push(r); }
-      const size = Math.max(state.size || 30, ...[...by.keys()]);
+      // 인원을 정했으면 1번부터 인원(또는 들어온 가장 큰 번호)까지, 안 정했으면 들어온 번호만
+      const size = state.size || 0;
+      const nums = size ? Array.from({ length: Math.max(size, ...by.keys()) }, (_, i) => i + 1) : [...by.keys()].sort((a, b) => a - b);
+      if (!nums.length) { box.innerHTML = '<p class="rs-empty">학생이 번호를 넣고 들어오면 번호 칸이 생겨요. 인원을 넣으면 안 들어온 번호도 보여요.</p>'; return; }
       const showName = this.showNames && state.idMode === 'numname';
       let cells = '';
-      for (let n = 1; n <= size; n++) {
+      for (const n of nums) {
         const rs = by.get(n) || [], r = rs[0];
         const cls = !r ? 'off' : r.path === LESSON ? (r.h === my ? 'same' : 'slide') : 'away';
         const tip = r ? `${n}번${r.name ? ' ' + r.name : ''} · ${cls === 'same' ? '같은 장' : cls === 'slide' ? (r.h + 1) + '장' : r.path === 'library' ? '차시 목록' : '다른 차시'} · 답 ${r.a}개` : `${n}번 · 안 들어옴`;
         cells += `<span class="rs ${cls}" title="${esc(tip)}"><b>${n}</b>${showName && r && r.name ? `<i>${esc(r.name)}</i>` : ''}${r ? `<em>${r.a}</em>` : ''}${rs.length > 1 ? `<u>×${rs.length}</u>` : ''}</span>`;
       }
-      const off = [...Array(size)].map((_, i) => i + 1).filter((n) => !by.has(n));
-      box.innerHTML = `<div class="rs-head"><span><i class="same"></i>같은 장</span><span><i class="slide"></i>다른 장</span><span><i class="away"></i>다른 곳</span><span><i class="off"></i>안 들어옴 ${off.length}명</span>`
+      const off = size ? nums.filter((n) => !by.has(n)) : null;
+      box.innerHTML = `<div class="rs-head"><span><i class="same"></i>같은 장</span><span><i class="slide"></i>다른 장</span><span><i class="away"></i>다른 곳</span>${off ? `<span><i class="off"></i>안 들어옴 ${off.length}명</span>` : '<span>들어온 번호만 보여요</span>'}`
         + `${state.idMode === 'numname' ? `<button type="button" class="rc-btn small" data-a="names">${showName ? '이름 숨기기' : '이름 보기'}</button>` : ''}</div><div class="rs-grid">${cells}</div>`;
       const nb = box.querySelector('[data-a="names"]'); if (nb) nb.onclick = () => { this.showNames = !this.showNames; this.rosterDraw(); };
-      this.box.querySelectorAll('[data-f]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.f === '1') === state.follow)));
-      this.box.querySelector('[data-a="lock"]').textContent = state.locked ? '방 잠금 풀기' : '방 잠그기';
     },
 
     // 학생: 코드 넣기
@@ -8189,7 +8205,10 @@ if (!window.clearImmediate) {
    화면에서는 중심축에 가까운 선부터 n줄만 코일 속 구간을 진하게 칠한다. 진한 선을 세면 n과 같다.
    유도 전류는 같은 양이 변하는 빠르기로 계산한다. stepped 옵션을 켜면 화면의 n(반올림)이 바뀐 뒤에만, 움직인 빠르기에
    맞춰 한 줄만큼 따라가는 양으로 계산해서, 보이는 줄 수가 그대로면 바늘도 멈춘다(한 줄마다 흐르는 전기의 양은 같다).
-   전류 부호: +는 B→Ⓖ→A (N극을 가까이 할 때의 방향). */
+   전류 부호: +는 B→Ⓖ→A (N극을 가까이 할 때의 방향).
+   코일은 도선 한 가닥이 A(위 오른쪽)에서 감겨 내려가 B(아래 오른쪽)로 나온다. 위에서 보면 시계 반대 방향으로 감는다
+   (오른쪽 → 뒤 → 왼쪽 → 앞). 그래서 +전류는 코일 속에서 A→B로 흐르며 앞줄을 왼쪽에서 오른쪽으로 지나고,
+   오른손을 감은 방향으로 쥐면 엄지가 위 → 코일 위쪽이 N극(다가오는 N극을 밀어낸다). 전류 점은 코일 도선을 따라서도 흐른다. */
 (function () {
   'use strict';
 
@@ -8197,14 +8216,15 @@ if (!window.clearImmediate) {
   const DW = 1056, DH = 780;
   const CX = 330;                       // 코일과 자석의 중심선
   const CL = 240, R = 80, RY = 17;      // 코일 길이, 반지름, 타원 높이의 절반
-  const TURNS_DRAWN = 12, TURNS_CALC = 10;
-  const TURN_DRAW = { 10: 12, 20: 18, 30: 24 };     // 감은 수에 따라 그림에 그리는 줄 수
+  const TURNS_DRAWN = 8, TURNS_CALC = 10;
+  const TURN_DRAW = { 10: 8, 20: 13, 30: 18 };      // 감은 수에 따라 그림에 그리는 바퀴 수(나선이 비스듬히 내려가는 게 보이게 성기게)
   const MW = 62, ML = 230, INSET = 18;  // 자석 폭, 길이, 극이 면에서 들어간 거리
   const G = { x: 700, y: 300, r: 74 };  // 검류계
   const BULB = { x: 880, y: 560, r: 40 };
   const FULL = 2.2;                     // 바늘이 끝까지 가는 유도 전류(1/s)
   const E_BAR = 6;                      // 에너지 막대가 꽉 차는 전기 에너지(∫I²dt, 넣었다 빼기 열 번쯤)
   const LINES_PER_SIDE = 9;
+  const COIL_END = 12, COIL_K = 28;     // 코일 나선의 위·아래 끝(코일 윗면·아랫면에서 안쪽으로), 한 바퀴를 나누는 점 수
   const HIST_SEC = 8, HIST_HZ = 30;
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -8484,12 +8504,48 @@ if (!window.clearImmediate) {
     }
 
     function wirePath() {
-      const yA = st.coilY + 12, yB = st.coilY + CL - 12, x0 = CX + R;
+      const yA = st.coilY + COIL_END, yB = st.coilY + CL - COIL_END, x0 = CX + R;
       // B에서 A까지. 세 번째 값 true는 «바로 앞 점에서 여기까지는 전구·검류계 속»이라 선을 긋지 않는다는 뜻
       return [
         [x0, yB], [560, yB], [560, 700], [BULB.x, 700], [BULB.x, BULB.y + BULB.r], [BULB.x, BULB.y - BULB.r, true],
         [BULB.x, G.y], [G.x + G.r, G.y], [G.x - G.r, G.y, true], [520, G.y], [520, yA], [x0, yA],
       ];
+    }
+    // 코일 도선(나선): A에서 시작해 θ가 늘수록 오른쪽 → 뒤(화면 위쪽) → 왼쪽 → 앞(화면 아래쪽)으로 돌며 내려간다
+    function coilPath() {
+      const n = TURN_DRAW[st.turns] || TURNS_DRAWN, y0 = st.coilY + COIL_END, y1 = st.coilY + CL - COIL_END, N = n * COIL_K;
+      const pts = [];
+      for (let k = 0; k <= N; k++) { const th = 2 * Math.PI * k / COIL_K; pts.push([CX + R * Math.cos(th), y0 + (y1 - y0) * k / N - RY * Math.sin(th), th]); }
+      return { pts, n, pitch: (y1 - y0) / n };
+    }
+    const frontAt = (th) => Math.sin(th) < 0;                       // 앞줄(보는 쪽): 화면에서 아래 반쪽
+    // 전류 점: 바깥 전선(B→…→Ⓖ→A)과 코일 도선(A→B)을 이은 고리를 따라 흐른다. +전류면 이 순서대로 움직인다
+    function currentDots() {
+      const a = clamp(Math.abs(st.Ie) / (0.12 * FULL_I), 0, 1);
+      if (a < 0.03) return null;
+      const P = wirePath(), C2 = coilPath().pts, segs = [];
+      let total = 0;
+      for (let i = 0; i < P.length - 1; i++) { const L = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); segs.push({ p0: P[i], p1: P[i + 1], L, start: total, hidden: !!P[i + 1][2], layer: 'wire' }); total += L; }
+      for (let i = 0; i < C2.length - 1; i++) { const L = Math.hypot(C2[i + 1][0] - C2[i][0], C2[i + 1][1] - C2[i][1]); segs.push({ p0: C2[i], p1: C2[i + 1], L, start: total, layer: frontAt((C2[i][2] + C2[i + 1][2]) / 2) ? 'front' : 'back' }); total += L; }
+      const gap = 30, off = ((st.dotOff % gap) + gap) % gap, out = [];
+      let j = 0;
+      for (let s = off; s < total; s += gap) {
+        while (j < segs.length - 1 && s >= segs[j].start + segs[j].L) j++;
+        const sg = segs[j]; if (sg.hidden) continue;
+        const t = (s - sg.start) / sg.L;
+        out.push({ x: sg.p0[0] + (sg.p1[0] - sg.p0[0]) * t, y: sg.p0[1] + (sg.p1[1] - sg.p0[1]) * t, layer: sg.layer });
+      }
+      return { a, dots: out };
+    }
+    function drawDots(layer) {
+      const d = st.dots; if (!d) return;
+      ctx.fillStyle = C.current;
+      for (const p of d.dots) {
+        if (p.layer !== layer) continue;
+        ctx.globalAlpha = d.a * (layer === 'back' ? 0.4 : 1);
+        ctx.beginPath(); ctx.arc(p.x, p.y, layer === 'wire' ? 6 : 5, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
     }
     function drawWires() {
       const P = wirePath();
@@ -8497,37 +8553,35 @@ if (!window.clearImmediate) {
       ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]);
       for (let i = 1; i < P.length; i++) { if (P[i][2]) ctx.moveTo(P[i][0], P[i][1]); else ctx.lineTo(P[i][0], P[i][1]); }
       ctx.stroke();
-      // 전류 점
-      const a = clamp(Math.abs(st.Ie) / (0.12 * FULL_I), 0, 1);
-      if (a < 0.03) return;
-      const segs = [];
-      let total = 0;
-      for (let i = 0; i < P.length - 1; i++) {
-        const L = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]);
-        segs.push({ i, L, start: total, hidden: !!P[i + 1][2] }); total += L;
-      }
-      ctx.fillStyle = C.current; ctx.globalAlpha = a;
-      const gap = 30, off = ((st.dotOff % gap) + gap) % gap;
-      for (let s = off; s < total; s += gap) {
-        const sg = segs.find((g) => s >= g.start && s < g.start + g.L);
-        if (!sg || sg.hidden) continue;
-        const t = (s - sg.start) / sg.L, p0 = P[sg.i], p1 = P[sg.i + 1];
-        ctx.beginPath(); ctx.arc(p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t, 6, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
+      st.dots = currentDots();
+      drawDots('wire');
     }
 
+    // 코일: 뒷줄은 자석 뒤에(흐리게), 앞줄은 자석 앞에. 한 가닥으로 이어 그려 감은 방향이 보이게 한다
     function drawCoil(part) {
-      const front = part === 'front';
+      const front = part === 'front', { pts, n, pitch } = coilPath();
       ctx.strokeStyle = front ? C['copper-f'] : C['copper-b'];
-      const n = TURN_DRAW[st.turns] || TURNS_DRAWN;
       ctx.lineWidth = front ? (n > 18 ? 5 : 7) : 4;
-      for (let i = 0; i < n; i++) {
-        const y = st.coilY + 10 + (CL - 20) * i / (n - 1);
-        ctx.beginPath();
-        if (front) ctx.ellipse(CX, y, R, RY, 0, 0, Math.PI);
-        else ctx.ellipse(CX, y, R, RY, 0, Math.PI, Math.PI * 2);
-        ctx.stroke();
+      ctx.beginPath();
+      let pen = false;
+      for (let i = 1; i < pts.length; i++) {
+        if (frontAt((pts[i - 1][2] + pts[i][2]) / 2) === front) { if (!pen) { ctx.moveTo(pts[i - 1][0], pts[i - 1][1]); pen = true; } ctx.lineTo(pts[i][0], pts[i][1]); }
+        else pen = false;
+      }
+      ctx.stroke();
+      drawDots(part);
+      // 전류가 흐르는 동안 앞줄에 방향 화살표(+전류면 왼쪽 → 오른쪽)
+      if (front && st.dots) {
+        const sgn = Math.sign(st.Ie), every = n > 18 ? 4 : 3;
+        ctx.fillStyle = C.current; ctx.strokeStyle = C['paper-2']; ctx.lineWidth = 2.5; ctx.globalAlpha = st.dots.a;
+        for (let t = 1; t < n; t += every) {
+          const th = 2 * Math.PI * t + 1.5 * Math.PI, k = t * COIL_K + 0.75 * COIL_K;
+          const x = CX + R * Math.cos(th), y = st.coilY + COIL_END + pitch * (k / COIL_K) - RY * Math.sin(th);
+          const ang = Math.atan2(pitch / (2 * Math.PI) - RY * Math.cos(th), -R * Math.sin(th)) + (sgn < 0 ? Math.PI : 0);
+          ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+          ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(-9, -10); ctx.lineTo(-4, 0); ctx.lineTo(-9, 10); ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore();
+        }
+        ctx.globalAlpha = 1;
       }
       if (front && (st.mode === 'coil' || st.mode === 'both')) {
         ctx.save(); ctx.setLineDash([10, 9]); ctx.strokeStyle = C.accent; ctx.lineWidth = 2.5;
@@ -9128,19 +9182,32 @@ if (!window.clearImmediate) {
       ctx.fillText(left[0], st.mx - ML / 4, st.my + 1); ctx.fillText(right[0], st.mx + ML / 4, st.my + 1);
     }
 
-    function turnXs() {
-      const n = st.dens === 1 ? 9 : 17, a = COIL.cx - COIL.len / 2 + 12, b = COIL.cx + COIL.len / 2 - 12;
-      return Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
+    // 코일: 도선 한 가닥이 왼쪽 끝 아래(a)에서 감겨 오른쪽 끝 아래(b)로 나온다. φ가 늘수록 앞줄(오른쪽 반쪽)을 위에서 아래로 지난다.
+    // dir 1이면 전류가 a→b(φ가 느는 쪽)로 흘러 앞줄에서 아래로 → 오른손 엄지(N극)는 오른쪽. dir -1이면 같은 코일에 거꾸로
+    function helix() {
+      const n = st.dens === 1 ? 9 : 17, a = COIL.cx - COIL.len / 2 + 12, b = COIL.cx + COIL.len / 2 - 12, K = 32, N = n * K;
+      const pts = [];
+      for (let k = 0; k <= N; k++) { const ph = Math.PI + 2 * Math.PI * k / K; pts.push([a + (b - a) * k / N + COIL.rx * Math.sin(ph), COIL.cy - COIL.r * Math.cos(ph), ph]); }
+      return { pts, n, a, b, N, K };
     }
     function circuitPath() {
       // 전지 +극에서 나가 왼쪽 끝으로 들어가고(dir 1), 오른쪽 끝에서 나와 전지 -극으로
-      const L = COIL.cx - COIL.len / 2, Rr = COIL.cx + COIL.len / 2, yb = COIL.cy + COIL.r;
+      const L = COIL.cx - COIL.len / 2 + 12, Rr = COIL.cx + COIL.len / 2 - 12, yb = COIL.cy + COIL.r;
       const plus = [COIL.cx - 16, BAT_Y], minus = [COIL.cx + 16, BAT_Y];
       const path = [[plus[0] - 4, BAT_Y], [L, BAT_Y], [L, yb], null, [Rr, yb], [Rr, BAT_Y], [minus[0] + 4, BAT_Y]];
       return st.dir === 1 ? path : path.map((p) => (p ? [2 * COIL.cx - p[0], p[1]] : p));
     }
     function drawCoilScene() {
-      const xs = turnXs(), { cy, r, rx } = COIL;
+      const H = helix(), { cy, r } = COIL;
+      const front = (ph) => Math.sin(ph) > 0;
+      const strand = (isFront) => {
+        ctx.beginPath(); let pen = false;
+        for (let i = 1; i < H.pts.length; i++) {
+          if (front((H.pts[i - 1][2] + H.pts[i][2]) / 2) === isFront) { if (!pen) { ctx.moveTo(H.pts[i - 1][0], H.pts[i - 1][1]); pen = true; } ctx.lineTo(H.pts[i][0], H.pts[i][1]); }
+          else pen = false;
+        }
+        ctx.stroke();
+      };
       // 회로와 전지
       const P = circuitPath();
       ctx.strokeStyle = C.ink; ctx.lineWidth = 4;
@@ -9152,9 +9219,25 @@ if (!window.clearImmediate) {
       ctx.fillStyle = C.ink; ctx.font = `700 28px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('+', longX + (st.dir === 1 ? -26 : 26), BAT_Y - 44); ctx.fillText('−', shortX + (st.dir === 1 ? 26 : -26), BAT_Y - 44);
       ctx.font = `600 24px ${FONT}`; ctx.fillText('전지', COIL.cx, BAT_Y + 62);
-      // 뒤쪽 반원
+      // 전류 점: 전지 +극 → 전선 → 코일 도선(감은 대로) → 전선 → 전지 -극. 뒷줄의 점은 흐리게
+      const hp = st.dir === 1 ? H.pts : H.pts.slice().reverse();
+      const loop = [[P[0], 'wire'], [P[1], 'wire'], [P[2], 'wire'], ...hp.map((p) => [p, 'coil']), [P[4], 'wire'], [P[5], 'wire'], [P[6], 'wire']];
+      const dots = [];
+      { let total = 0; const segs = [];
+        for (let i = 0; i < loop.length - 1; i++) { const p0 = loop[i][0], p1 = loop[i + 1][0], L = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]); if (!L) continue;
+          const layer = loop[i][1] === 'coil' && loop[i + 1][1] === 'coil' ? (front((p0[2] + p1[2]) / 2) ? 'front' : 'back') : 'wire';
+          segs.push({ p0, p1, L, start: total, layer }); total += L; }
+        let j = 0;
+        for (let sd = (st.flow * 40) % 34; sd < total; sd += 34) {
+          while (j < segs.length - 1 && sd >= segs[j].start + segs[j].L) j++;
+          const g = segs[j], t = (sd - g.start) / g.L;
+          dots.push({ x: g.p0[0] + (g.p1[0] - g.p0[0]) * t, y: g.p0[1] + (g.p1[1] - g.p0[1]) * t, layer: g.layer });
+        } }
+      const dotsOf = (layer, alpha, rad) => { ctx.fillStyle = C.current; ctx.globalAlpha = alpha; for (const d of dots) if (d.layer === layer) { ctx.beginPath(); ctx.arc(d.x, d.y, rad, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; };
+      // 뒷줄
       ctx.strokeStyle = C['copper-b']; ctx.lineWidth = 4;
-      for (const x of xs) { ctx.beginPath(); ctx.ellipse(x, cy, rx, r, 0, Math.PI / 2, Math.PI * 1.5); ctx.stroke(); }
+      strand(false);
+      dotsOf('back', 0.4, 4);
       // 자기력선
       if (st.lines) {
         const { outer, inner } = coilLines();
@@ -9172,26 +9255,15 @@ if (!window.clearImmediate) {
       drawCompasses((x, y) => (Math.abs(y - BAT_Y) < 50 && Math.abs(x - COIL.cx) < 80)
         || (Math.abs(x - COIL.cx) < COIL.len / 2 + 24 && Math.abs(Math.abs(y - COIL.cy) - COIL.r) < 26)
         || (Math.abs(y - COIL.cy) < 30 && Math.abs(Math.abs(x - COIL.cx) - (COIL.len / 2 + 46)) < 44));
-      // 앞쪽 반원과 전류 점
+      // 앞줄과 전류 점, 앞줄의 전류 방향 화살표(dir 1이면 아래로)
       ctx.strokeStyle = C['copper-f']; ctx.lineWidth = 6;
-      for (const x of xs) { ctx.beginPath(); ctx.ellipse(x, cy, rx, r, 0, -Math.PI / 2, Math.PI / 2); ctx.stroke(); }
-      ctx.fillStyle = C.current;
-      const phase = (st.flow % 1 + 1) % 1;
-      for (const x of xs) {
-        for (let k = 0; k < 3; k++) {
-          const t = ((k / 3 + phase) % 1);                 // 0 위 → 1 아래 (dir 1)
-          const ph = -Math.PI / 2 + Math.PI * (st.dir === 1 ? t : 1 - t);
-          ctx.beginPath(); ctx.arc(x + rx * Math.cos(ph), cy + r * Math.sin(ph), 4.5, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-      // 바깥 전선의 전류 점
-      const segs = [[P[0], P[1]], [P[1], P[2]], [P[4], P[5]], [P[5], P[6]]];
-      const lens = segs.map(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1])), total = lens.reduce((s, v) => s + v, 0);
-      for (let s = (st.flow * 40) % 34; s < total; s += 34) {
-        let u = s, i = 0; while (i < lens.length && u > lens[i]) { u -= lens[i]; i++; }
-        if (i >= lens.length) break;
-        const [a, b] = segs[i], t = u / lens[i];
-        ctx.beginPath(); ctx.arc(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, 5, 0, Math.PI * 2); ctx.fill();
+      strand(true);
+      dotsOf('front', 1, 4.5); dotsOf('wire', 1, 5);
+      ctx.fillStyle = C.current; ctx.strokeStyle = C['paper-2']; ctx.lineWidth = 2.5;
+      for (let m = 1; m <= H.n; m += H.n > 9 ? 3 : 2) {
+        const k = H.K * (m - 0.25), x = H.a + (H.b - H.a) * k / H.N + COIL.rx;
+        ctx.save(); ctx.translate(x, cy); ctx.rotate(st.dir === 1 ? Math.PI / 2 : -Math.PI / 2);
+        ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-9, -10); ctx.lineTo(-4, 0); ctx.lineTo(-9, 10); ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore();
       }
       // 코일 양 끝의 극
       ctx.font = `800 46px ${FONT}`;

@@ -96,7 +96,6 @@ details.fold[open] > summary { margin-bottom: 12px; }
 .makeform { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) auto auto auto; gap: 12px; align-items: end; }
 .makeform label { display: grid; gap: 4px; font: 600 14px/1.3 var(--f-body); color: var(--ink-2); min-width: 0; }
 .makeform input, .makeform select { width: 100%; }
-.makeform #size { width: 84px; }
 input[type=text], input[type=email], select { min-height: 48px; }
 .opt { font-weight: 500; color: var(--ink-3); }
 .steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: var(--ink-2); }
@@ -135,10 +134,10 @@ select { height: 48px; }
       <label>과목 이름<input type="text" id="name" maxlength="30" placeholder="예: 통합과학2" autocomplete="off"></label>
       <label>가르치는 반<input type="text" id="cls" maxlength="200" placeholder="예: 2-1반, 2-3반, 2-5반" autocomplete="off"></label>
       <label>학생 표시<select id="idmode"><option value="anon">익명</option><option value="num">번호만</option><option value="numname">번호와 이름</option></select></label>
-      <label id="sizeWrap" hidden>반 인원<input type="text" inputmode="numeric" id="size" value="30"></label>
+      <label id="sizeWrap" hidden>반 인원 <span class="opt">선택</span><input type="text" inputmode="numeric" id="size" placeholder="안 정함" style="width:96px"></label>
       <button class="btn main" type="submit">만들기</button>
     </form>
-    <p class="small">가르치는 반은 쉼표로 나눠 적어요. 그러면 링크 하나를 여러 반이 함께 써요(비워 두면 반 하나). 번호를 받으면 수업 중 누가 들어왔는지 번호 칸으로 보여요. 모두 나중에 바꿀 수 있어요.</p>
+    <p class="small">가르치는 반은 쉼표로 나눠 적어요. 그러면 링크 하나를 여러 반이 함께 써요(비워 두면 반 하나). 번호를 받으면 수업 중 누가 들어왔는지 번호 칸으로 보여요(인원을 비우면 들어온 번호만). 모두 나중에 바꿀 수 있어요.</p>
   </div>
   <div class="card">
     <details class="fold"><summary><span class="h2">이렇게 써요</span></summary>
@@ -299,7 +298,8 @@ select { height: 48px; }
         + '<form class="form" data-a="namef"><label class="grow">수업방 이름<input type="text" maxlength="30" value="' + esc(c.name || '') + '" autocomplete="off"></label><button class="btn" type="submit">이름 저장</button></form>'
         + '<div data-clsf></div>'
         + '<div class="field"><span class="flabel">학생 표시</span><div class="row">' + ['anon', 'num', 'numname'].map(function (k) { return '<button class="btn small" type="button" data-m="' + k + '" aria-pressed="' + (mode === k) + '">' + MODES[k] + '</button>'; }).join('')
-        + (mode !== 'anon' ? '<label class="sizebox">인원 <input type="text" inputmode="numeric" data-a="size" value="' + (c.size || 30) + '" aria-label="반 인원"> 명</label>' : '') + '</div></div>'
+        + (mode !== 'anon' ? '<label class="sizebox">인원 <input type="text" inputmode="numeric" data-a="size" value="' + (c.size || '') + '" placeholder="안 정함" aria-label="반 인원"> 명</label>' : '') + '</div>'
+        + (mode !== 'anon' ? '<span class="small">인원을 비우면 수업 패널에 들어온 번호만 보여요. 넣으면 안 들어온 번호도 보여요.</span>' : '') + '</div>'
         + '<div class="field"><span class="flabel">수업방 지우기</span><div class="row"><button class="btn warn small" type="button" data-a="del">이 수업방 지우기</button><span class="small">링크로 들어와도 열리지 않고 지난 수업 기록도 사라져요. 되돌릴 수 없어요.</span></div></div>'
         + '</div></details></div>';
     }).join('');
@@ -340,9 +340,9 @@ select { height: 48px; }
       });
       var size = card.querySelector('[data-a="size"]');
       if (size) size.onchange = function () {
-        var n = parseInt(size.value, 10);
-        if (!(n >= 1 && n <= 60)) { msg('반 인원은 1~60명으로 넣어 주세요.'); size.value = c.size || 30; return; }
-        post(c.code + '/settings', { key: c.key, size: n }).then(function (j) { if (j.error) { msg(j.error); return; } update(c.code, { size: j.size }); msg((c.name || '반') + ' 인원을 ' + j.size + '명으로 바꿨어요.'); }).catch(function () { msg('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+        var v = size.value.trim(), n = parseInt(v, 10);
+        if (v && !(n >= 1 && n <= 60)) { msg('반 인원은 1~60명으로 넣거나 비워 두세요.'); size.value = c.size || ''; return; }
+        post(c.code + '/settings', { key: c.key, size: v }).then(function (j) { if (j.error) { msg(j.error); return; } update(c.code, { size: j.size }); msg((c.name || '반') + (j.size ? ' 인원을 ' + j.size + '명으로 정했어요.' : ' 인원을 비웠어요. 수업 패널에 들어온 번호만 보여요.')); }).catch(function () { msg('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
       };
     });
   }
@@ -442,12 +442,12 @@ select { height: 48px; }
     if (!API) { msg('수업방 주소가 없어요.'); return; }
     if (!s) { msg('먼저 위에서 구글로 로그인해 주세요.'); return; }
     msg('만드는 중…');
-    var mode = idmode.value, size = parseInt(document.getElementById('size').value, 10) || 30, cls = parseCls(document.getElementById('cls').value);
+    var mode = idmode.value, size = document.getElementById('size').value, cls = parseCls(document.getElementById('cls').value);
     api('/rooms', { session: s.token, persist: true, name: name, idMode: mode, size: size, classes: cls }).then(function (j) {
       if (j.login) { signedOut(); renderAll(); msg('로그인이 풀렸어요. 다시 로그인해 주세요.'); return; }
       if (!j.code || !j.key) { msg(j.error || '만들지 못했어요.'); return; }
       var got = j.classes || [];
-      var l = load(); l.push({ code: j.code, key: j.key, name: j.name || name, idMode: j.idMode || mode, size: j.size || size, classes: got }); save(l);
+      var l = load(); l.push({ code: j.code, key: j.key, name: j.name || name, idMode: j.idMode || mode, size: j.size || null, classes: got }); save(l);
       document.getElementById('name').value = ''; document.getElementById('cls').value = '';
       msg(name + ' 수업방을 만들었어요. ' + (got.length ? '과목 링크를 ' + got.join(', ') + ' 클래스룸에 올려 두세요.' : '반 링크를 그 반 클래스룸에 올려 두세요.') + (got.length < cls.length ? ' (반 이름은 글자·숫자로 10자 안, 16개까지예요.)' : '')); render();
     }, function () { msg('만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
