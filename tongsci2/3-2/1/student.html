@@ -9387,7 +9387,7 @@ window.THREE={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnim
     const sens = Object.fromEntries([...ph.querySelectorAll('.ih-s')].map((e) => [e.dataset.k, e]));
     const ruleB = Object.fromEntries([...ph.querySelectorAll('.ih-rule')].map((e) => [e.dataset.k, e]));
     const ctlB = Object.fromEntries([...ph.querySelectorAll('.ih-btn')].map((e) => [e.dataset.k, e]));
-    const s = window.Scene3D.make(stage, canvas, { view: { yaw: 0.4, pitch: 0.66, dist: 24.5, target: [1.4, 1.0, 1.6] }, fov: 34, min: 16, max: 40, pmax: 1.15, shadows: true, onFrame: frame, click: tap });
+    const s = window.Scene3D.make(stage, canvas, { view: { yaw: 0.4, pitch: 0.44, dist: 26, target: [1.2, 2.6, 1.0] }, fov: 34, min: 16, max: 40, pmax: 1.15, shadows: true, onFrame: frame, click: tap });
     if (!s.ok) return { setActive() {}, fit() {} };
     const { T, scene, inked, mat, group } = s;
     const V = (x, y, z) => new T.Vector3(x, y, z);
@@ -9491,7 +9491,8 @@ window.THREE={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnim
       now.textContent = n ? n[1] : '센서 → 인터넷 → 전화 → 기기, 모두 이어졌다';
       now.classList.toggle('done', !n);
     }
-    rig = window.Scene3D.sunRig(s, { R: 24, H: 0.8, south: 0.45, t0: 10, shadow: 16, onChange: () => { if (!ready) return; if (pkCool <= 0) { upload(); pkCool = 0.7; } apply('sun'); } });
+    rig = window.Scene3D.sunRig(s, { R: 11, H: 0.75, south: 0.15, t0: 10, shadow: 16, onChange: () => { if (!ready) return; if (pkCool <= 0) { upload(); pkCool = 0.7; } apply('sun'); } });
+    rig.ball.scale.setScalar(0.6);   // 집을 가리지 않게 작은 해
     canvas.addEventListener('keydown', (e) => { const d = { ArrowRight: 0.5, ArrowLeft: -0.5 }[e.key]; if (d) { e.preventDefault(); e.stopPropagation(); rig.set(rig.t + d); } });
     // 전화
     Object.entries(ruleB).forEach(([k, b]) => b.addEventListener('click', () => {
@@ -9555,7 +9556,7 @@ window.THREE={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnim
       }
     }
     placeMan(); ready = true; apply('init');
-    root._home = { time: (t) => rig.set(t), rule: (k) => ruleB[k].click(), ctl: (k) => ctlB[k].click(), out: () => tap({ clientX: s.toClient(man.position.clone().setY(1.2)).x, clientY: s.toClient(man.position.clone().setY(1.2)).y }) };
+    root._home = { sun: () => { const p = s.toClient(rig.ball.position), r = canvas.getBoundingClientRect(); return [Math.round(p.x - r.left), Math.round(p.y - r.top), Math.round(r.width), Math.round(r.height)]; }, time: (t) => rig.set(t), rule: (k) => ruleB[k].click(), ctl: (k) => ctlB[k].click(), out: () => tap({ clientX: s.toClient(man.position.clone().setY(1.2)).x, clientY: s.toClient(man.position.clone().setY(1.2)).y }) };
     return { setActive: s.setActive, fit: s.fit };
   }
   window.SmartHome = { mount };
