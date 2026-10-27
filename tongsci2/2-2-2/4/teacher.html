@@ -826,6 +826,9 @@ table.dirt td.done { color: var(--ink); }
 .room-badge .rb-open { border: 0; background: none; padding: 4px 0; text-align: left; }
 .room-badge .rb-toggle { border: 2px solid var(--accent); background: var(--accent); color: var(--paper-2); border-radius: 999px; padding: 3px 12px; font-weight: 700; }
 .room-badge .rb-me { border: 1.5px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 2px 10px; font-weight: 700; }
+/* 과목 방 선생님: 이 차시로 수업할 반 고르기(지난번 반은 테두리만) */
+.room-badge .rb-cls { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.room-badge .rb-cls .rb-toggle:not(.on) { background: var(--paper-2); color: var(--accent); }
 .room-badge .rb-leave { border: 0; background: var(--paper); border-radius: 999px; min-width: 30px; height: 30px; padding: 0 8px; font-weight: 700; }
 .room-badge .rb-leave[data-armed] { background: var(--stamp); color: var(--paper-2); }
 .room-badge .rb-lost { color: var(--stamp); }
@@ -857,6 +860,9 @@ table.dirt td.done { color: var(--ink); }
 .rc-seg button + button { border-left: 2px solid var(--ink); }
 .rc-seg button[aria-pressed="true"] { background: var(--accent); color: var(--paper-2); }
 .rc-form { display: flex; flex-wrap: wrap; gap: 10px; }
+/* 과목 방 학생: 우리 반 고르기 */
+.rc-cls { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+.rc-cls .rc-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
 .rc-input { font: 800 44px/1 var(--f-display); letter-spacing: .3em; width: 6.2em; padding: 6px 14px; border: 3px solid var(--ink); border-radius: 10px; background: var(--paper); color: var(--ink); text-align: center; }
 .rc-input:focus-visible, .rc-btn:focus-visible, .rc-seg button:focus-visible, .room-badge button:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 @media print { .room-badge, .room-overlay { display: none !important; } }
@@ -7016,7 +7022,9 @@ if (!window.clearImmediate) {
    수업이 끝나면 복습만 된다(답 보내기 같은 수업 기능은 꺼진다).
    반 방 선생님 화면: 처음 붙으면 이 차시로 수업을 시작한다(같은 차시가 이미 열려 있으면 방의 장으로 이어서 — 휴대폰 리모컨).
    끊겼다 다시 붙을 때는 끝난 수업을 저절로 다시 열지 않고 배지의 «이 차시로 수업 시작»을 기다린다.
-   다른 선생님 기기가 차시를 바꾸면 이 화면도 그 차시로 옮겨 간다. «수업 끝내기» 뒤에도 연결은 남아 다시 시작할 수 있다. */
+   다른 선생님 기기가 차시를 바꾸면 이 화면도 그 차시로 옮겨 간다. «수업 끝내기» 뒤에도 연결은 남아 다시 시작할 수 있다.
+   과목 방(반 목록이 있는 방): 학생은 처음 한 번 자기 반을 고르고, 선생님은 반을 골라(?cls=, 또는 배지의 반 단추) 수업을 연다.
+   수업·주목·질문·부르기는 그 반 학생에게만 가고, 다른 반 학생은 복습을 그대로 한다. 선생님 현황도 그 반만 센다. */
 (function () {
   'use strict';
   const qs = new URLSearchParams(location.search);
@@ -7038,7 +7046,15 @@ if (!window.clearImmediate) {
     set(code, v) { try { localStorage.setItem('science-room:me:' + code, JSON.stringify(v)); } catch { /* 저장이 막혀도 이번에는 쓴다 */ } me.mem = v; },
     mem: null,
   };
-  const needId = (mode, code) => mode && mode !== 'anon' && !(me.get(code) || me.mem);
+  // 처음 한 번 넣을 것: 과목 방이면 반, 번호를 받으면 번호. info는 방 정보나 state({ idMode, classes })
+  const needId = (info, code) => {
+    const w = me.get(code) || me.mem, list = info.classes || [];
+    if (list.length && !(w && list.includes(w.cls))) return true;
+    return !!info.idMode && info.idMode !== 'anon' && !(w && w.num);
+  };
+  const myCls = () => { const w = room && (me.get(room.code) || me.mem); return (w && w.cls) || null; };
+  // 이 수업이 나(학생)에게 해당하나: 반이 정해진 수업은 그 반 학생만
+  const forMe = (l) => !l || !l.cls || l.cls === myCls();
   const SAVE_KEY = 'science-room:' + location.pathname;
   // 학생 기기 표시(다시 연결해도 같은 학생으로 세려고). 이름·기기 정보와는 상관없는 임의 문자열
   const CID = (() => {
@@ -7060,6 +7076,7 @@ if (!window.clearImmediate) {
   // ---------- 연결 ----------
   let ws = null, room = null, retry = 0, retryTimer = 0, leaving = false;
   let classRoom = null;                               // 교사용을 반 링크로 열었을 때 그 반(열쇠 포함)
+  let teachCls = ROLE === 'teacher' ? qs.get('cls') || null : null;   // 과목 방 선생님: 지금 수업하는 반
   let state = { follow: true, locked: false, students: 0, pos: { h: 0, f: -1 }, ask: null };
   const words = new Map();                            // 낱말 문항 → { counts, n } (선생님)
   let applying = 0;                                   // 방에서 온 넘김을 적용하는 중(그동안 일어난 넘김 사건은 내 것이 아니다)
@@ -7067,7 +7084,7 @@ if (!window.clearImmediate) {
   function connect() {
     clearTimeout(retryTimer);
     const who = ROLE === 'student' ? (me.get(room.code) || me.mem) : null;
-    const id = who ? `&num=${who.num}${who.name ? '&name=' + encodeURIComponent(who.name) : ''}` : '';
+    const id = who ? `${who.cls ? '&cls=' + encodeURIComponent(who.cls) : ''}${who.num ? '&num=' + who.num : ''}${who.name ? '&name=' + encodeURIComponent(who.name) : ''}` : '';
     const q = ROLE === 'teacher' ? `?role=teacher&key=${encodeURIComponent(room.key)}` : `?role=student&cid=${CID}${id}`;
     const sock = ws = new WebSocket(`${WS}/rooms/${room.code}/ws${q}`);
     ws.onopen = () => {
@@ -7098,14 +7115,35 @@ if (!window.clearImmediate) {
   function reconnect() { const old = ws; ws = null; if (old) try { old.close(); } catch {} connect(); }
   // 반 방 선생님: 이 차시로 수업 시작
   function startLesson() {
-    state.lesson = { path: LESSON, title: document.title };
+    state.lesson = { path: LESSON, title: document.title, cls: teachCls };
     send({ t: 'lesson', ...state.lesson }); sendPos(); ui.badge();
+  }
+  // 과목 방 선생님: 주소의 ?cls=도 같이 바꿔 새로 고쳐도 같은 반으로 붙게 한다
+  function setCls(c) {
+    teachCls = c || null;
+    try { const u = new URL(location.href); if (teachCls) u.searchParams.set('cls', teachCls); else u.searchParams.delete('cls'); history.replaceState(history.state, '', u); } catch { /* 주소는 못 바꿔도 수업은 된다 */ }
+  }
+  // 다른 선생님 기기가 연 수업으로 옮겨 간다(차시가 같으면 반만 바꾼다). 옮겨 가면 true
+  function followLesson(l) {
+    if (l.path !== LESSON) {
+      leaving = true; try { ws.close(); } catch {}
+      location.href = `${BASE}/${l.path}/teacher.html?room=${room.code}${l.cls ? '&cls=' + encodeURIComponent(l.cls) : ''}${passApi}`;
+      return true;
+    }
+    setCls(l.cls); return false;
   }
   function teacherSync(m) {
     const fresh = !room.synced; room.synced = true;
-    if (m.lesson && m.lesson.path === LESSON) { if (fresh) apply(m.pos); else sendPos(); return; }
-    if (fresh) startLesson();
+    const list = m.classes || [], l = m.lesson;
+    if (teachCls && !list.includes(teachCls)) setCls(null);
+    // 같은 수업이면 이어서(반을 안 고르고 열었으면 열린 수업에 붙는다 — 휴대폰 리모컨)
+    if (l && l.path === LESSON && (!teachCls || (l.cls || null) === teachCls)) { setCls(l.cls); if (fresh) apply(m.pos); else sendPos(); return; }
+    if (!fresh) { if (l) followLesson(l); return; }   // 끊긴 사이 다른 기기가 수업을 바꿨다
+    if (!(list.length && !teachCls)) startLesson();    // 과목 방에서 반을 안 골랐으면 배지에서 고른다
   }
+  // 과목 방 선생님: 지금 수업하는 반 학생만 센다
+  const inClass = (x) => !teachCls || x.cls === teachCls;
+  const studentsNow = () => (teachCls && state.where ? state.where.filter(inClass).reduce((s, w) => s + w.n, 0) : state.students);
   function pos() { const i = Reveal.getIndices(); return { h: i.h, f: Number.isInteger(i.f) ? i.f : -1 }; }
   function sendPos() { if (ROLE === 'teacher' && room) send({ t: 'pos', ...pos() }); }
   function sendWhere() { if (ROLE === 'student' && room) send({ t: 'where', path: LESSON, h: Reveal.getIndices().h }); }
@@ -7119,37 +7157,53 @@ if (!window.clearImmediate) {
   function onMessage(m) {
     if (m.t === 'tally') { if (m.q.startsWith('w-')) { words.set(m.q, m); ui.cloudDraw(); } else asks.show(m.q, m); return; }
     if (m.t === 'reset') { asks.reset(); words.clear(); ui.cloudDraw(); ui.wordSent = null; return; }
-    if (m.t === 'ask') { state.ask = { id: m.id, prompt: m.prompt, open: m.open }; ui.askChanged(); ui.badge(); return; }
+    if (m.t === 'ask') {
+      if (ROLE === 'student' && waiting()) return;    // 다른 반 수업의 질문
+      state.ask = { id: m.id, prompt: m.prompt, open: m.open }; ui.askChanged(); ui.badge(); return;
+    }
     if (m.t === 'lesson') {
-      state.lesson = { path: m.path, title: m.title };
-      if (ROLE === 'teacher') {                        // 다른 선생님 기기가 차시를 열었다
-        if (m.path !== LESSON) { leaving = true; try { ws.close(); } catch {} location.href = `${BASE}/${m.path}/teacher.html?room=${room.code}${passApi}`; return; }
+      const l = { path: m.path, title: m.title, cls: m.cls || null };
+      if (ROLE === 'teacher') {                        // 다른 선생님 기기가 차시(나 반)를 열었다
+        state.lesson = l;
+        if (followLesson(l)) return;
         asks.clear(); words.clear(); ui.badge(); return;
       }
+      if (!forMe(l)) { state.lesson = null; ui.badge(); return; }   // 다른 반 수업: 복습 그대로
+      state.lesson = l;
       ui.session(); if (!goLesson()) { lockNav(); apply({ h: 0, f: -1 }); } ui.badge(); return;
     }
     if (m.t === 'ended') {
+      const had = !!state.lesson;
       state.lesson = null; state.attention = false; state.ask = null;
-      if (ROLE === 'student') { solo = false; ui.attention(); lockNav(); ui.session(); ui.askChanged(); ui.badge(); ui.flash('수업이 끝났어요 · 이제 복습할 수 있어요'); }
-      else { asks.clear(); words.clear(); if (ui.panelOpen) ui.closePanel(); ui.badge(); ui.flash(m.auto ? '오래 조작이 없어 수업이 저절로 끝났어요' : '수업을 마쳤어요 · 다음 수업도 같은 반 링크예요'); }
+      if (ROLE === 'student') { solo = false; ui.attention(); lockNav(); ui.session(); ui.askChanged(); ui.badge(); if (had) ui.flash('수업이 끝났어요 · 이제 복습할 수 있어요'); }
+      else { asks.clear(); words.clear(); if (ui.panelOpen) ui.closePanel(); ui.badge(); ui.flash(m.auto ? '오래 조작이 없어 수업이 저절로 끝났어요' : '수업을 마쳤어요 · 다음 수업도 같은 링크예요'); }
       return;
+    }
+    if (m.t === 'classes') {
+      state.classes = m.list || [];
+      if (ROLE === 'student' && needId(state, room.code)) ui.idBox(reconnect);
+      ui.badge(); return;
     }
     if (m.t === 'where') { state.where = m.list; ui.badge(); if (ui.panelOpen) ui.panelCounts(); return; }
     if (m.t === 'roster') { state.roster = m.list; if (ui.panelOpen) ui.panelCounts(); return; }
     if (m.t === 'idmode') {
       state.idMode = m.mode; state.size = m.size;
-      if (ROLE === 'student' && needId(m.mode, room.code)) ui.idBox(reconnect);
+      if (ROLE === 'student' && needId(state, room.code)) ui.idBox(reconnect);
       if (ui.panelOpen) ui.panelCounts(); return;
     }
-    if (m.t === 'attention') { state.attention = m.on; ui.attention(); ui.badge(); if (ui.panelOpen) ui.panelCounts(); return; }
+    if (m.t === 'attention') {
+      if (ROLE === 'student' && waiting()) return;    // 다른 반 수업의 주목
+      state.attention = m.on; ui.attention(); ui.badge(); if (ui.panelOpen) ui.panelCounts(); return;
+    }
     if (m.t === 'summon') {
-      if (ROLE !== 'student') return;
+      if (ROLE !== 'student' || !forMe(m)) return;
       solo = false; state.follow = true;
       if (m.path && m.path !== LESSON) { state.lesson = { path: m.path }; goLesson(); return; }
       lockNav(); if (m.pos) apply(m.pos); ui.badge(); return;
     }
     if (m.t === 'state') {
       state = { ...state, ...m, ask: m.ask || null };
+      if (ROLE === 'student' && !forMe(m.lesson)) Object.assign(state, { lesson: null, ask: null, attention: false });   // 다른 반 수업
       if (m.persist) room.persist = true;
       if (m.name) room.name = m.name;
       ui.session();
@@ -7298,6 +7352,7 @@ if (!window.clearImmediate) {
   function where() {
     const my = Reveal.getIndices().h, out = { same: 0, slide: 0, other: 0, list: 0 };
     for (const w of state.where || []) {
+      if (!inClass(w)) continue;                      // 과목 방: 다른 반 학생은 빼고 센다
       if (w.path === LESSON) out[w.h === my ? 'same' : 'slide'] += w.n;
       else if (w.path === 'library') out.list += w.n;
       else if (w.path !== '?') out.other += w.n;
@@ -7317,19 +7372,34 @@ if (!window.clearImmediate) {
       home.title = room && room.persist ? '반 수업방으로' : '자료실 첫 화면';
       home.hidden = ROLE === 'student' && !!(room && state.lesson);
     },
+    // 처음 한 번: 과목 방이면 반 고르기, 번호를 받는 반이면 번호(와 이름)
     idBox(done) {
-      const mode = state.idMode, withName = mode === 'numname';
-      const o = this.overlay(`<h2>${esc(room.name || '수업방')}</h2><p class="rc-lead">선생님이 ${withName ? '번호와 이름' : '번호'}을 받기로 했어요. 처음 한 번만 넣으면 돼요.</p>
-        <form class="rc-form"><input class="rc-input rc-num" inputmode="numeric" type="number" min="1" max="99" placeholder="번호" aria-label="번호" required>${withName ? '<input class="rc-input rc-name" maxlength="12" placeholder="이름" aria-label="이름" autocomplete="off">' : ''}<button type="submit" class="rc-btn main">들어가기</button></form>
+      const mode = state.idMode || 'anon', withNum = mode !== 'anon', withName = mode === 'numname';
+      const list = state.classes || [], old = me.get(room.code) || me.mem || {};
+      let cls = list.includes(old.cls) ? old.cls : null;
+      const what = withName ? '번호와 이름' : '번호';
+      const lead = list.length ? (withNum ? `우리 반을 고르고 ${what}을 넣어요.` : '우리 반을 골라요.') + ' 처음 한 번만 하면 돼요.' : `선생님이 ${what}을 받기로 했어요. 처음 한 번만 넣으면 돼요.`;
+      const o = this.overlay(`<h2>${esc(room.name || '수업방')}</h2><p class="rc-lead">${lead}</p>
+        <form class="rc-form">${list.length ? `<div class="rc-cls" role="group" aria-label="우리 반">${list.map((c) => `<button type="button" class="rc-btn" data-c="${esc(c)}" aria-pressed="${c === cls}">${esc(c)}</button>`).join('')}</div>` : ''}
+        ${withNum ? `<input class="rc-input rc-num" inputmode="numeric" type="number" min="1" max="99" placeholder="번호" aria-label="번호" value="${old.num || ''}">` : ''}${withName ? `<input class="rc-input rc-name" maxlength="12" placeholder="이름" aria-label="이름" autocomplete="off" value="${esc(old.name || '')}">` : ''}
+        ${withNum || !list.length ? '<button type="submit" class="rc-btn main">들어가기</button>' : ''}</form>
         <p class="rc-msg" aria-live="polite"></p>`);
-      o.querySelector('.rc-num').focus();
-      o.querySelector('.rc-form').onsubmit = (e) => {
+      const form = o.querySelector('.rc-form'), say = (t) => { o.querySelector('.rc-msg').textContent = t; };
+      o.querySelectorAll('[data-c]').forEach((b) => b.onclick = () => {
+        cls = b.dataset.c;
+        o.querySelectorAll('[data-c]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        if (withNum) o.querySelector('.rc-num').focus(); else form.requestSubmit();   // 반만 고르는 방: 누르면 바로 들어간다
+      });
+      const first = (cls && o.querySelector('.rc-num')) || o.querySelector('[data-c]') || o.querySelector('.rc-num');
+      if (first) first.focus();
+      form.onsubmit = (e) => {
         e.preventDefault();
-        const num = Number.parseInt(o.querySelector('.rc-num').value, 10);
+        const num = withNum ? Number.parseInt(o.querySelector('.rc-num').value, 10) : null;
         const name = withName ? o.querySelector('.rc-name').value.replace(/\s+/g, ' ').trim() : '';
-        if (!(num >= 1 && num <= 99)) { o.querySelector('.rc-msg').textContent = '번호를 1~99 사이로 넣어 주세요.'; return; }
-        if (withName && !/^[\p{L} ]{1,12}$/u.test(name)) { o.querySelector('.rc-msg').textContent = '이름을 글자로 12자 안에서 넣어 주세요.'; return; }
-        me.set(room.code, { num, name });
+        if (list.length && !cls) { say('우리 반을 먼저 골라 주세요.'); return; }
+        if (withNum && !(num >= 1 && num <= 99)) { say('번호를 1~99 사이로 넣어 주세요.'); return; }
+        if (withName && !/^[\p{L} ]{1,12}$/u.test(name)) { say('이름을 글자로 12자 안에서 넣어 주세요.'); return; }
+        me.set(room.code, { cls, num, name });
         this.closePanel(); done();
       };
     },
@@ -7366,18 +7436,22 @@ if (!window.clearImmediate) {
       b.hidden = false;
       const lost = this.conn === 'lost' ? ' · <b class="rb-lost">다시 연결 중…</b>' : '';
       const asking = state.ask && state.ask.open;
-      const title = room.name ? esc(room.name) : `수업방 ${room.code}`;
-      if (ROLE === 'teacher' && room.persist && !state.lesson) {
+      const title = (room.name ? esc(room.name) : `수업방 ${room.code}`) + (ROLE === 'teacher' && teachCls && state.lesson ? ` · ${esc(teachCls)}` : '');
+      const list = state.classes || [];
+      if (ROLE === 'teacher' && room.persist && !state.lesson && list.length) {   // 과목 방: 반을 고르면 이 차시로 수업 시작
+        b.innerHTML = `<span class="rb-text"><b>${title}</b> · 수업 없음 · 학생 ${state.students}명 복습 중${lost} · <b>이 차시로 수업할 반</b></span><span class="rb-cls" role="group" aria-label="이 차시로 수업할 반">${list.map((c) => `<button type="button" class="rb-toggle${c === teachCls ? ' on' : ''}" data-c="${esc(c)}" title="${esc(c)} 수업 시작">${esc(c)}</button>`).join('')}</span>`;
+        b.querySelectorAll('[data-c]').forEach((x) => x.onclick = () => { setCls(x.dataset.c); startLesson(); });
+      } else if (ROLE === 'teacher' && room.persist && !state.lesson) {
         b.innerHTML = `<span class="rb-text"><b>${title}</b> · 수업 끝남 · 학생 ${state.students}명 복습 중${lost}</span><button type="button" class="rb-toggle" data-a="restart">이 차시로 수업 시작</button>`;
         b.querySelector('[data-a="restart"]').onclick = () => startLesson();
       } else if (ROLE === 'teacher') {
-        const wh = state.where ? where() : null;
-        b.innerHTML = `<button type="button" class="rb-open" title="수업방 패널 열기"><b>${title}</b> · 학생 ${state.students}명${wh && state.students ? ` (같은 장 ${wh.same})` : ''}${state.attention ? ' · <b class="rb-lost">주목 중</b>' : ''} · ${state.follow ? '모두 따라오기' : '자유롭게'}${state.locked ? ' · 잠김' : ''}${lost}</button>`
+        const wh = state.where ? where() : null, n = studentsNow();
+        b.innerHTML = `<button type="button" class="rb-open" title="수업방 패널 열기"><b>${title}</b> · 학생 ${n}명${wh && n ? ` (같은 장 ${wh.same})` : ''}${state.attention ? ' · <b class="rb-lost">주목 중</b>' : ''} · ${state.follow ? '모두 따라오기' : '자유롭게'}${state.locked ? ' · 잠김' : ''}${lost}</button>`
           + (asking ? '<button type="button" class="rb-toggle" data-a="cloud">낱말 구름</button>' : '');
         b.querySelector('.rb-open').onclick = () => this.panel();
         const c = b.querySelector('[data-a="cloud"]'); if (c) c.onclick = () => this.cloud();
       } else if (waiting()) {
-        b.innerHTML = `<span class="rb-text"><b>${title}</b> · 복습 중 · 수업이 시작되면 저절로 넘어가요${lost}</span>`;
+        b.innerHTML = `<span class="rb-text"><b>${title}</b> · 복습 중 · ${list.length ? '우리 반 ' : ''}수업이 시작되면 저절로 넘어가요${lost}</span>`;
       } else if (state.follow) {
         b.innerHTML = `<span class="rb-text"><b>${title}</b> · 선생님 화면을 따라가는 중${lost}</span>`;
       } else {
@@ -7389,10 +7463,11 @@ if (!window.clearImmediate) {
         b.insertAdjacentHTML('beforeend', '<button type="button" class="rb-toggle" data-a="word">낱말 답하기</button>');
         b.querySelector('[data-a="word"]').onclick = () => this.wordBox();
       }
-      // 번호를 받는 반: 내 번호(잘못 넣었으면 눌러서 바꾼다)
-      const who = ROLE === 'student' && state.idMode && state.idMode !== 'anon' ? (me.get(room.code) || me.mem) : null;
-      if (who) {
-        b.insertAdjacentHTML('beforeend', `<button type="button" class="rb-me" title="번호 바꾸기" aria-label="${who.num}번 · 번호 바꾸기">${who.num}번</button>`);
+      // 과목 방·번호를 받는 반: 내 반·번호(잘못 넣었으면 눌러서 바꾼다)
+      const who = ROLE === 'student' && (list.length || (state.idMode && state.idMode !== 'anon')) ? (me.get(room.code) || me.mem) : null;
+      const tag = who ? [list.length ? who.cls : '', state.idMode && state.idMode !== 'anon' && who.num ? who.num + '번' : ''].filter(Boolean).join(' ') : '';
+      if (tag) {
+        b.insertAdjacentHTML('beforeend', `<button type="button" class="rb-me" title="반·번호 바꾸기" aria-label="${esc(tag)} · 바꾸기">${esc(tag)}</button>`);
         b.querySelector('.rb-me').onclick = () => this.idBox(reconnect);
       }
       // 반 방 학생은 나가기 단추가 없다(수업 중에는 따라오고, 끝나면 복습)
@@ -7550,8 +7625,8 @@ if (!window.clearImmediate) {
       let qr = '';
       try { const q = window.qrcode(0, 'M'); q.addData(link); q.make(); qr = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch { qr = ''; }
       const o = this.overlay(`<div class="rc-join">
-          <div class="rc-codebox"><span class="rc-label">${room.persist ? esc(room.name || '반 수업방') + ' · 참여 코드' : '참여 코드'}</span><span class="rc-code${room.code.length > 4 ? ' long' : ''}">${room.code}</span>
-            <p class="rc-how">${room.persist ? '클래스룸의 <b>반 링크</b>를 누르거나 QR을 찍어요. 코드를 넣어도 돼요.' : '학생용을 열고 <b>수업방 들어가기</b>에 코드를 넣거나, QR을 찍어요.'}</p>
+          <div class="rc-codebox"><span class="rc-label">${room.persist ? esc(room.name || '반 수업방') + (teachCls ? ' ' + esc(teachCls) : '') + ' · 참여 코드' : '참여 코드'}</span><span class="rc-code${room.code.length > 4 ? ' long' : ''}">${room.code}</span>
+            <p class="rc-how">${room.persist ? `클래스룸의 <b>${(state.classes || []).length ? '과목 링크' : '반 링크'}</b>를 누르거나 QR을 찍어요. 코드를 넣어도 돼요.` : '학생용을 열고 <b>수업방 들어가기</b>에 코드를 넣거나, QR을 찍어요.'}</p>
             <p class="rc-link">${esc(link.replace(/^https?:\/\//, ''))}</p></div>
           <div class="rc-qr">${qr}</div>
         </div>
@@ -7583,7 +7658,8 @@ if (!window.clearImmediate) {
     panelCounts() {
       if (!this.box || !room) return;
       const c = this.box.querySelector('.rc-count'); if (!c) return;
-      c.innerHTML = `학생 <b>${state.students}</b>명 들어옴`;
+      const n = studentsNow(), others = state.students - n;
+      c.innerHTML = teachCls ? `${esc(teachCls)} 학생 <b>${n}</b>명 들어옴${others > 0 ? ` · 다른 반 ${others}명 복습 중` : ''}` : `학생 <b>${n}</b>명 들어옴`;
       const w = where(), wb = this.box.querySelector('.rc-where');
       if (wb) wb.innerHTML = `<span><b>${w.same}</b> 선생님과 같은 장</span><span><b>${w.slide}</b> 같은 차시 다른 장</span><span><b>${w.other}</b> 다른 차시</span><span><b>${w.list}</b> 차시 목록</span>`;
       const at = this.box.querySelector('[data-a="attention"]'); if (at) { at.textContent = state.attention ? '주목 풀기' : '주목'; at.classList.toggle('warn', !!state.attention); }
@@ -7595,7 +7671,7 @@ if (!window.clearImmediate) {
       const on = state.idMode && state.idMode !== 'anon';
       box.hidden = !on; if (!on) return;
       const my = Reveal.getIndices().h, by = new Map();
-      for (const r of state.roster || []) { if (!by.has(r.num)) by.set(r.num, []); by.get(r.num).push(r); }
+      for (const r of state.roster || []) { if (!inClass(r)) continue; if (!by.has(r.num)) by.set(r.num, []); by.get(r.num).push(r); }
       const size = Math.max(state.size || 30, ...[...by.keys()]);
       const showName = this.showNames && state.idMode === 'numname';
       let cells = '';
@@ -7637,7 +7713,7 @@ if (!window.clearImmediate) {
       if (!info.open) return '열려 있는 방이 아니에요. 코드를 다시 확인해 주세요.';
       if (info.locked) return '선생님이 방을 잠갔어요.';
       const r = { code, persist: !!info.persist, name: info.name || '' };
-      if (needId(info.idMode, code)) { room = r; state.idMode = info.idMode; ui.idBox(() => join(r)); return null; }
+      if (needId(info, code)) { room = r; state.idMode = info.idMode; state.classes = info.classes || []; ui.idBox(() => join(r)); return null; }
       join(r);
       return null;
     } catch { return '연결하지 못했어요. 인터넷 연결을 확인해 주세요.'; }

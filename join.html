@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>움직이는 과학 수업 · 반 수업방</title>
+<title>움직이는 과학 수업 · 수업방</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
@@ -58,12 +58,15 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--ink-2); list
 details[open] > summary { margin-bottom: 8px; }
 .sizebox { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--ink-3); }
 .sizebox input { width: 64px; font-size: 16px; padding: 6px 8px; }
+input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; width: 100%; }
+.pin-ok { color: var(--accent); font-weight: 700; }
+.pin-no { color: var(--stamp); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <p class="brand"><a href="index.html">움직이는 과학 수업</a></p>
-  <h1 id="title">반 수업방</h1>
+  <h1 id="title">수업방</h1>
   <div class="card big" id="app" aria-live="polite"><p class="muted">확인하는 중…</p></div>
   <div class="card" id="lib" hidden>
     <h2 id="libTitle">차시 목록</h2>
@@ -91,21 +94,43 @@ details[open] > summary { margin-bottom: 8px; }
   var teacher = !!mine && !preview;
   var ME = 'science-room:me:' + code;
   function getMe() { try { return JSON.parse(localStorage.getItem(ME)); } catch (e) { return null; } }
-  function idQuery() { var m = getMe(); return m ? '&num=' + m.num + (m.name ? '&name=' + encodeURIComponent(m.name) : '') : ''; }
-  // 번호를 받는 반이면 처음 한 번 번호(와 이름)를 묻는다
+  function idQuery() { var m = getMe(); return m ? (m.cls ? '&cls=' + encodeURIComponent(m.cls) : '') + (m.num ? '&num=' + m.num : '') + (m.name ? '&name=' + encodeURIComponent(m.name) : '') : ''; }
+  // 처음 한 번 넣을 것: 과목 방이면 우리 반, 번호를 받는 반이면 번호(와 이름)
+  function needId(info) {
+    var w = getMe() || {}, list = info.classes || [];
+    if (list.length && list.indexOf(w.cls) < 0) return true;
+    return !!info.idMode && info.idMode !== 'anon' && !w.num;
+  }
+  function myCls(info) { return (info.classes || []).length ? (getMe() || {}).cls || null : null; }
+  // 이 수업이 나에게 해당하나: 반이 정해진 수업은 그 반 학생만
+  function forMe(l) { return !!l && (!l.cls || l.cls === (getMe() || {}).cls); }
+  function lastOf(info, c) { return c ? (info.lastBy || {})[c] || null : info.last || null; }
   function askId(info, next) {
-    var withName = info.idMode === 'numname';
-    show('<h2>' + esc(info.name || '반') + ' 수업방</h2><p class="muted">선생님이 ' + (withName ? '번호와 이름' : '번호') + '을 받기로 했어요. 처음 한 번만 넣으면 돼요.</p>'
-      + '<form class="row" id="idf"><input type="text" inputmode="numeric" id="num" placeholder="번호" aria-label="번호" style="flex:0 1 110px">' + (withName ? '<input type="text" id="nm" maxlength="12" placeholder="이름" aria-label="이름" autocomplete="off" style="flex:1 1 160px">' : '') + '<button class="btn main" type="submit">들어가기</button></form><p class="small" id="idm" aria-live="polite"></p>');
-    $('num').focus();
-    $('idf').onsubmit = function (e) {
-      e.preventDefault();
-      var num = parseInt($('num').value, 10), name = withName ? $('nm').value.replace(/\s+/g, ' ').trim() : '';
-      if (!(num >= 1 && num <= 99)) { $('idm').textContent = '번호를 1~99 사이로 넣어 주세요.'; return; }
+    var list = info.classes || [], withNum = !!info.idMode && info.idMode !== 'anon', withName = info.idMode === 'numname';
+    var old = getMe() || {}, cls = list.indexOf(old.cls) >= 0 ? old.cls : null, what = withName ? '번호와 이름' : '번호';
+    show('<h2>' + esc(info.name || '반') + ' 수업방</h2><p class="muted">' + (list.length ? (withNum ? '우리 반을 고르고 ' + what + '을 넣어요.' : '우리 반을 골라요.') + ' 처음 한 번만 하면 돼요.' : '선생님이 ' + what + '을 받기로 했어요. 처음 한 번만 넣으면 돼요.') + '</p>'
+      + '<form id="idf" style="display:grid;gap:10px">'
+      + (list.length ? '<div class="row" role="group" aria-label="우리 반">' + list.map(function (c) { return '<button class="btn" type="button" data-c="' + esc(c) + '" aria-pressed="' + (c === cls) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '')
+      + (withNum ? '<div class="row"><input type="text" inputmode="numeric" id="num" placeholder="번호" aria-label="번호" style="flex:0 1 110px" value="' + (old.num || '') + '">' + (withName ? '<input type="text" id="nm" maxlength="12" placeholder="이름" aria-label="이름" autocomplete="off" style="flex:1 1 160px" value="' + esc(old.name || '') + '">' : '') + '<button class="btn main" type="submit">들어가기</button></div>' : '')
+      + '</form><p class="small" id="idm" aria-live="polite"></p>');
+    var form = $('idf');
+    function done() {
+      var num = withNum ? parseInt($('num').value, 10) : null, name = withName ? $('nm').value.replace(/\s+/g, ' ').trim() : '';
+      if (list.length && !cls) { $('idm').textContent = '우리 반을 먼저 골라 주세요.'; return; }
+      if (withNum && !(num >= 1 && num <= 99)) { $('idm').textContent = '번호를 1~99 사이로 넣어 주세요.'; return; }
       if (withName && !/^[\p{L} ]{1,12}$/u.test(name)) { $('idm').textContent = '이름을 글자로 12자 안에서 넣어 주세요.'; return; }
-      try { localStorage.setItem(ME, JSON.stringify({ num: num, name: name })); } catch (x) {}
+      try { localStorage.setItem(ME, JSON.stringify({ cls: cls, num: num, name: name })); } catch (x) {}
       next();
-    };
+    }
+    form.querySelectorAll('[data-c]').forEach(function (b) {
+      b.onclick = function () {
+        cls = b.dataset.c;
+        form.querySelectorAll('[data-c]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        if (withNum) $('num').focus(); else done();                     // 반만 고르는 방: 누르면 바로 들어간다
+      };
+    });
+    form.onsubmit = function (e) { e.preventDefault(); done(); };
+    var first = (cls && $('num')) || form.querySelector('[data-c]') || $('num'); if (first) first.focus();
   }
   var gone = false;
   function show(html) { $('app').innerHTML = html; }
@@ -115,43 +140,55 @@ details[open] > summary { margin-bottom: 8px; }
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt('복사해서 쓰세요', text); }); else prompt('복사해서 쓰세요', text);
   }
   if (!/^(\d{4}|\d{6})$/.test(code) || !API) {
-    show('<h2>링크가 올바르지 않아요</h2><p class="muted">선생님께 반 링크를 다시 받아 주세요.</p>');
+    show('<h2>링크가 올바르지 않아요</h2><p class="muted">선생님께 링크를 다시 받아 주세요.</p>');
     library(false); return;
   }
   // 단원별 차시 목록. mark: { now, next, last } 차시 경로
   function library(withRoom, mark) {
     mark = mark || {};
     $('lib').hidden = false;
-    $('libTitle').textContent = teacher ? '차시 고르기 — 누르면 이 반 수업이 그 차시로 시작돼요' : withRoom ? '복습 — 아무 차시나 열어 볼 수 있어요' : '차시 목록 — 혼자 볼 수 있어요';
+    $('libTitle').textContent = teacher ? '차시 고르기 — 누르면 ' + (selCls || '이 반') + ' 수업이 그 차시로 시작돼요' : withRoom ? '복습 — 아무 차시나 열어 볼 수 있어요' : '차시 목록 — 혼자 볼 수 있어요';
     var html = '', unit = '';
     LESSONS.forEach(function (l) {
       if (l.unit !== unit) { unit = l.unit; html += '<li class="unit">' + esc(l.unit + ' ' + l.unitTitle) + '</li>'; }
-      var href = teacher ? l.teacher + '?room=' + code + pass : l.student + (withRoom ? '?room=' + code + pass : '');
+      var href = teacher ? l.teacher + tq() : l.student + (withRoom ? '?room=' + code + pass : '');
       var tag = mark.now === l.path ? '<b class="tag now">지금 수업 중</b>' : mark.next === l.path ? '<b class="tag next">다음 차시</b>' : mark.last === l.path ? '<b class="tag">지난 수업</b>' : '';
       var main = mark.now === l.path || (teacher ? mark.next === l.path : mark.last === l.path);
       html += '<li><span>' + esc(l.n + '차시 ' + l.title) + tag + '</span><a class="btn' + (main ? ' main' : '') + '" href="' + esc(href) + '">' + (teacher ? (mark.now === l.path ? '이어서 하기' : '수업 시작') : '열기') + '</a></li>';
     });
     $('list').innerHTML = html;
   }
-  // ---- 선생님 화면: 지금 수업 / 지난 수업 · 다음 차시, 들어온 학생 수(10초마다) ----
-  var sig = null, pollT = 0;
+  // ---- 선생님 화면: 지금 수업 / (과목 방이면 반 고르기) 지난 수업 · 다음 차시, 들어온 학생 수(10초마다) ----
+  var sig = null, pollT = 0, lastInfo = null, selCls = null, CLS_KEY = 'science-room:cls:' + code;
+  function tq() { return '?room=' + code + (selCls ? '&cls=' + encodeURIComponent(selCls) : '') + pass; }
   function teacherView(info) {
-    var s = JSON.stringify([info.lesson, info.last]);
+    lastInfo = info;
+    var list = info.classes || [];
+    if (!list.length) selCls = null;
+    else if (list.indexOf(selCls) < 0) { var st = null; try { st = localStorage.getItem(CLS_KEY); } catch (e) {} selCls = (info.lesson && info.lesson.cls) || (list.indexOf(st) >= 0 ? st : list[0]); }
+    var s = JSON.stringify([info.lesson, info.last, info.lastBy, list, selCls]);
     if (s !== sig) {
       sig = s;
-      var now = info.lesson ? find(info.lesson.path) : null;
-      var lastL = info.last ? find(info.last.path) : null;
+      var open = info.lesson ? find(info.lesson.path) : null, openCls = (info.lesson && info.lesson.cls) || null;
+      var now = open && openCls === selCls ? open : null;                // 고른 반(반 목록이 없으면 이 방)의 수업
+      var lastI = lastOf(info, selCls), lastL = lastI ? find(lastI.path) : null;
       var nextL = now ? null : lastL ? find(nextOf(lastL.path)) : LESSONS[0];
-      var tHref = function (l) { return esc(l.teacher + '?room=' + code + pass); };
-      var h = now
-        ? '<h2><span class="dot" aria-hidden="true"></span>지금 수업 중: ' + esc(label(now)) + '</h2><p class="muted">학생 화면이 이 차시를 따라가고 있어요. 마칠 때 «수업 끝내기»를 누르면 학생은 복습으로 바뀌어요. 잊어도 선생님 화면을 닫고 15분 뒤에 저절로 끝나요.</p>'
-        : '<h2>수업 전이에요</h2><p class="muted">' + (lastL ? '지난 수업은 <b>' + esc(label(lastL)) + '</b>이에요. ' : '') + '차시를 고르면 수업이 시작되고, 들어와 있는 학생 화면이 그 차시로 옮겨 가요.</p>';
-      h += '<p class="muted">지금 들어와 있는 학생: <b id="cnt">0</b>명</p><div class="row">'
-        + (now ? '<a class="btn main" href="' + tHref(now) + '">이어서 하기</a><button class="btn warn" type="button" id="end">수업 끝내기</button>'
-          : nextL ? '<a class="btn main" href="' + tHref(nextL) + '">' + (lastL ? '다음 차시 시작' : '첫 차시 시작') + ' · ' + esc(nextL.n + '차시 ' + nextL.title) + '</a>' : '')
-        + '<button class="btn" type="button" id="copy">반 링크 복사</button><a class="btn" href="?room=' + code + '&as=student' + pass + '">학생 화면 미리 보기</a><a class="btn" href="teach.html' + (pass ? '?' + pass.slice(1) : '') + '">선생님 페이지</a></div>';
+      var who = function (c) { return c ? esc(c) + ' · ' : ''; };
+      var h = open
+        ? '<h2><span class="dot" aria-hidden="true"></span>지금 수업 중: ' + who(openCls) + esc(label(open)) + '</h2><p class="muted">' + (openCls ? esc(openCls) + ' ' : '') + '학생 화면이 이 차시를 따라가고 있어요. 마칠 때 «수업 끝내기»를 누르면 학생은 복습으로 바뀌어요. 잊어도 선생님 화면을 닫고 15분 뒤에 저절로 끝나요.</p>'
+        : '<h2>수업 전이에요</h2><p class="muted">' + (list.length ? '반을 고르고 차시를 누르면 수업이 시작되고, 들어와 있는 <b>그 반 학생</b> 화면만 그 차시로 옮겨 가요. 다른 반 학생은 복습을 그대로 해요.' : (lastL ? '지난 수업은 <b>' + esc(label(lastL)) + '</b>이에요. ' : '') + '차시를 고르면 수업이 시작되고, 들어와 있는 학생 화면이 그 차시로 옮겨 가요.') + '</p>';
+      h += '<p class="muted" id="cnt"></p>';
+      if (open) h += '<div class="row"><a class="btn' + (now ? ' main' : '') + '" href="' + esc(open.teacher + '?room=' + code + (openCls ? '&cls=' + encodeURIComponent(openCls) : '') + pass) + '">' + who(openCls) + '이어서 하기</a><button class="btn warn" type="button" id="end">수업 끝내기</button></div>';
+      if (list.length) h += '<div class="row" role="group" aria-label="수업할 반"><span class="small">수업할 반</span>' + list.map(function (c) { return '<button class="btn" type="button" data-c="' + esc(c) + '" aria-pressed="' + (c === selCls) + '">' + esc(c) + '</button>'; }).join('') + '</div>'
+        + '<p class="muted">' + esc(selCls) + ' 지난 수업: ' + (lastL ? '<b>' + esc(label(lastL)) + '</b>' : '아직 없어요') + '</p>';
+      if (nextL) h += '<div class="row"><a class="btn main" href="' + esc(nextL.teacher + tq()) + '">' + who(selCls) + (lastL ? '다음 차시 시작' : '첫 차시 시작') + ' · ' + esc(nextL.n + '차시 ' + nextL.title) + '</a></div>'
+        + (open ? '<p class="small">시작하면 ' + (openCls ? esc(openCls) + ' ' : '지금 ') + '수업은 끝나요.</p>' : '');
+      h += '<div class="row"><button class="btn" type="button" id="copy">' + (list.length ? '과목 링크 복사' : '반 링크 복사') + '</button><a class="btn" href="?room=' + code + '&as=student' + pass + '">학생 화면 미리 보기</a><a class="btn" href="teach.html' + (pass ? '?' + pass.slice(1) : '') + '">선생님 페이지</a></div>';
       show(h);
       $('copy').onclick = function (e) { copy(location.href.split('?')[0] + '?room=' + code, e.currentTarget); };
+      $('app').querySelectorAll('[data-c]').forEach(function (b) {
+        b.onclick = function () { selCls = b.dataset.c; try { localStorage.setItem(CLS_KEY, selCls); } catch (e) {} teacherView(lastInfo); };
+      });
       var end = $('end');
       if (end) end.onclick = function () {
         if (!end.dataset.armed) { end.dataset.armed = '1'; end.textContent = '한 번 더 누르면 수업이 끝나요'; setTimeout(function () { if (end.isConnected) { delete end.dataset.armed; end.textContent = '수업 끝내기'; } }, 3000); return; }
@@ -161,14 +198,15 @@ details[open] > summary { margin-bottom: 8px; }
       };
       library(true, { now: now && now.path, next: nextL && nextL.path, last: lastL && lastL.path });
     }
-    $('cnt').textContent = info.students || 0;
+    var by = info.byCls || {};
+    $('cnt').innerHTML = '지금 들어와 있는 학생: <b>' + (info.students || 0) + '</b>명' + (list.length ? ' (' + list.map(function (c) { return esc(c) + ' ' + (by[c] || 0); }).join(' · ') + ')' : '');
     clearTimeout(pollT);
     pollT = setTimeout(function tick() { if (document.hidden) { pollT = setTimeout(tick, 10000); return; } check(); }, 10000);   // 화면을 보고 있을 때만
   }
   // ---- 학생 화면 미리 보기 ----
   function previewView(info) {
     var now = info.lesson ? find(info.lesson.path) : null, lastL = info.last ? find(info.last.path) : null;
-    show('<h2>학생 화면 미리 보기</h2><p class="muted">' + (now ? '지금은 수업 중이라, 학생이 반 링크를 열면 이 화면 없이 바로 <b>' + esc(label(now)) + '</b>로 넘어가요.' : '수업이 없을 때 학생은 이 링크에서 아래 차시를 골라 복습해요. 선생님이 수업을 시작하면 어느 화면에 있든 저절로 수업 차시로 넘어가요.') + '</p>'
+    show('<h2>학생 화면 미리 보기</h2><p class="muted">' + (now ? '지금은 수업 중이라, 학생이 링크를 열면 이 화면 없이 바로 <b>' + esc(label(now)) + '</b>로 넘어가요.' : '수업이 없을 때 학생은 이 링크에서 아래 차시를 골라 복습해요. 선생님이 수업을 시작하면 어느 화면에 있든 저절로 수업 차시로 넘어가요.') + '</p>'
       + '<p class="small">미리 보기는 수업방에 붙지 않아 학생 수에 들어가지 않아요. 차시를 열면 혼자 보기로 열려요.</p><div class="row"><a class="btn main" href="?room=' + code + pass + '">선생님 화면으로 돌아가기</a></div>');
     library(false, { now: now && now.path, last: lastL && lastL.path });
   }
@@ -179,10 +217,46 @@ details[open] > summary { margin-bottom: 8px; }
     ws.onopen = function () { tries = 0; ws.send(JSON.stringify({ t: 'where', path: 'library', h: 0 })); };
     ws.onmessage = function (e) {
       var m; try { m = JSON.parse(e.data); } catch (x) { return; }
-      if ((m.t === 'state' && m.lesson) || m.t === 'lesson') go((m.lesson || m).path);
-      if (m.t === 'summon' && m.path) go(m.path);
+      if (m.t === 'state' && forMe(m.lesson)) go(m.lesson.path);          // 우리 반 수업만 따라간다
+      if (m.t === 'lesson' && forMe(m)) go(m.path);
+      if (m.t === 'summon' && m.path && forMe(m)) go(m.path);
+      if (m.t === 'classes') check();
     };
     ws.onclose = function () { if (!gone) setTimeout(check, Math.min(10000, 1000 * Math.pow(2, tries++))); };
+  }
+  // ---- 선생님으로 들어가기: 수업방을 만들 때 정한 선생님 비밀번호 → 이 기기에 진행 열쇠 ----
+  var PIN = 'science-room:pin', pinTried = false;
+  function savedPin() { try { return localStorage.getItem(PIN); } catch (e) { return null; } }
+  function teacherDoor(info) {
+    $('foot').innerHTML = '<button class="btn" type="button" id="tdoor">선생님이세요? 비밀번호로 들어가기</button>';
+    $('tdoor').onclick = function () { pinForm(info); };
+  }
+  function pinForm(info) {
+    if (ws) { gone = true; try { ws.close(); } catch (x) {} ws = null; gone = false; }
+    $('lib').hidden = true; $('foot').innerHTML = '';
+    if (!info.pin) {
+      show('<h2>선생님으로 들어가기</h2><p class="muted">이 수업방은 아직 선생님 비밀번호가 없어요. 수업방을 만든 기기에서 선생님 페이지를 열고 비밀번호를 정하면, 그다음부터는 어느 기기에서든 여기서 비밀번호만 넣으면 돼요.</p><div class="row"><a class="btn main" href="teach.html' + (pass ? '?' + pass.slice(1) : '') + '">선생님 페이지</a><button class="btn" type="button" id="pinback">학생 화면으로</button></div>');
+    } else {
+      show('<h2>선생님으로 들어가기</h2><p class="muted">수업방을 만들 때 정한 <b>선생님 비밀번호</b>를 넣으면 이 기기가 선생님 기기가 돼요. 기기마다 한 번만 하면 되고, 이 기기에서는 다른 수업방 링크도 저절로 선생님으로 열려요.</p>'
+        + '<form class="row" id="pinf"><input type="password" id="pin" autocomplete="current-password" placeholder="선생님 비밀번호" aria-label="선생님 비밀번호" style="flex:1 1 220px"><button class="btn main" type="submit">들어가기</button></form>'
+        + '<p class="small" id="pinm" aria-live="polite"></p><div class="row"><button class="btn" type="button" id="pinback">학생 화면으로</button></div>');
+      $('pin').focus();
+      $('pinf').onsubmit = function (e) { e.preventDefault(); var v = $('pin').value.trim(); if (v.length < 6) { $('pinm').textContent = '비밀번호를 6글자 이상 넣어 주세요.'; return; } $('pinm').textContent = '확인하는 중…'; unlock(v, false); };
+    }
+    $('pinback').onclick = function () { check(); };
+  }
+  function unlock(pin, silent) {
+    fetch(API + '/rooms/' + code + '/teacher', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin }) })
+      .then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.ok || !j.key) { if (silent) check(); else $('pinm').textContent = j.error || '들어가지 못했어요.'; return; }
+        try {
+          var list = (JSON.parse(localStorage.getItem('science-room:classes')) || []).filter(function (c) { return c.code !== code; });
+          list.push({ code: code, key: j.key, name: j.name, idMode: j.idMode, size: j.size, pin: true });
+          localStorage.setItem('science-room:classes', JSON.stringify(list));
+          localStorage.setItem(PIN, pin);
+        } catch (x) { if (!silent) $('pinm').textContent = '이 브라우저에 저장하지 못했어요(사생활 보호 창이면 일반 창에서 열어 주세요).'; return; }
+        location.replace(location.href.split('#')[0]);           // 선생님 화면으로 다시 연다
+      }).catch(function () { if (silent) check(); else $('pinm').textContent = '연결하지 못했어요. 인터넷 연결을 확인해 주세요.'; });
   }
   function check() {
     fetch(API + '/rooms/' + code).then(function (r) { return r.json(); }).then(function (info) {
@@ -190,18 +264,22 @@ details[open] > summary { margin-bottom: 8px; }
       $('title').textContent = (info.name || '반') + ' 수업방' + (teacher ? ' · 선생님' : '');
       if (teacher) { teacherView(info); return; }
       if (preview) { previewView(info); return; }
-      if (info.idMode && info.idMode !== 'anon' && !getMe()) { askId(info, check); return; }
-      if (info.lesson) { go(info.lesson.path); return; }               // 수업 중에는 복습 목록 없이 바로 수업으로
-      var who = getMe(), lastL = info.last ? find(info.last.path) : null;
-      show('<h2><span class="dot" aria-hidden="true"></span>지금은 복습 시간이에요</h2><p class="muted">아래 차시를 자유롭게 열어 볼 수 있어요. 선생님이 수업을 시작하면 어느 화면에 있든 저절로 수업 차시로 넘어가요.</p>'
+      // 이 기기에 선생님 비밀번호가 저장돼 있으면(다른 반에서 한 번 넣음) 조용히 선생님으로 열어 본다
+      if (info.pin && !pinTried && savedPin()) { pinTried = true; unlock(savedPin(), true); return; }
+      teacherDoor(info);
+      if (needId(info)) { askId(info, check); return; }
+      if (forMe(info.lesson)) { go(info.lesson.path); return; }          // 우리 반 수업 중에는 복습 목록 없이 바로 수업으로
+      var who = getMe() || {}, mc = myCls(info), lastI = lastOf(info, mc), lastL = lastI ? find(lastI.path) : null;
+      var tag = [mc ? esc(mc) : '', info.idMode && info.idMode !== 'anon' && who.num ? who.num + '번' + (who.name ? ' ' + esc(who.name) : '') : ''].filter(Boolean).join(' ');
+      show('<h2><span class="dot" aria-hidden="true"></span>지금은 복습 시간이에요</h2><p class="muted">아래 차시를 자유롭게 열어 볼 수 있어요. 선생님이 ' + (mc ? '우리 반 ' : '') + '수업을 시작하면 어느 화면에 있든 저절로 수업 차시로 넘어가요.</p>'
         + (lastL ? '<div class="row"><a class="btn main" href="' + esc(lastL.student + '?room=' + code + pass) + '">지난 수업 다시 보기 · ' + esc(lastL.n + '차시 ' + lastL.title) + '</a></div>' : '')
-        + '<p class="small">' + (info.idMode && info.idMode !== 'anon' && who ? who.num + '번' + (who.name ? ' ' + esc(who.name) : '') + '으로 들어와 있어요. <a href="#" id="reid">바꾸기</a>' : '이름은 보내지 않아요.') + '</p>');
+        + '<p class="small">' + (tag ? '이 기기는 <b>' + tag + '</b> 학생으로 들어와 있어요. <a href="#" id="reid">바꾸기</a>' : '이름은 보내지 않아요.') + '</p>');
       var re = $('reid'); if (re) re.onclick = function (e) { e.preventDefault(); try { localStorage.removeItem(ME); } catch (x) {} if (ws) { gone = true; ws.close(); gone = false; ws = null; } check(); };
       library(true, { last: lastL && lastL.path });
       if (!ws || ws.readyState > 1) listen();
     }).catch(function () { show('<h2>연결하지 못했어요</h2><p class="muted">인터넷 연결을 확인해 주세요. 아래 차시는 혼자 볼 수 있어요.</p>'); library(false); setTimeout(check, 5000); });
   }
-  $('foot').textContent = teacher ? '이 기기에 진행 열쇠가 있어서 같은 반 링크가 선생님 화면으로 열려요. 학생 기기에서는 학생 화면으로 열려요.' : '';
+  $('foot').textContent = teacher ? '이 기기에 진행 열쇠가 있어서 학생과 같은 링크가 선생님 화면으로 열려요. 학생 기기에서는 학생 화면으로 열려요.' : '';
   check();
 })();
 </script>
