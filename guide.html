@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>수업 참여 방법 · 움직이는 과학 수업</title>
+<meta name="description" content="학생이 수업방에 들어가 선생님 화면을 따라가고, 한 낱말로 답하고 ❤️·💔를 누르는 방법을 실제 화면으로 보여 줘요.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root { color-scheme: light; --paper: #f2f5f3; --paper-2: #fbfcf9; --grid: #dbe4e2; --ink: #1d2433; --ink-2: #4b566a; --ink-3: #6b7587; --rule: #c3cecd; --accent: #1f5f4a; --accent-soft: #dcebe4; --hl: #ffe27a; --stamp: #c8402f;
+  --f-display: "Hahmlet", "Apple SD Gothic Neo", "Malgun Gothic", serif; --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; color: var(--ink); font: 400 17px/1.6 var(--f-body); word-break: keep-all; overflow-wrap: break-word; background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 32px 32px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
+.topnav { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.brand { font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--accent); }
+h1 { margin: 0; font: 800 clamp(32px, 6vw, 52px)/1.1 var(--f-display); text-wrap: balance; }
+.lead { margin: 8px 0 0; color: var(--ink-2); max-width: 44em; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); color: var(--ink); font: 700 16px/1.2 var(--f-body); text-decoration: none; cursor: pointer; }
+.btn.small { min-height: 36px; padding: 0 14px; font-size: 14px; }
+.btn.main { background: var(--ink); color: var(--paper-2); }
+.btn:hover { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
+.btn:disabled { opacity: .4; pointer-events: none; }
+.btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
+.btn:focus-visible, .dots button:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
+.viewer { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(20px, 4vw, 48px); align-items: start; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 6px 6px 0 var(--ink); padding: clamp(16px, 3vw, 32px); }
+.phone { width: min(300px, 72vw); aspect-ratio: 390 / 844; border: 10px solid var(--ink); border-radius: 36px; overflow: hidden; background: #fff; position: relative; justify-self: center; }
+.phone::before { content: ""; position: absolute; top: 8px; left: 50%; width: 70px; height: 16px; margin-left: -35px; border-radius: 999px; background: var(--ink); z-index: 2; }
+.phone img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.side { display: grid; gap: 14px; min-width: 0; align-content: start; }
+.stepno { margin: 0; font: 700 14px/1 var(--f-body); letter-spacing: .14em; color: var(--accent); }
+.side h2 { margin: 0; font: 800 clamp(26px, 3.6vw, 36px)/1.2 var(--f-display); text-wrap: balance; }
+.side p.desc { margin: 0; font-size: clamp(17px, 1.9vw, 20px); color: var(--ink-2); max-width: 34em; }
+.tview { margin: 0; display: grid; gap: 6px; }
+.tview .tlabel { font: 700 13px/1.2 var(--f-body); letter-spacing: .14em; color: var(--ink-3); }
+.tview img { width: 100%; height: auto; max-width: 620px; aspect-ratio: 16 / 9; object-fit: cover; object-position: top; border: 2px solid var(--ink); border-radius: 8px; display: block; background: #fff; }
+.tview figcaption { font-size: 15px; color: var(--ink-2); }
+.solo { margin: 0; padding: 12px 14px; border: 1.5px dashed var(--rule); border-radius: 8px; color: var(--ink-3); font-size: 15px; max-width: 620px; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dots { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.dots button { width: 34px; height: 34px; border-radius: 999px; border: 2px solid var(--ink); background: var(--paper-2); color: var(--ink); font: 700 14px/1 var(--f-body); cursor: pointer; }
+.dots button[aria-current="step"] { background: var(--ink); color: var(--paper-2); }
+.fade { animation: fade .35s ease; }
+@keyframes fade { from { opacity: .2; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fade { animation: none; } }
+.more { display: grid; gap: 12px; }
+.more h2 { margin: 0; font: 800 26px/1.2 var(--f-display); }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.grid li { display: grid; gap: 6px; }
+.grid button { padding: 0; border: 2px solid var(--ink); border-radius: 14px; overflow: hidden; background: #fff; cursor: pointer; aspect-ratio: 390 / 600; }
+.grid img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.grid span { font: 600 14px/1.35 var(--f-body); color: var(--ink-2); }
+.note { margin: 0; padding: 14px 16px; border-left: 4px solid var(--accent); background: var(--paper-2); color: var(--ink-2); border-radius: 0 8px 8px 0; }
+video { width: 100%; max-width: 860px; border: 2px solid var(--ink); border-radius: 10px; background: #000; display: block; }
+@media (max-width: 760px) { .viewer { grid-template-columns: 1fr; } }
+/* 영상용 한 장 */
+body.video { background: var(--paper); overflow: hidden; }
+body.video .wrap { max-width: none; width: 1280px; height: 720px; padding: 40px 56px; display: block; }
+body.video .topnav, body.video header, body.video .ctl, body.video .dots, body.video .more, body.video .note, body.video .vid { display: none; }
+body.video .viewer { height: 640px; box-shadow: none; border: 0; background: transparent; padding: 0; grid-template-columns: 290px 1fr; gap: 56px; }
+body.video .phone { width: 290px; }
+body.video .side h2 { font-size: 40px; }
+body.video .side p.desc { font-size: 22px; }
+body.video .tview img { max-width: 760px; }
+body.video .stepno::after { content: "  ·  수업 참여 방법"; color: var(--ink-3); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">움직이는 과학 수업</span></nav>
+  <header>
+    <h1>수업 참여 방법</h1>
+    <p class="lead">실제 수업 화면으로 한 단계씩 보여 줘요. 왼쪽은 <b>내 휴대폰</b>, 오른쪽은 그때의 <b>선생님 화면</b>이에요. «다음»을 누르거나 «자동으로 보기»를 눌러요.</p>
+  </header>
+  <section class="viewer" aria-label="단계별 안내">
+    <div class="phone"><img id="ph" alt="" width="390" height="844"></div>
+    <div class="side">
+      <p class="stepno" id="no"></p>
+      <h2 id="sh"></h2>
+      <p class="desc" id="sp"></p>
+      <figure class="tview" id="tv"><span class="tlabel">그때 선생님 화면</span><img id="ti" alt="" width="1280" height="720"><figcaption id="tc"></figcaption></figure>
+      <p class="solo" id="solo">이 단계는 학생 혼자 해요. 선생님은 기다리고 있어요.</p>
+      <div class="ctl"><button class="btn" type="button" id="prev">← 이전</button><button class="btn main" type="button" id="next">다음 →</button><button class="btn" type="button" id="play" aria-pressed="false">▶ 자동으로 보기</button></div>
+      <ol class="dots" id="dots" aria-label="단계 고르기"></ol>
+    </div>
+  </section>
+  <section class="more vid">
+    <h2>영상으로 보기</h2>
+    <video src="guide/join.mp4" controls preload="none" poster="guide/poster.webp" playsinline></video>
+  </section>
+  <section class="more">
+    <h2>한눈에 보기</h2>
+    <ol class="grid" id="grid"></ol>
+  </section>
+  <p class="note">선생님이라면: 이 페이지 주소를 과목 링크와 함께 클래스룸에 올려 두면 학생이 수업 전에 미리 익힐 수 있어요.</p>
+</div>
+<script>
+(function () {
+  'use strict';
+  var STEPS = [{"s":"1-code","h":"참여 코드 넣기","p":"클래스룸에 올라온 <b>과목 링크</b>를 누르면 바로 다음 단계로 가요. 선생님이 화면에 참여 코드를 띄웠다면 자료실 첫 화면 «수업 참여하기»에 넣고 «들어가기»를 눌러요."},{"s":"2-pick","h":"처음 한 번: 우리 반 고르기","p":"우리 반을 누르고 번호를 넣어요. 한 번만 하면 이 기기가 기억해요. 로그인은 필요 없어요."},{"s":"3-pick-done","h":"번호 넣고 들어가기","p":"잘못 넣었으면 나중에 화면 위 «2-3반 7번»을 눌러 바꿀 수 있어요."},{"s":"4-review","t":"t4-choose","h":"수업 전에는 복습","p":"수업이 없을 때는 아무 차시나 열어 복습해요. 선생님이 <b>우리 반</b> 수업을 시작하면 어느 화면에 있든 저절로 넘어가요.","tc":"선생님은 반을 골라 차시를 시작해요."},{"s":"5-follow","t":"t5-lesson","h":"수업이 시작되면 저절로","p":"선생님이 수업을 시작하자 내 화면이 그 차시로 옮겨 왔어요. 위에 «선생님 화면을 따라가는 중»이 떠요. 휴대폰을 가로로 돌리면 크게 보여요.","tc":"선생님이 띄운 차시"},{"s":"6-next","t":"t6-next","h":"선생님이 넘기면 따라와요","p":"수업 중에는 선생님이 넘기는 장을 그대로 따라가요. 그림 속 조작(끌기·누르기)은 내 화면에서 직접 해 봐요.","tc":"선생님이 다음 장으로 넘겼어요."},{"s":"7-attention","t":"t7-panel","h":"«선생님을 보세요»","p":"선생님이 «주목»을 누르면 화면이 잠시 멈춰요. 선생님 이야기를 들으면 다시 풀려요.","tc":"선생님 화면에는 번호 칸마다 누가 같은 장을 보고 있는지 보여요."},{"s":"8-word","h":"한 낱말로 답하기","p":"선생님이 질문을 띄우면 입력 칸이 저절로 떠요. 떠오르는 낱말 하나(12자 안)를 써서 «보내기»를 눌러요."},{"s":"9-sent","h":"보낸 답은 바꿀 수 있어요","p":"다시 써서 보내면 바뀌어요. 번호를 받는 반이면 선생님은 누가 썼는지 볼 수 있어요."},{"s":"10-vote","t":"t10-cloud","h":"친구 낱말에 ❤️·💔","p":"선생님이 공감·반대를 켜면 친구들 낱말이 이름 없이 떠요. ❤️를 받은 낱말은 선생님 화면에서 커지고, 💔를 받으면 작아져요. 내 낱말에는 못 누르고, 다시 누르면 취소돼요.","tc":"선생님 화면의 낱말 구름"},{"s":"11-end","h":"수업이 끝나면 복습","p":"수업이 끝나면 «이제 복습할 수 있어요»가 떠요. 같은 과목 링크로 언제든 다시 들어와 지난 차시를 봐요."}];
+  var $ = function (id) { return document.getElementById(id); };
+  var img = function (n) { return 'guide/' + n + '.webp'; };
+  var qs = new URLSearchParams(location.search), video = qs.has('video');
+  var i = 0, timer = 0;
+  // 사진을 미리 받아 두어 넘길 때 깜빡이지 않게
+  STEPS.forEach(function (s) { new Image().src = img(s.s); if (s.t) new Image().src = img(s.t); });
+  $('dots').innerHTML = STEPS.map(function (s, k) { return '<li><button type="button" data-k="' + k + '" aria-label="' + (k + 1) + '단계: ' + s.h.replace(/"/g, '') + '">' + (k + 1) + '</button></li>'; }).join('');
+  $('grid').innerHTML = STEPS.map(function (s, k) { return '<li><button type="button" data-k="' + k + '"><img src="' + img(s.s) + '" alt="" loading="lazy"></button><span>' + (k + 1) + '. ' + s.h + '</span></li>'; }).join('');
+  document.querySelectorAll('[data-k]').forEach(function (b) { b.onclick = function () { stop(); show(+b.dataset.k); if (b.closest('#grid')) document.querySelector('.viewer').scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
+  function show(k) {
+    i = Math.max(0, Math.min(STEPS.length - 1, k));
+    var s = STEPS[i];
+    $('no').textContent = (i + 1) + ' / ' + STEPS.length;
+    $('sh').innerHTML = s.h; $('sp').innerHTML = s.p;
+    $('ph').src = img(s.s); $('ph').alt = s.h + ' — 학생 휴대폰 화면';
+    $('tv').hidden = !s.t; $('solo').hidden = !!s.t;
+    if (s.t) { $('ti').src = img(s.t); $('ti').alt = s.h + ' — 선생님 화면'; $('tc').textContent = s.tc || ''; }
+    $('prev').disabled = i === 0; $('next').textContent = i === STEPS.length - 1 ? '처음부터 ↺' : '다음 →';
+    document.querySelectorAll('#dots button').forEach(function (b) { if (+b.dataset.k === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    ['ph', 'sh', 'sp', 'tv'].forEach(function (id) { var e = $(id); e.classList.remove('fade'); void e.offsetWidth; e.classList.add('fade'); });
+    if (!video) try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) { /* 주소는 못 바꿔도 된다 */ }
+  }
+  function stop() { clearInterval(timer); timer = 0; $('play').setAttribute('aria-pressed', 'false'); $('play').textContent = '▶ 자동으로 보기'; }
+  $('prev').onclick = function () { stop(); show(i - 1); };
+  $('next').onclick = function () { stop(); show(i === STEPS.length - 1 ? 0 : i + 1); };
+  $('play').onclick = function () {
+    if (timer) { stop(); return; }
+    $('play').setAttribute('aria-pressed', 'true'); $('play').textContent = '❚❚ 멈추기';
+    if (i === STEPS.length - 1) show(0);
+    timer = setInterval(function () { if (i === STEPS.length - 1) { stop(); return; } show(i + 1); }, 5000);
+  };
+  document.addEventListener('keydown', function (e) { if (e.target.closest && e.target.closest('input,textarea')) return; if (e.key === 'ArrowRight') { stop(); show(i + 1); } if (e.key === 'ArrowLeft') { stop(); show(i - 1); } });
+  if (video) { document.body.classList.add('video'); show(Number(qs.get('video')) - 1 || 0); }
+  else show((Number((location.hash || '').slice(1)) || 1) - 1);
+})();
+</script>
+</body>
+</html>

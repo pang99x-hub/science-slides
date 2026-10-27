@@ -8286,7 +8286,7 @@ if (!window.clearImmediate) {
         o.querySelector('[data-a="open"]').onclick = async (e) => {
           e.currentTarget.disabled = true;
           try {
-            const r = await fetch(`${API}/rooms`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: (signedIn() || {}).token }) });
+            const r = await fetch(`${API}/rooms`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: (signedIn() || {}).token, path: LESSON }) });   // 차시를 알려 두면 첫 화면에서 코드만 넣어도 들어온다
             const j = await r.json();
             if (!r.ok) throw new Error(j.error || '방을 열지 못했어요');
             state = { follow: true, locked: false, students: 0, pos: pos() };

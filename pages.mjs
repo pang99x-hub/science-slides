@@ -69,6 +69,41 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 .btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
 .namebox { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-width: 0; flex: 1 1 auto; }
 .namebox form { flex: 1 1 100%; }
+/* 선생님 페이지 */
+.topnav { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.pagehead { display: grid; gap: 8px; }
+.stack { display: grid; gap: 16px; }
+.h2 { font: 700 22px/1.3 var(--f-display); }
+.acct { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.acct .tag { margin-left: 4px; }
+details.fold { border-top: 0; padding-top: 0; }
+details.fold > summary { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--ink); }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after { content: '▾'; margin-left: auto; font-size: 18px; color: var(--ink-3); transition: transform .15s; }
+details.fold:not([open]) > summary::after { transform: rotate(-90deg); }
+details.fold[open] > summary { margin-bottom: 12px; }
+.fold-body { display: grid; gap: 12px; }
+.roomhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.linkhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; }
+.label { font: 700 15px/1.3 var(--f-body); color: var(--ink); }
+.setbox { display: grid; gap: 16px; }
+.field { display: grid; gap: 6px; }
+.flabel { font: 600 14px/1.3 var(--f-body); color: var(--ink-2); }
+.makeform { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) auto auto auto; gap: 12px; align-items: end; }
+.makeform label { display: grid; gap: 4px; font: 600 14px/1.3 var(--f-body); color: var(--ink-2); min-width: 0; }
+.makeform input, .makeform select { width: 100%; }
+.makeform #size { width: 84px; }
+input[type=text], input[type=email], select { min-height: 48px; }
+.opt { font-weight: 500; color: var(--ink-3); }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: var(--ink-2); }
+#msg:empty, .card p.small:empty { display: none; }
+.makeform .btn { min-height: 48px; }
+select { height: 48px; }
+#msg { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+@media (max-width: 720px) {
+  .makeform { grid-template-columns: 1fr 1fr; }
+  .makeform label:nth-child(-n+2), .makeform button { grid-column: 1 / -1; }
+}
 </style>
 </head>`;
 
@@ -360,37 +395,47 @@ export function teachPage(site, units) {
   return `${head('선생님 페이지 · ' + site.name)}
 <body>
 <div class="wrap">
-  <p class="brand"><a href="index.html">${esc(site.name)}</a></p>
-  <h1>선생님 페이지</h1>
-  <p class="muted">과목마다 수업방을 하나 만들고 가르치는 반을 적어 두세요. 그 <b>과목 링크</b>를 반마다 클래스룸에 한 번만 올려 두면 돼요. 학생은 처음 한 번 자기 반을 고르고, 그 링크로 언제든 들어와 복습해요. 선생님이 반을 골라 수업을 열면 <b>그 반 학생만</b> 수업 차시로 저절로 옮겨 가요. 선생님은 <b>구글로 로그인</b>하고, 처음이면 가입 신청을 해서 승인을 받아요. 학생은 로그인하지 않아요.</p>
-  <div class="card big" id="me">
-    <h2>선생님 로그인</h2>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">${esc(site.name)}</span></nav>
+  <header class="pagehead">
+    <h1>선생님 페이지</h1>
+    <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
+  </header>
+  <div class="card" id="me">
+    <h2 id="mehead">선생님 로그인</h2>
     <div id="mebox"><p class="muted">확인하는 중…</p></div>
     <p class="small" id="memsg" aria-live="polite"></p>
   </div>
   <div class="card" id="admin" hidden>
-    <h2>가입 신청 관리</h2>
-    <div id="adminbox"></div>
-    <p class="small" id="adminmsg" aria-live="polite"></p>
+    <details class="fold" id="admind"><summary><span class="h2">가입 신청 관리</span><span class="tag" id="adminsum"></span></summary>
+      <div class="fold-body"><div id="adminbox"></div><p class="small" id="adminmsg" aria-live="polite"></p></div>
+    </details>
   </div>
-  <div id="classes" style="display:grid;gap:16px"></div>
+  <p id="msg" aria-live="polite"></p>
+  <div id="classes" class="stack"></div>
   <div class="card" id="makecard" hidden>
-    <h2>수업방 만들기</h2>
-    <form class="form" id="make">
-      <label class="grow">이름<input type="text" id="name" maxlength="30" placeholder="예: 통합과학2" autocomplete="off"></label>
-      <label class="grow">가르치는 반(쉼표로 나눠요)<input type="text" id="cls" maxlength="200" placeholder="예: 2-1반, 2-3반, 2-5반" autocomplete="off"></label>
+    <h2>새 수업방 만들기</h2>
+    <form class="makeform" id="make">
+      <label>과목 이름<input type="text" id="name" maxlength="30" placeholder="예: 통합과학2" autocomplete="off"></label>
+      <label>가르치는 반<input type="text" id="cls" maxlength="200" placeholder="예: 2-1반, 2-3반, 2-5반" autocomplete="off"></label>
       <label>학생 표시<select id="idmode"><option value="anon">익명</option><option value="num">번호만</option><option value="numname">번호와 이름</option></select></label>
-      <label id="sizeWrap" hidden>반 인원<input type="text" inputmode="numeric" id="size" value="30" style="width:90px"></label>
+      <label id="sizeWrap" hidden>반 인원<input type="text" inputmode="numeric" id="size" value="30"></label>
       <button class="btn main" type="submit">만들기</button>
     </form>
-    <p class="small"><b>가르치는 반</b>을 적으면 과목 방이 돼요. 링크 하나를 모든 반이 같이 쓰고, 학생은 처음 한 번 자기 반을 골라요. 지난 수업·다음 차시는 반마다 따로 기억해요. 비워 두면 반 하나짜리 방이에요. 반은 나중에 더하거나 뺄 수 있어요.</p>
-    <p class="small"><b>익명</b>은 들어온 수와 응답 수만 보여요. <b>번호만</b>·<b>번호와 이름</b>은 학생이 처음 한 번 넣고, 수업 패널에 번호 칸(같은 장·다른 장·안 들어옴)으로 보여요. 이름은 «이름 보기»를 눌렀을 때만 보여요. 언제든 바꿀 수 있어요.</p>
-    <p class="small" id="msg" aria-live="polite"></p>
+    <p class="small">가르치는 반은 쉼표로 나눠 적어요. 그러면 링크 하나를 여러 반이 함께 써요(비워 두면 반 하나). 번호를 받으면 수업 중 누가 들어왔는지 번호 칸으로 보여요. 모두 나중에 바꿀 수 있어요.</p>
   </div>
   <div class="card">
-    <h2>다른 기기·교실 컴퓨터에서 수업하기</h2>
-    <p class="muted">어느 기기에서든 클래스룸에 올린 <b>과목 링크</b>를 열고, 아래쪽 <b>«선생님이세요? 구글로 로그인»</b>을 누르면 돼요. 이 페이지에서 로그인해도 같아요. 한 번 로그인한 기기는 다른 수업방 링크도 저절로 선생님으로 열려요. 휴대폰에서 같은 차시를 열면 리모컨처럼 함께 넘어가요.</p>
-    <p class="small note">여럿이 함께 쓰는 교실 컴퓨터라면 수업 뒤 이 페이지 위쪽 «로그아웃»을 눌러 주세요. 로그아웃하면 그 컴퓨터에 남은 진행 열쇠도 못 쓰게 돼요.</p>
+    <details class="fold"><summary><span class="h2">이렇게 써요</span></summary>
+      <div class="fold-body">
+        <ol class="steps">
+          <li>구글로 로그인해요. 처음이면 가입 신청을 하고, 승인되면 바로 써요.</li>
+          <li>과목마다 수업방을 만들고 가르치는 반을 적어요.</li>
+          <li><b>과목 링크</b>를 반마다 클래스룸에 한 번 올려 둬요. 학생은 처음 한 번 자기 반을 고르고, 로그인 없이 들어와 언제든 복습해요.</li>
+          <li>수업 때는 선생님도 같은 링크를 열고 반과 차시를 골라요. <b>그 반 학생만</b> 수업 차시로 옮겨 오고, 다른 반은 복습을 그대로 해요.</li>
+          <li>다른 기기에서는 과목 링크 아래 «선생님이세요? 구글로 로그인»을 누르면 돼요. 휴대폰으로 같은 차시를 열면 리모컨처럼 함께 넘어가요.</li>
+        </ol>
+        <p class="small note">여럿이 쓰는 교실 컴퓨터라면 수업 뒤 위쪽 «로그아웃»을 눌러 주세요. 그 컴퓨터에 남은 진행 열쇠도 못 쓰게 돼요.</p>
+      </div>
+    </details>
   </div>
 </div>
 <script>
@@ -436,7 +481,7 @@ ${AUTH_JS}
   function status(card, c) {
     var box = card.querySelector('[data-s]');
     fetch(API + '/rooms/' + c.code).then(function (r) { return r.json(); }).then(function (info) {
-      if (!info.open) { box.textContent = '닫힌 방이에요(오래 쓰지 않아 닫혔어요). 아래 «수업방 지우기»로 목록에서 빼고 새로 만들어 주세요.'; return; }
+      if (!info.open) { box.textContent = '닫힌 방이에요(오래 쓰지 않아 닫혔어요). 아래 «설정 → 수업방 지우기»로 목록에서 빼고 새로 만들어 주세요.'; return; }
       var list = info.classes || [];
       if (String(list) !== String(c.classes || [])) update(c.code, { classes: list });
       if (info.name && info.name !== c.name) { update(c.code, { name: info.name }); c.name = info.name; var hn = card.querySelector('[data-name]'); if (hn) hn.textContent = info.name; }   // 다른 기기에서 바꾼 이름
@@ -451,9 +496,9 @@ ${AUTH_JS}
           b.disabled = true; post(c.code + '/end', { key: c.key }).then(function () { box.classList.remove('live'); status(card, c); }).catch(function () { msg('끝내지 못했어요. 인터넷 연결을 확인해 주세요.'); b.disabled = false; });
         };
       } else box.innerHTML = list.length ? '수업 전' : last ? '수업 전 · 지난 수업: <b>' + esc(label(last)) + '</b>' : '수업 전 · 아직 연 차시가 없어요';
-      var cb = card.querySelector('[data-cls]');
-      cb.innerHTML = (list.length ? '<ul class="lessons">' + list.map(function (k) { var l = (info.lastBy || {})[k], f = l && find(l.path); return '<li><span><b>' + esc(k) + '</b> · 학생 ' + ((info.byCls || {})[k] || 0) + '명 들어옴</span><span class="small">지난 수업: ' + (f ? esc(label(f)) : '아직 없어요') + '</span></li>'; }).join('') + '</ul>' : '')
-        + '<form class="form" data-a="clsf"><label class="grow">가르치는 반(쉼표로 나눠요)<input type="text" maxlength="200" value="' + esc(list.join(', ')) + '" placeholder="예: 2-1반, 2-3반, 2-5반" autocomplete="off"></label><button class="btn" type="submit">' + (list.length ? '반 목록 저장' : '과목 방으로 바꾸기') + '</button></form>';
+      card.querySelector('[data-cls]').innerHTML = list.length ? '<ul class="lessons">' + list.map(function (k) { var l = (info.lastBy || {})[k], f = l && find(l.path); return '<li><span><b>' + esc(k) + '</b> · 학생 ' + ((info.byCls || {})[k] || 0) + '명 들어옴</span><span class="small">지난 수업: ' + (f ? esc(label(f)) : '아직 없어요') + '</span></li>'; }).join('') + '</ul>' : '';
+      var cb = card.querySelector('[data-clsf]');
+      cb.innerHTML = '<form class="form" data-a="clsf"><label class="grow"><span>가르치는 반 <span class="opt">· 쉼표로 나눠요</span></span><input type="text" maxlength="200" value="' + esc(list.join(', ')) + '" placeholder="예: 2-1반, 2-3반, 2-5반" autocomplete="off"></label><button class="btn" type="submit">' + (list.length ? '반 목록 저장' : '과목 방으로 바꾸기') + '</button></form>';
       cb.querySelector('[data-a="clsf"]').onsubmit = function (e) {
         e.preventDefault();
         var want = parseCls(this.querySelector('input').value);
@@ -466,6 +511,7 @@ ${AUTH_JS}
       };
     }).catch(function () { box.textContent = '수업방 상태를 확인하지 못했어요.'; });
   }
+  var openSet = {};                                                  // 설정 칸을 연 수업방
   function update(code, patch) { save(load().map(function (x) { return x.code === code ? Object.assign(x, patch) : x; })); }
   function render() {
     var list = load(), box = document.getElementById('classes');
@@ -473,21 +519,26 @@ ${AUTH_JS}
     box.innerHTML = list.map(function (c, i) {
       var join = BASE + 'join.html?room=' + c.code, mode = c.idMode || 'anon', sub = (c.classes || []).length ? '과목' : '반';
       return '<div class="card big" data-i="' + i + '">'
-        + '<div class="row between"><div class="namebox" data-head><h2 data-name>' + esc(c.name || '수업방') + '</h2><button class="btn small" type="button" data-a="rename">이름 바꾸기</button></div><span class="code" title="참여 코드">' + c.code + '</span></div>'
+        + '<div class="roomhead"><h2 data-name>' + esc(c.name || '수업방') + '</h2><span class="code" title="참여 코드">' + c.code + '</span></div>'
         + '<p class="status" data-s>확인하는 중…</p>'
-        + '<div data-cls style="display:grid;gap:10px"></div>'
-        + '<p class="small"><span data-ll=" 링크">' + sub + ' 링크</span> — 가르치는 반 클래스룸마다 한 번 올려 두세요. 선생님도 수업 때 이 링크를 열어요.</p><div class="link">' + esc(join) + '</div>'
+        + '<div data-cls></div>'
+        + '<p class="linkhead"><span class="label" data-ll=" 링크">' + sub + ' 링크</span><span class="small">반 클래스룸에 한 번 올려 두고, 선생님도 수업 때 이 링크를 열어요</span></p>'
+        + '<div class="link">' + esc(join) + '</div>'
         + '<div class="row"><a class="btn main" href="' + esc(join + pass) + '" data-ll=" 링크 열기">' + sub + ' 링크 열기</a><button class="btn" type="button" data-a="copy" data-ll=" 링크 복사">' + sub + ' 링크 복사</button></div>'
-        + '<div class="row"><span class="small">학생 표시</span>' + ['anon', 'num', 'numname'].map(function (k) { return '<button class="btn" type="button" data-m="' + k + '" aria-pressed="' + (mode === k) + '">' + MODES[k] + '</button>'; }).join('')
-        + (mode !== 'anon' ? '<label class="sizebox">인원 <input type="text" inputmode="numeric" data-a="size" value="' + (c.size || 30) + '" aria-label="반 인원"> 명</label>' : '') + '</div>'
         + ((c.classes || []).length ? '' : '<details><summary>차시 바로 시작</summary><ul class="lessons">' + lessonsHtml(c) + '</ul></details>')
-        + '<details><summary>수업방 지우기</summary><p class="small">지우면 클래스룸에 올린 링크로 들어와도 열리지 않고, 반마다 지난 수업 기록도 사라져요. 되돌릴 수 없어요. 들어와 있는 학생 화면에는 «수업방이 끝났어요»가 떠요.</p>'
-        + '<div class="row"><button class="btn warn" type="button" data-a="del">이 수업방 지우기</button></div></details>'
-        + '</div>';
+        + '<details class="set"' + (openSet[c.code] ? ' open' : '') + '><summary>설정 <span class="opt">이름 · 가르치는 반 · 학생 표시 · 지우기</span></summary><div class="setbox">'
+        + '<form class="form" data-a="namef"><label class="grow">수업방 이름<input type="text" maxlength="30" value="' + esc(c.name || '') + '" autocomplete="off"></label><button class="btn" type="submit">이름 저장</button></form>'
+        + '<div data-clsf></div>'
+        + '<div class="field"><span class="flabel">학생 표시</span><div class="row">' + ['anon', 'num', 'numname'].map(function (k) { return '<button class="btn small" type="button" data-m="' + k + '" aria-pressed="' + (mode === k) + '">' + MODES[k] + '</button>'; }).join('')
+        + (mode !== 'anon' ? '<label class="sizebox">인원 <input type="text" inputmode="numeric" data-a="size" value="' + (c.size || 30) + '" aria-label="반 인원"> 명</label>' : '') + '</div></div>'
+        + '<div class="field"><span class="flabel">수업방 지우기</span><div class="row"><button class="btn warn small" type="button" data-a="del">이 수업방 지우기</button><span class="small">링크로 들어와도 열리지 않고 지난 수업 기록도 사라져요. 되돌릴 수 없어요.</span></div></div>'
+        + '</div></details></div>';
     }).join('');
     box.querySelectorAll('[data-i]').forEach(function (card) {
       var c = load()[+card.dataset.i];
       status(card, c);
+      var set = card.querySelector('details.set');
+      set.ontoggle = function () { openSet[c.code] = set.open; };          // 다시 그려도 설정 칸을 연 채로
       card.querySelector('[data-a="copy"]').onclick = function (e) { copy(BASE + 'join.html?room=' + c.code, e.currentTarget); };
       card.querySelector('[data-a="del"]').onclick = function (e) {
         var b = e.currentTarget;
@@ -500,23 +551,15 @@ ${AUTH_JS}
           fetch(API + '/rooms/' + c.code).then(function (r) { return r.json(); }).then(function (info) { if (!info.open) gone(); else { msg(j.error); b.disabled = false; } }, function () { msg(j.error); b.disabled = false; });
         }).catch(function () { msg('지우지 못했어요. 인터넷 연결을 확인해 주세요.'); b.disabled = false; });
       };
-      card.querySelector('[data-a="rename"]').onclick = function () {
-        var head = card.querySelector('[data-head]');
-        head.innerHTML = '<form class="form" data-a="namef"><label class="grow">수업방 이름<input type="text" maxlength="30" value="' + esc(c.name || '') + '" autocomplete="off"></label><button class="btn main" type="submit">저장</button><button class="btn" type="button" data-a="cancel">취소</button></form><p class="small" aria-live="polite" data-a="namemsg">학생 화면·클래스룸 링크는 그대로이고, 이름만 바뀌어요.</p>';
-        var f = head.querySelector('form'), inp = f.querySelector('input'), say = function (t) { head.querySelector('[data-a="namemsg"]').textContent = t; };
-        inp.focus(); inp.select();
-        f.querySelector('[data-a="cancel"]').onclick = function () { render(); };
-        f.onsubmit = function (e) {
-          e.preventDefault();
-          var v = inp.value.replace(/\\s+/g, ' ').trim();
-          if (!v) { say('이름을 넣어 주세요.'); return; }
-          say('바꾸는 중…');
-          post(c.code + '/settings', { key: c.key, name: v }).then(function (j) {
-            if (j.error) { say(j.error); return; }
-            update(c.code, { name: j.name || v }); render();
-            msg('이름을 바꿨어요: «' + (j.name || v) + '». 들어와 있는 학생 화면에도 바로 바뀌어요.');
-          }).catch(function () { say('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
-        };
+      card.querySelector('[data-a="namef"]').onsubmit = function (e) {
+        e.preventDefault();
+        var v = this.querySelector('input').value.replace(/\\s+/g, ' ').trim();
+        if (!v) { msg('수업방 이름을 넣어 주세요.'); return; }
+        post(c.code + '/settings', { key: c.key, name: v }).then(function (j) {
+          if (j.error) { msg(j.error); return; }
+          update(c.code, { name: j.name || v }); render();
+          msg('이름을 바꿨어요: «' + (j.name || v) + '». 학생 화면·클래스룸 링크는 그대로이고, 들어와 있는 학생 화면에도 바로 바뀌어요.');
+        }).catch(function () { msg('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
       };
       card.querySelectorAll('[data-m]').forEach(function (b) {
         b.onclick = function () {
@@ -541,6 +584,7 @@ ${AUTH_JS}
   function meCard() {
     var box = document.getElementById('mebox'), s = sess();
     if (!s) {
+      document.getElementById('mehead').hidden = false;
       var old = myRooms().length;
       box.innerHTML = '<p class="muted">학교나 개인 구글 계정으로 로그인해요. 처음이면 가입 신청을 하고, 승인되면 어느 기기에서든 내 수업방이 보여요.</p>'
         + (old ? '<p class="small">이 기기에 있던 수업방 ' + old + '개는 로그인하면 이 계정으로 옮겨져요.</p>' : '') + '<div id="gbtn"></div>';
@@ -548,10 +592,11 @@ ${AUTH_JS}
       return;
     }
     var who = '<b>' + esc(s.name || s.email) + '</b>' + (s.name ? ' · ' + esc(s.email) : '');
-    var out = '<button class="btn" type="button" id="logout">로그아웃</button>';
+    var out = '<button class="btn small" type="button" id="logout">로그아웃</button>';
+    document.getElementById('mehead').hidden = s.status === 'approved';
     if (s.status === 'approved') {
-      box.innerHTML = '<p class="muted">' + who + '(으)로 로그인돼 있어요' + (s.admin ? ' · 관리자' : '') + '.</p>'
-        + (s.admin && s.pending ? '<p><a class="tag next" href="#admin">가입 신청 ' + s.pending + '건이 승인을 기다려요 ↓</a></p>' : '') + '<div class="row">' + out + '</div>';
+      box.innerHTML = '<div class="acct"><span class="muted">' + who + (s.admin ? '<span class="tag">관리자</span>' : '') + '</span>' + out + '</div>'
+        + (s.admin && s.pending ? '<p><a class="tag next" href="#admin">가입 신청 ' + s.pending + '건이 승인을 기다려요 ↓</a></p>' : '');
     } else if (s.status === 'pending') {
       box.innerHTML = '<p class="muted">' + who + ' · <b class="tag next">승인 기다림</b></p><p class="muted">가입 신청을 보냈어요. 관리하는 선생님이 승인하면 이 페이지가 저절로 바뀌어요(30초마다 확인해요).</p><div class="row"><button class="btn main" type="button" id="recheck">승인됐는지 다시 보기</button>' + out + '</div>';
       document.getElementById('recheck').onclick = function () { meMsg('확인하는 중…'); syncMe().then(function () { meMsg(sess() && sess().status === 'approved' ? '승인됐어요!' : '아직 승인 전이에요.'); renderAll(); }); };
@@ -589,6 +634,10 @@ ${AUTH_JS}
     };
     var by = function (st) { return users.filter(function (u) { return u.status === st; }); };
     var pend = by('pending'), ok = by('approved'), rest = users.filter(function (u) { return u.status === 'denied' || u.status === 'revoked'; });
+    var sum = document.getElementById('adminsum'), fold = document.getElementById('admind');
+    sum.textContent = pend.length ? '새 신청 ' + pend.length + '건' : '새 신청 없음 · 승인된 선생님 ' + ok.length + '명';
+    sum.className = 'tag' + (pend.length ? ' next' : '');
+    if (!fold.dataset.init) { fold.dataset.init = '1'; fold.open = pend.length > 0; }   // 처음에는 새 신청이 있을 때만 펼친다
     document.getElementById('adminbox').innerHTML =
       '<p class="muted">' + (pend.length ? '새 가입 신청 <b>' + pend.length + '</b>건' : '새 가입 신청이 없어요.') + '</p>'
       + (pend.length ? '<ul class="lessons">' + pend.map(function (u) { return row(u, [['approve', '승인'], ['deny', '거절']]); }).join('') + '</ul>' : '')
@@ -643,8 +692,10 @@ ${AUTH_JS}
     document.getElementById('classes').hidden = !ok;
     if (ok) render(); else document.getElementById('classes').innerHTML = '';
   }
-  renderAll();
-  if (sess()) syncMe().then(renderAll, renderAll);                  // 다른 기기에서 만든 수업방·승인 여부를 맞춘다
+  // 첫 화면 «새 수업방 만들기»(#makecard)로 왔으면 만들기 칸으로 옮겨 이름 칸에 둔다
+  var toMake = function () { var m = document.getElementById('makecard'); if (location.hash === '#makecard' && !m.hidden) { m.scrollIntoView({ block: 'center' }); document.getElementById('name').focus(); } };
+  renderAll(); toMake();
+  if (sess()) syncMe().then(function () { renderAll(); toMake(); }, renderAll);   // 다른 기기에서 만든 수업방·승인 여부를 맞춘다
   // 승인을 기다리는 동안 30초마다 확인해 승인되면 저절로 열어 준다
   setInterval(function () {
     var s = sess(); if (!s || s.status !== 'pending' || document.hidden) return;
