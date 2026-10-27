@@ -12,6 +12,7 @@
 :root { color-scheme: light; --paper: #f2f5f3; --paper-2: #fbfcf9; --grid: #dbe4e2; --ink: #1d2433; --ink-2: #4b566a; --ink-3: #6b7587; --rule: #c3cecd; --accent: #1f5f4a; --accent-soft: #dcebe4; --hl: #ffe27a; --stamp: #c8402f; --current: #e9731a;
   --f-display: "Hahmlet", "Apple SD Gothic Neo", "Malgun Gothic", serif; --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; color: var(--ink); font: 400 17px/1.6 var(--f-body); word-break: keep-all; overflow-wrap: break-word; background-color: var(--paper);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 32px 32px; }
 .wrap { max-width: 880px; margin: 0 auto; padding-block: 36px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
@@ -34,7 +35,7 @@ h2 { margin: 0; font: 700 22px/1.3 var(--f-display); text-wrap: balance; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .between { justify-content: space-between; }
 .link { font: 500 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--paper); border: 1.5px dashed var(--rule); border-radius: 8px; padding: 8px 10px; overflow-wrap: anywhere; user-select: all; }
-input[type=text], select { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; }
+input[type=text], input[type=email], select { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; }
 .form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .form label { display: grid; gap: 4px; font: 600 14px/1.3 var(--f-body); color: var(--ink-2); min-width: 0; }
 .form label.grow { flex: 1 1 220px; }
@@ -59,8 +60,9 @@ details[open] > summary { margin-bottom: 8px; }
 .sizebox { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--ink-3); }
 .sizebox input { width: 64px; font-size: 16px; padding: 6px 8px; }
 input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; width: 100%; }
-.pin-ok { color: var(--accent); font-weight: 700; }
-.pin-no { color: var(--stamp); }
+.btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+.namebox { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-width: 0; flex: 1 1 auto; }
+.namebox form { flex: 1 1 100%; }
 </style>
 </head>
 <body>
@@ -81,8 +83,61 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
   var API = (qs.get('roomapi') || "https://science-room.pang99x.workers.dev").replace(/\/$/, '');
   var pass = qs.get('roomapi') ? '&roomapi=' + encodeURIComponent(qs.get('roomapi')) : '';
   var code = qs.get('room') || '';
+  var GID = qs.get('gid') || "817402337132-ern5o53sgva1350h34a633b5l3e6lof0.apps.googleusercontent.com";
   var LESSONS = [{"unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":1,"title":"태양 에너지의 생성","path":"tongsci2/2-2-1/1","student":"tongsci2/2-2-1/1/student.html","teacher":"tongsci2/2-2-1/1/teacher.html"},{"unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":2,"title":"태양 에너지의 전환과 흐름","path":"tongsci2/2-2-1/2","student":"tongsci2/2-2-1/2/student.html","teacher":"tongsci2/2-2-1/2/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":1,"title":"전기 에너지의 생산","path":"tongsci2/2-2-2/1","student":"tongsci2/2-2-2/1/student.html","teacher":"tongsci2/2-2-2/1/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":2,"title":"전자기 유도","path":"tongsci2/2-2-2/2","student":"tongsci2/2-2-2/2/student.html","teacher":"tongsci2/2-2-2/2/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":3,"title":"발전기","path":"tongsci2/2-2-2/3","student":"tongsci2/2-2-2/3/student.html","teacher":"tongsci2/2-2-2/3/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":4,"title":"화력 발전과 핵발전","path":"tongsci2/2-2-2/4","student":"tongsci2/2-2-2/4/student.html","teacher":"tongsci2/2-2-2/4/teacher.html"}];
   var $ = function (id) { return document.getElementById(id); };
+
+  var SESS = 'science-room:session', ROOMS = 'science-room:classes';
+  function stored(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function sess() { var s = stored(SESS); return s && s.token ? s : null; }          // { token, email, name, status, admin, pending }
+  function devId() {
+    var d = null; try { d = localStorage.getItem('science-room:dev'); } catch (e) {}
+    if (!/^d-[0-9a-f]{20}$/.test(d || '')) { d = 'd-' + Array.from(crypto.getRandomValues(new Uint8Array(10)), function (b) { return b.toString(16).padStart(2, '0'); }).join(''); try { localStorage.setItem('science-room:dev', d); } catch (e) {} }
+    return d;
+  }
+  function myRooms() { return stored(ROOMS) || []; }
+  function have() { return myRooms().filter(function (c) { return c && c.code && c.key; }).map(function (c) { return { code: c.code, key: c.key }; }); }
+  function api(path, body) {
+    return fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().then(function (j) { j.http = r.status; return j; }); });
+  }
+  // 로그인·맞추기 결과를 이 기기에 둔다(승인된 선생님이면 내 수업방과 이 기기용 진행 열쇠까지)
+  function keep(j, token) {
+    var s = sess() || {};
+    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0 });
+    if (j.rooms) store(ROOMS, j.rooms.map(function (r) { return { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; }));
+    return sess();
+  }
+  function signedOut() { store(SESS, null); store(ROOMS, null); }
+  // 로그인돼 있으면 서버와 맞춘다 → 로그인 정보(로그인 안 됐거나 풀렸으면 null)
+  function syncMe() {
+    var s = sess(); if (!s) return Promise.resolve(null);
+    return api('/me', { session: s.token, dev: devId(), have: have() }).then(function (j) { if (j.login) { signedOut(); return null; } return j.error ? s : keep(j); }, function () { return s; });
+  }
+  // 로그아웃: 이 기기의 진행 열쇠도 서버에서 못 쓰게 한다(공용 컴퓨터)
+  function logout() {
+    var s = sess(), done = function () { signedOut(); try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {} };
+    return api('/auth/logout', { session: s && s.token, have: have() }).then(done, done);
+  }
+  // 구글 로그인 단추. 구글 스크립트는 이 단추를 띄울 때만 불러온다(학생 화면은 구글에 연결하지 않는다)
+  function googleButton(box, onDone) {
+    if (!GID) { box.innerHTML = '<p class="small">구글 로그인을 준비하고 있어요. 조금 뒤에 다시 와 주세요.</p>'; return; }
+    var go = function () {
+      if (!window.google || !google.accounts || !google.accounts.id) { box.innerHTML = '<p class="small">구글 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>'; return; }
+      google.accounts.id.initialize({ client_id: GID, auto_select: false, callback: function (r) {
+        onDone(null, '확인하는 중…', true);
+        api('/auth/google', { credential: r.credential, dev: devId(), have: have() }).then(function (j) {
+          if (j.error) onDone(null, j.error); else onDone(keep(j, j.session));
+        }, function () { onDone(null, '연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+      } });
+      box.innerHTML = '';
+      google.accounts.id.renderButton(box, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko' });
+    };
+    if (window.google && google.accounts && google.accounts.id) { go(); return; }
+    var sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = go; sc.onerror = go; document.head.appendChild(sc);
+  }
+
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function find(path) { return LESSONS.filter(function (l) { return l.path === path; })[0] || null; }
   function label(l) { return l.unit + ' ' + l.n + '차시 ' + l.title; }
@@ -224,49 +279,40 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
     };
     ws.onclose = function () { if (!gone) setTimeout(check, Math.min(10000, 1000 * Math.pow(2, tries++))); };
   }
-  // ---- 선생님으로 들어가기: 수업방을 만들 때 정한 선생님 비밀번호 → 이 기기에 진행 열쇠 ----
-  var PIN = 'science-room:pin', pinTried = false;
-  function savedPin() { try { return localStorage.getItem(PIN); } catch (e) { return null; } }
-  function teacherDoor(info) {
-    $('foot').innerHTML = '<button class="btn" type="button" id="tdoor">선생님이세요? 비밀번호로 들어가기</button>';
-    $('tdoor').onclick = function () { pinForm(info); };
+  // ---- 선생님으로 들어가기: 가입 승인된 선생님 구글 계정으로 로그인 → 이 기기에 진행 열쇠 ----
+  var synced = false;
+  function isMine() { return myRooms().some(function (c) { return c.code === code && c.key; }); }
+  function reopen() { location.replace(location.href.split('#')[0]); }      // 선생님 화면(또는 학생 화면)으로 다시 연다
+  var teachUrl = 'teach.html' + (pass ? '?' + pass.slice(1) : '');
+  function teacherDoor() {
+    $('foot').innerHTML = '<button class="btn" type="button" id="tdoor">선생님이세요? 구글로 로그인</button>';
+    $('tdoor').onclick = function () { loginView(false); };
   }
-  function pinForm(info) {
+  // claim: 이 기기에 이 방 열쇠는 있는데 로그인 전(로그인하면 그 계정 수업방으로 옮겨진다)
+  function loginView(claim) {
     if (ws) { gone = true; try { ws.close(); } catch (x) {} ws = null; gone = false; }
     $('lib').hidden = true; $('foot').innerHTML = '';
-    if (!info.pin) {
-      show('<h2>선생님으로 들어가기</h2><p class="muted">이 수업방은 아직 선생님 비밀번호가 없어요. 수업방을 만든 기기에서 선생님 페이지를 열고 비밀번호를 정하면, 그다음부터는 어느 기기에서든 여기서 비밀번호만 넣으면 돼요.</p><div class="row"><a class="btn main" href="teach.html' + (pass ? '?' + pass.slice(1) : '') + '">선생님 페이지</a><button class="btn" type="button" id="pinback">학생 화면으로</button></div>');
-    } else {
-      show('<h2>선생님으로 들어가기</h2><p class="muted">수업방을 만들 때 정한 <b>선생님 비밀번호</b>를 넣으면 이 기기가 선생님 기기가 돼요. 기기마다 한 번만 하면 되고, 이 기기에서는 다른 수업방 링크도 저절로 선생님으로 열려요.</p>'
-        + '<form class="row" id="pinf"><input type="password" id="pin" autocomplete="current-password" placeholder="선생님 비밀번호" aria-label="선생님 비밀번호" style="flex:1 1 220px"><button class="btn main" type="submit">들어가기</button></form>'
-        + '<p class="small" id="pinm" aria-live="polite"></p><div class="row"><button class="btn" type="button" id="pinback">학생 화면으로</button></div>');
-      $('pin').focus();
-      $('pinf').onsubmit = function (e) { e.preventDefault(); var v = $('pin').value.trim(); if (v.length < 6) { $('pinm').textContent = '비밀번호를 6글자 이상 넣어 주세요.'; return; } $('pinm').textContent = '확인하는 중…'; unlock(v, false); };
-    }
-    $('pinback').onclick = function () { check(); };
-  }
-  function unlock(pin, silent) {
-    fetch(API + '/rooms/' + code + '/teacher', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin }) })
-      .then(function (r) { return r.json(); }).then(function (j) {
-        if (!j.ok || !j.key) { if (silent) check(); else $('pinm').textContent = j.error || '들어가지 못했어요.'; return; }
-        try {
-          var list = (JSON.parse(localStorage.getItem('science-room:classes')) || []).filter(function (c) { return c.code !== code; });
-          list.push({ code: code, key: j.key, name: j.name, idMode: j.idMode, size: j.size, pin: true });
-          localStorage.setItem('science-room:classes', JSON.stringify(list));
-          localStorage.setItem(PIN, pin);
-        } catch (x) { if (!silent) $('pinm').textContent = '이 브라우저에 저장하지 못했어요(사생활 보호 창이면 일반 창에서 열어 주세요).'; return; }
-        location.replace(location.href.split('#')[0]);           // 선생님 화면으로 다시 연다
-      }).catch(function () { if (silent) check(); else $('pinm').textContent = '연결하지 못했어요. 인터넷 연결을 확인해 주세요.'; });
+    show('<h2>선생님으로 들어가기</h2><p class="muted">' + (claim
+      ? '이 기기에 이 수업방 열쇠가 있어요. 이제 선생님 기능은 로그인해야 쓸 수 있어요. 구글로 로그인하면 이 수업방이 그 계정으로 옮겨지고 바로 수업할 수 있어요.'
+      : '가입 승인을 받은 선생님 구글 계정으로 로그인하면 이 기기가 선생님 기기가 돼요. 한 번 로그인한 기기는 다른 수업방 링크도 저절로 선생님으로 열려요. 학생은 로그인하지 않아요.') + '</p>'
+      + '<div id="gbtn"></div><p class="small" id="lm" aria-live="polite"></p><div class="row">' + (claim ? '' : '<button class="btn" type="button" id="back">학생 화면으로</button>') + '<a class="btn" href="' + teachUrl + '">선생님 페이지</a></div>');
+    var back = $('back'); if (back) back.onclick = function () { check(); };
+    googleButton($('gbtn'), function (who, err) {
+      if (!who) { $('lm').textContent = err; return; }
+      if (who.status !== 'approved') { $('lm').innerHTML = esc(who.email) + ' 계정은 아직 가입 승인 전이에요. <a href="' + teachUrl + '">선생님 페이지</a>에서 가입 신청을 해 주세요.'; return; }
+      if (isMine()) { reopen(); return; }
+      $('lm').textContent = who.email + ' 계정이 만든 수업방이 아니에요. 이 수업방을 만든 선생님 계정으로 로그인해 주세요.';
+    });
   }
   function check() {
     fetch(API + '/rooms/' + code).then(function (r) { return r.json(); }).then(function (info) {
       if (!info.open) { show('<h2>이 반 수업방은 닫혔어요</h2><p class="muted">' + (teacher ? '선생님 페이지에서 새로 만들어 주세요.' : '선생님께 새 링크를 받아 주세요. 아래 차시는 혼자 볼 수 있어요.') + '</p>'); library(false); return; }
       $('title').textContent = (info.name || '반') + ' 수업방' + (teacher ? ' · 선생님' : '');
-      if (teacher) { teacherView(info); return; }
+      if (teacher) { if (sess()) teacherView(info); else loginView(true); return; }
       if (preview) { previewView(info); return; }
-      // 이 기기에 선생님 비밀번호가 저장돼 있으면(다른 반에서 한 번 넣음) 조용히 선생님으로 열어 본다
-      if (info.pin && !pinTried && savedPin()) { pinTried = true; unlock(savedPin(), true); return; }
-      teacherDoor(info);
+      // 이 기기가 다른 수업방에서 로그인해 둔 선생님 기기면, 이 방도 내 방인지 조용히 맞춰 본다
+      if (!synced && sess()) { synced = true; syncMe().then(function () { if (isMine()) reopen(); else check(); }, check); return; }
+      teacherDoor();
       if (needId(info)) { askId(info, check); return; }
       if (forMe(info.lesson)) { go(info.lesson.path); return; }          // 우리 반 수업 중에는 복습 목록 없이 바로 수업으로
       var who = getMe() || {}, mc = myCls(info), lastI = lastOf(info, mc), lastL = lastI ? find(lastI.path) : null;
@@ -279,7 +325,11 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
       if (!ws || ws.readyState > 1) listen();
     }).catch(function () { show('<h2>연결하지 못했어요</h2><p class="muted">인터넷 연결을 확인해 주세요. 아래 차시는 혼자 볼 수 있어요.</p>'); library(false); setTimeout(check, 5000); });
   }
-  $('foot').textContent = teacher ? '이 기기에 진행 열쇠가 있어서 학생과 같은 링크가 선생님 화면으로 열려요. 학생 기기에서는 학생 화면으로 열려요.' : '';
+  if (teacher && sess()) {
+    $('foot').innerHTML = (sess().pending ? '<b>가입 신청 ' + sess().pending + '건</b>이 승인을 기다려요 · <a href="teach.html' + (pass ? '?' + pass.slice(1) : '') + '">선생님 페이지에서 승인</a><br>' : '')
+      + '이 기기는 <b>' + esc(sess().email) + '</b> 계정으로 로그인돼 있어 선생님 화면으로 열려요. 학생 기기에서는 학생 화면으로 열려요. <a href="#" id="out">로그아웃</a>';
+    $('out').onclick = function (e) { e.preventDefault(); this.textContent = '로그아웃하는 중…'; logout().then(reopen); };
+  }
   check();
 })();
 </script>

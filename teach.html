@@ -12,6 +12,7 @@
 :root { color-scheme: light; --paper: #f2f5f3; --paper-2: #fbfcf9; --grid: #dbe4e2; --ink: #1d2433; --ink-2: #4b566a; --ink-3: #6b7587; --rule: #c3cecd; --accent: #1f5f4a; --accent-soft: #dcebe4; --hl: #ffe27a; --stamp: #c8402f; --current: #e9731a;
   --f-display: "Hahmlet", "Apple SD Gothic Neo", "Malgun Gothic", serif; --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; color: var(--ink); font: 400 17px/1.6 var(--f-body); word-break: keep-all; overflow-wrap: break-word; background-color: var(--paper);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 32px 32px; }
 .wrap { max-width: 880px; margin: 0 auto; padding-block: 36px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
@@ -34,7 +35,7 @@ h2 { margin: 0; font: 700 22px/1.3 var(--f-display); text-wrap: balance; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .between { justify-content: space-between; }
 .link { font: 500 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--paper); border: 1.5px dashed var(--rule); border-radius: 8px; padding: 8px 10px; overflow-wrap: anywhere; user-select: all; }
-input[type=text], select { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; }
+input[type=text], input[type=email], select { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; }
 .form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .form label { display: grid; gap: 4px; font: 600 14px/1.3 var(--f-body); color: var(--ink-2); min-width: 0; }
 .form label.grow { flex: 1 1 220px; }
@@ -59,22 +60,28 @@ details[open] > summary { margin-bottom: 8px; }
 .sizebox { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--ink-3); }
 .sizebox input { width: 64px; font-size: 16px; padding: 6px 8px; }
 input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; width: 100%; }
-.pin-ok { color: var(--accent); font-weight: 700; }
-.pin-no { color: var(--stamp); }
+.btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+.namebox { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-width: 0; flex: 1 1 auto; }
+.namebox form { flex: 1 1 100%; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <p class="brand"><a href="index.html">움직이는 과학 수업</a></p>
   <h1>선생님 페이지</h1>
-  <p class="muted">과목마다 수업방을 하나 만들고 가르치는 반을 적어 두세요. 그 <b>과목 링크</b>를 반마다 클래스룸에 한 번만 올려 두면 돼요. 학생은 처음 한 번 자기 반을 고르고, 그 링크로 언제든 들어와 복습해요. 선생님이 반을 골라 수업을 열면 <b>그 반 학생만</b> 수업 차시로 저절로 옮겨 가요. 선생님도 수업 때 <b>같은 링크</b>를 열면 돼요. 처음 쓰는 기기라면 «선생님이세요?»에 선생님 비밀번호를 한 번 넣어요.</p>
-  <div class="card" id="pincard">
-    <h2>선생님 비밀번호</h2>
-    <div id="pinbox"></div>
-    <p class="small" id="pinmsg" aria-live="polite"></p>
+  <p class="muted">과목마다 수업방을 하나 만들고 가르치는 반을 적어 두세요. 그 <b>과목 링크</b>를 반마다 클래스룸에 한 번만 올려 두면 돼요. 학생은 처음 한 번 자기 반을 고르고, 그 링크로 언제든 들어와 복습해요. 선생님이 반을 골라 수업을 열면 <b>그 반 학생만</b> 수업 차시로 저절로 옮겨 가요. 선생님은 <b>구글로 로그인</b>하고, 처음이면 가입 신청을 해서 승인을 받아요. 학생은 로그인하지 않아요.</p>
+  <div class="card big" id="me">
+    <h2>선생님 로그인</h2>
+    <div id="mebox"><p class="muted">확인하는 중…</p></div>
+    <p class="small" id="memsg" aria-live="polite"></p>
+  </div>
+  <div class="card" id="admin" hidden>
+    <h2>가입 신청 관리</h2>
+    <div id="adminbox"></div>
+    <p class="small" id="adminmsg" aria-live="polite"></p>
   </div>
   <div id="classes" style="display:grid;gap:16px"></div>
-  <div class="card">
+  <div class="card" id="makecard" hidden>
     <h2>수업방 만들기</h2>
     <form class="form" id="make">
       <label class="grow">이름<input type="text" id="name" maxlength="30" placeholder="예: 통합과학2" autocomplete="off"></label>
@@ -88,9 +95,9 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
     <p class="small" id="msg" aria-live="polite"></p>
   </div>
   <div class="card">
-    <h2>다른 기기에서 수업하기</h2>
-    <p class="muted">집 컴퓨터·휴대폰·다른 교실 컴퓨터에서는 클래스룸에 올린 <b>과목 링크</b>를 열고, 아래쪽 <b>«선생님이세요? 비밀번호로 들어가기»</b>에 선생님 비밀번호만 넣으면 돼요. 그 기기에서는 다른 수업방 링크도 저절로 선생님으로 열려요. 휴대폰에서 같은 차시를 열면 리모컨처럼 함께 넘어가요.</p>
-    <p class="small note">선생님 비밀번호는 학생에게 알려 주지 마세요. 5번 틀리면 10분 동안 잠겨요. 함께 쓰는 교실 컴퓨터라면 수업 뒤 이 페이지에서 «이 기기에서 지우기»를 눌러 주세요.</p>
+    <h2>다른 기기·교실 컴퓨터에서 수업하기</h2>
+    <p class="muted">어느 기기에서든 클래스룸에 올린 <b>과목 링크</b>를 열고, 아래쪽 <b>«선생님이세요? 구글로 로그인»</b>을 누르면 돼요. 이 페이지에서 로그인해도 같아요. 한 번 로그인한 기기는 다른 수업방 링크도 저절로 선생님으로 열려요. 휴대폰에서 같은 차시를 열면 리모컨처럼 함께 넘어가요.</p>
+    <p class="small note">여럿이 함께 쓰는 교실 컴퓨터라면 수업 뒤 이 페이지 위쪽 «로그아웃»을 눌러 주세요. 로그아웃하면 그 컴퓨터에 남은 진행 열쇠도 못 쓰게 돼요.</p>
   </div>
 </div>
 <script>
@@ -101,10 +108,61 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
   var pass = qs.get('roomapi') ? '&roomapi=' + encodeURIComponent(qs.get('roomapi')) : '';
   var BASE = location.href.split(/[?#]/)[0].replace(/[^/]*$/, '');
   var LESSONS = [{"unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":1,"title":"태양 에너지의 생성","path":"tongsci2/2-2-1/1","student":"tongsci2/2-2-1/1/student.html","teacher":"tongsci2/2-2-1/1/teacher.html"},{"unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":2,"title":"태양 에너지의 전환과 흐름","path":"tongsci2/2-2-1/2","student":"tongsci2/2-2-1/2/student.html","teacher":"tongsci2/2-2-1/2/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":1,"title":"전기 에너지의 생산","path":"tongsci2/2-2-2/1","student":"tongsci2/2-2-2/1/student.html","teacher":"tongsci2/2-2-2/1/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":2,"title":"전자기 유도","path":"tongsci2/2-2-2/2","student":"tongsci2/2-2-2/2/student.html","teacher":"tongsci2/2-2-2/2/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":3,"title":"발전기","path":"tongsci2/2-2-2/3","student":"tongsci2/2-2-2/3/student.html","teacher":"tongsci2/2-2-2/3/teacher.html"},{"unit":"2-2-2","unitTitle":"발전과 에너지원","n":4,"title":"화력 발전과 핵발전","path":"tongsci2/2-2-2/4","student":"tongsci2/2-2-2/4/student.html","teacher":"tongsci2/2-2-2/4/teacher.html"}];
+  var GID = qs.get('gid') || "817402337132-ern5o53sgva1350h34a633b5l3e6lof0.apps.googleusercontent.com";
   var KEY = 'science-room:classes';
   var MODES = { anon: '익명', num: '번호만', numname: '번호와 이름' };
-  var PIN = 'science-room:pin';
-  function savedPin() { try { return localStorage.getItem(PIN); } catch (e) { return null; } }
+
+  var SESS = 'science-room:session', ROOMS = 'science-room:classes';
+  function stored(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function sess() { var s = stored(SESS); return s && s.token ? s : null; }          // { token, email, name, status, admin, pending }
+  function devId() {
+    var d = null; try { d = localStorage.getItem('science-room:dev'); } catch (e) {}
+    if (!/^d-[0-9a-f]{20}$/.test(d || '')) { d = 'd-' + Array.from(crypto.getRandomValues(new Uint8Array(10)), function (b) { return b.toString(16).padStart(2, '0'); }).join(''); try { localStorage.setItem('science-room:dev', d); } catch (e) {} }
+    return d;
+  }
+  function myRooms() { return stored(ROOMS) || []; }
+  function have() { return myRooms().filter(function (c) { return c && c.code && c.key; }).map(function (c) { return { code: c.code, key: c.key }; }); }
+  function api(path, body) {
+    return fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().then(function (j) { j.http = r.status; return j; }); });
+  }
+  // 로그인·맞추기 결과를 이 기기에 둔다(승인된 선생님이면 내 수업방과 이 기기용 진행 열쇠까지)
+  function keep(j, token) {
+    var s = sess() || {};
+    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0 });
+    if (j.rooms) store(ROOMS, j.rooms.map(function (r) { return { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; }));
+    return sess();
+  }
+  function signedOut() { store(SESS, null); store(ROOMS, null); }
+  // 로그인돼 있으면 서버와 맞춘다 → 로그인 정보(로그인 안 됐거나 풀렸으면 null)
+  function syncMe() {
+    var s = sess(); if (!s) return Promise.resolve(null);
+    return api('/me', { session: s.token, dev: devId(), have: have() }).then(function (j) { if (j.login) { signedOut(); return null; } return j.error ? s : keep(j); }, function () { return s; });
+  }
+  // 로그아웃: 이 기기의 진행 열쇠도 서버에서 못 쓰게 한다(공용 컴퓨터)
+  function logout() {
+    var s = sess(), done = function () { signedOut(); try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {} };
+    return api('/auth/logout', { session: s && s.token, have: have() }).then(done, done);
+  }
+  // 구글 로그인 단추. 구글 스크립트는 이 단추를 띄울 때만 불러온다(학생 화면은 구글에 연결하지 않는다)
+  function googleButton(box, onDone) {
+    if (!GID) { box.innerHTML = '<p class="small">구글 로그인을 준비하고 있어요. 조금 뒤에 다시 와 주세요.</p>'; return; }
+    var go = function () {
+      if (!window.google || !google.accounts || !google.accounts.id) { box.innerHTML = '<p class="small">구글 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>'; return; }
+      google.accounts.id.initialize({ client_id: GID, auto_select: false, callback: function (r) {
+        onDone(null, '확인하는 중…', true);
+        api('/auth/google', { credential: r.credential, dev: devId(), have: have() }).then(function (j) {
+          if (j.error) onDone(null, j.error); else onDone(keep(j, j.session));
+        }, function () { onDone(null, '연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+      } });
+      box.innerHTML = '';
+      google.accounts.id.renderButton(box, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko' });
+    };
+    if (window.google && google.accounts && google.accounts.id) { go(); return; }
+    var sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = go; sc.onerror = go; document.head.appendChild(sc);
+  }
+
   function load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
   function save(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) { msg('이 브라우저에 저장하지 못했어요(사생활 보호 창이면 일반 창에서 열어 주세요).'); } }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -113,12 +171,6 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
   function label(l) { return l.unit + ' ' + l.n + '차시 ' + l.title; }
   function post(path, body) { return fetch(API + '/rooms/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); }); }
   function parseCls(v) { return String(v || '').split(/[,，、\n]/).map(function (x) { return x.replace(/\s+/g, ' ').trim(); }).filter(Boolean); }
-  // 다른 기기용 링크(#add=...)로 열었으면 이 브라우저에 반을 더한다
-  var m = location.hash.match(/^#add=(.+)$/);
-  if (m) {
-    try { var c = JSON.parse(decodeURIComponent(m[1])); if (/^\d{6}$/.test(c.code) && c.key) { var l = load().filter(function (x) { return x.code !== c.code; }); l.push(c); save(l); msg((c.name || '반') + ' 수업방을 이 기기에 더했어요.'); } } catch (e) {}
-    history.replaceState(null, '', location.pathname + location.search);
-  }
   function copy(text, btn) {
     var done = function () { var t = btn.textContent; btn.textContent = '복사했어요'; setTimeout(function () { btn.textContent = t; }, 1600); };
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt('복사해서 쓰세요', text); });
@@ -142,9 +194,10 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
   function status(card, c) {
     var box = card.querySelector('[data-s]');
     fetch(API + '/rooms/' + c.code).then(function (r) { return r.json(); }).then(function (info) {
-      if (!info.open) { box.textContent = '닫힌 방이에요(오래 쓰지 않아 닫혔어요). 이 기기에서 지우고 새로 만들어 주세요.'; return; }
+      if (!info.open) { box.textContent = '닫힌 방이에요(오래 쓰지 않아 닫혔어요). 아래 «수업방 지우기»로 목록에서 빼고 새로 만들어 주세요.'; return; }
       var list = info.classes || [];
       if (String(list) !== String(c.classes || [])) update(c.code, { classes: list });
+      if (info.name && info.name !== c.name) { update(c.code, { name: info.name }); c.name = info.name; var hn = card.querySelector('[data-name]'); if (hn) hn.textContent = info.name; }   // 다른 기기에서 바꾼 이름
       card.querySelectorAll('[data-ll]').forEach(function (x) { x.textContent = (list.length ? '과목' : '반') + x.dataset.ll; });
       var now = info.lesson && find(info.lesson.path), oc = info.lesson && info.lesson.cls, last = info.last && find(info.last.path);
       if (now) {
@@ -156,11 +209,6 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
           b.disabled = true; post(c.code + '/end', { key: c.key }).then(function () { box.classList.remove('live'); status(card, c); }).catch(function () { msg('끝내지 못했어요. 인터넷 연결을 확인해 주세요.'); b.disabled = false; });
         };
       } else box.innerHTML = list.length ? '수업 전' : last ? '수업 전 · 지난 수업: <b>' + esc(label(last)) + '</b>' : '수업 전 · 아직 연 차시가 없어요';
-      box.insertAdjacentHTML('beforeend', info.pin ? ' · <span class="pin-ok">비밀번호 걸림</span>' : ' · <b class="pin-no">비밀번호 없음</b>');
-      if (!info.pin && savedPin()) {
-        box.insertAdjacentHTML('beforeend', ' <button class="btn" type="button" data-a="pin" style="min-height:36px">지금 걸기</button>');
-        box.querySelector('[data-a="pin"]').onclick = function () { post(c.code + '/settings', { key: c.key, pin: savedPin() }).then(function (j) { if (j.error) msg(j.error); status(card, c); }); };
-      }
       var cb = card.querySelector('[data-cls]');
       cb.innerHTML = (list.length ? '<ul class="lessons">' + list.map(function (k) { var l = (info.lastBy || {})[k], f = l && find(l.path); return '<li><span><b>' + esc(k) + '</b> · 학생 ' + ((info.byCls || {})[k] || 0) + '명 들어옴</span><span class="small">지난 수업: ' + (f ? esc(label(f)) : '아직 없어요') + '</span></li>'; }).join('') + '</ul>' : '')
         + '<form class="form" data-a="clsf"><label class="grow">가르치는 반(쉼표로 나눠요)<input type="text" maxlength="200" value="' + esc(list.join(', ')) + '" placeholder="예: 2-1반, 2-3반, 2-5반" autocomplete="off"></label><button class="btn" type="submit">' + (list.length ? '반 목록 저장' : '과목 방으로 바꾸기') + '</button></form>';
@@ -179,11 +227,11 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
   function update(code, patch) { save(load().map(function (x) { return x.code === code ? Object.assign(x, patch) : x; })); }
   function render() {
     var list = load(), box = document.getElementById('classes');
-    if (!list.length) { box.innerHTML = '<div class="card"><p class="muted">아직 만든 수업방이 없어요. 아래에서 과목 이름과 가르치는 반을 넣고 만들어 주세요.</p></div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="card"><p class="muted">아직 만든 수업방이 없어요. 아래에서 과목 이름과 가르치는 반을 넣고 만들어 주세요. 다른 기기에서 만든 수업방은 로그인하면 여기에도 보여요.</p></div>'; return; }
     box.innerHTML = list.map(function (c, i) {
       var join = BASE + 'join.html?room=' + c.code, mode = c.idMode || 'anon', sub = (c.classes || []).length ? '과목' : '반';
       return '<div class="card big" data-i="' + i + '">'
-        + '<div class="row between"><h2>' + esc(c.name || '수업방') + '</h2><span class="code" title="참여 코드">' + c.code + '</span></div>'
+        + '<div class="row between"><div class="namebox" data-head><h2 data-name>' + esc(c.name || '수업방') + '</h2><button class="btn small" type="button" data-a="rename">이름 바꾸기</button></div><span class="code" title="참여 코드">' + c.code + '</span></div>'
         + '<p class="status" data-s>확인하는 중…</p>'
         + '<div data-cls style="display:grid;gap:10px"></div>'
         + '<p class="small"><span data-ll=" 링크">' + sub + ' 링크</span> — 가르치는 반 클래스룸마다 한 번 올려 두세요. 선생님도 수업 때 이 링크를 열어요.</p><div class="link">' + esc(join) + '</div>'
@@ -191,14 +239,43 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
         + '<div class="row"><span class="small">학생 표시</span>' + ['anon', 'num', 'numname'].map(function (k) { return '<button class="btn" type="button" data-m="' + k + '" aria-pressed="' + (mode === k) + '">' + MODES[k] + '</button>'; }).join('')
         + (mode !== 'anon' ? '<label class="sizebox">인원 <input type="text" inputmode="numeric" data-a="size" value="' + (c.size || 30) + '" aria-label="반 인원"> 명</label>' : '') + '</div>'
         + ((c.classes || []).length ? '' : '<details><summary>차시 바로 시작</summary><ul class="lessons">' + lessonsHtml(c) + '</ul></details>')
-        + '<details><summary>이 기기 관리</summary><div class="row"><button class="btn" type="button" data-a="move">다른 기기용 링크 복사</button><button class="btn warn" type="button" data-a="del">이 기기에서 지우기</button></div>'
-        + '<p class="small">지워도 링크와 학생 기록은 그대로예요. 다른 기기용 링크가 있으면 되살릴 수 있어요.</p></details>'
+        + '<details><summary>수업방 지우기</summary><p class="small">지우면 클래스룸에 올린 링크로 들어와도 열리지 않고, 반마다 지난 수업 기록도 사라져요. 되돌릴 수 없어요. 들어와 있는 학생 화면에는 «수업방이 끝났어요»가 떠요.</p>'
+        + '<div class="row"><button class="btn warn" type="button" data-a="del">이 수업방 지우기</button></div></details>'
         + '</div>';
     }).join('');
     box.querySelectorAll('[data-i]').forEach(function (card) {
       var c = load()[+card.dataset.i];
       status(card, c);
       card.querySelector('[data-a="copy"]').onclick = function (e) { copy(BASE + 'join.html?room=' + c.code, e.currentTarget); };
+      card.querySelector('[data-a="del"]').onclick = function (e) {
+        var b = e.currentTarget;
+        if (!armed(b, '한 번 더 누르면 «' + (c.name || '수업방') + '»을 지워요', '이 수업방 지우기')) return;
+        b.disabled = true;
+        var gone = function () { save(load().filter(function (x) { return x.code !== c.code; })); msg('«' + (c.name || '수업방') + '» 수업방을 지웠어요.'); render(); };
+        post(c.code + '/delete', { key: c.key }).then(function (j) {
+          if (!j.error) { gone(); return; }
+          // 이미 닫힌 방이면 목록에서만 뺀다
+          fetch(API + '/rooms/' + c.code).then(function (r) { return r.json(); }).then(function (info) { if (!info.open) gone(); else { msg(j.error); b.disabled = false; } }, function () { msg(j.error); b.disabled = false; });
+        }).catch(function () { msg('지우지 못했어요. 인터넷 연결을 확인해 주세요.'); b.disabled = false; });
+      };
+      card.querySelector('[data-a="rename"]').onclick = function () {
+        var head = card.querySelector('[data-head]');
+        head.innerHTML = '<form class="form" data-a="namef"><label class="grow">수업방 이름<input type="text" maxlength="30" value="' + esc(c.name || '') + '" autocomplete="off"></label><button class="btn main" type="submit">저장</button><button class="btn" type="button" data-a="cancel">취소</button></form><p class="small" aria-live="polite" data-a="namemsg">학생 화면·클래스룸 링크는 그대로이고, 이름만 바뀌어요.</p>';
+        var f = head.querySelector('form'), inp = f.querySelector('input'), say = function (t) { head.querySelector('[data-a="namemsg"]').textContent = t; };
+        inp.focus(); inp.select();
+        f.querySelector('[data-a="cancel"]').onclick = function () { render(); };
+        f.onsubmit = function (e) {
+          e.preventDefault();
+          var v = inp.value.replace(/\s+/g, ' ').trim();
+          if (!v) { say('이름을 넣어 주세요.'); return; }
+          say('바꾸는 중…');
+          post(c.code + '/settings', { key: c.key, name: v }).then(function (j) {
+            if (j.error) { say(j.error); return; }
+            update(c.code, { name: j.name || v }); render();
+            msg('이름을 바꿨어요: «' + (j.name || v) + '». 들어와 있는 학생 화면에도 바로 바뀌어요.');
+          }).catch(function () { say('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+        };
+      };
       card.querySelectorAll('[data-m]').forEach(function (b) {
         b.onclick = function () {
           post(c.code + '/settings', { key: c.key, idMode: b.dataset.m }).then(function (j) {
@@ -213,63 +290,124 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
         if (!(n >= 1 && n <= 60)) { msg('반 인원은 1~60명으로 넣어 주세요.'); size.value = c.size || 30; return; }
         post(c.code + '/settings', { key: c.key, size: n }).then(function (j) { if (j.error) { msg(j.error); return; } update(c.code, { size: j.size }); msg((c.name || '반') + ' 인원을 ' + j.size + '명으로 바꿨어요.'); }).catch(function () { msg('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
       };
-      card.querySelector('[data-a="move"]').onclick = function (e) { copy(BASE + 'teach.html#add=' + encodeURIComponent(JSON.stringify(c)), e.currentTarget); };
-      card.querySelector('[data-a="del"]').onclick = function (e) {
-        if (!armed(e.currentTarget, '한 번 더 누르면 지워져요', '이 기기에서 지우기')) return;
-        save(load().filter(function (x) { return x.code !== c.code; })); render();
-      };
     });
   }
-  function pinMsg(t) { document.getElementById('pinmsg').textContent = t; }
-  function pinCard(editing) {
-    var box = document.getElementById('pinbox'), has = !!savedPin();
-    if (has && !editing) {
-      box.innerHTML = '<p class="muted">이 기기에 저장돼 있어요. 새로 만드는 수업방에 저절로 걸려요.</p><div class="row"><button class="btn" type="button" id="pinchg">바꾸기</button><button class="btn warn" type="button" id="pindel">이 기기에서 지우기</button></div>';
-      document.getElementById('pinchg').onclick = function () { pinCard(true); };
-      document.getElementById('pindel').onclick = function (e) {
-        if (!armed(e.currentTarget, '한 번 더 누르면 이 기기의 비밀번호와 반 열쇠를 지워요', '이 기기에서 지우기')) return;
-        try { localStorage.removeItem(PIN); localStorage.removeItem(KEY); } catch (x) {}
-        pinMsg('이 기기에서 지웠어요. 수업방과 학생 기록은 그대로예요. 다시 쓰려면 수업방 링크에서 비밀번호를 넣으면 돼요.'); pinCard(); render();
-      };
+
+  // ---- 선생님 로그인 카드: 로그인 전 / 가입 전·신청 / 승인 기다림 / 승인됨 ----
+  function meMsg(t) { document.getElementById('memsg').textContent = t; }
+  var ST = { none: '가입 전', pending: '승인 기다림', denied: '신청이 받아들여지지 않음', revoked: '승인 해제됨' };
+  function meCard() {
+    var box = document.getElementById('mebox'), s = sess();
+    if (!s) {
+      var old = myRooms().length;
+      box.innerHTML = '<p class="muted">학교나 개인 구글 계정으로 로그인해요. 처음이면 가입 신청을 하고, 승인되면 어느 기기에서든 내 수업방이 보여요.</p>'
+        + (old ? '<p class="small">이 기기에 있던 수업방 ' + old + '개는 로그인하면 이 계정으로 옮겨져요.</p>' : '') + '<div id="gbtn"></div>';
+      googleButton(document.getElementById('gbtn'), function (who, err, busy) { if (busy) { meMsg(err); return; } if (!who) { meMsg(err); return; } meMsg(''); renderAll(); });
       return;
     }
-    box.innerHTML = '<p class="muted">한 번 정해 두면 어느 기기에서든 수업방 링크의 «선생님이세요?»에 이 비밀번호만 넣으면 선생님 화면이 돼요.</p>'
-      + '<form class="form" id="pinset"><label class="grow">선생님 비밀번호(6글자 이상)<input type="password" id="tpin" autocomplete="new-password"></label><button class="btn main" type="submit">정하기</button></form>';
-    document.getElementById('pinset').onsubmit = function (e) {
-      e.preventDefault();
-      var v = document.getElementById('tpin').value.trim();
-      if (v.length < 6) { pinMsg('6글자 이상으로 정해 주세요.'); return; }
-      try { localStorage.setItem(PIN, v); } catch (x) { pinMsg('이 브라우저에 저장하지 못했어요.'); return; }
-      var list = load();
-      if (!list.length) { pinMsg('정했어요. 이제 아래에서 수업방을 만들면 이 비밀번호가 걸려요.'); pinCard(); return; }
-      pinMsg('이 기기의 수업방 ' + list.length + '개에 거는 중…');
-      Promise.all(list.map(function (c) { return post(c.code + '/settings', { key: c.key, pin: v }).catch(function () { return { error: 1 }; }); })).then(function (rs) {
-        var ok = rs.filter(function (r) { return !r.error; }).length;
-        pinMsg('정했어요. 이 기기의 수업방 ' + ok + '개에 걸었어요.'); pinCard(); render();
-      });
+    var who = '<b>' + esc(s.name || s.email) + '</b>' + (s.name ? ' · ' + esc(s.email) : '');
+    var out = '<button class="btn" type="button" id="logout">로그아웃</button>';
+    if (s.status === 'approved') {
+      box.innerHTML = '<p class="muted">' + who + '(으)로 로그인돼 있어요' + (s.admin ? ' · 관리자' : '') + '.</p>'
+        + (s.admin && s.pending ? '<p><a class="tag next" href="#admin">가입 신청 ' + s.pending + '건이 승인을 기다려요 ↓</a></p>' : '') + '<div class="row">' + out + '</div>';
+    } else if (s.status === 'pending') {
+      box.innerHTML = '<p class="muted">' + who + ' · <b class="tag next">승인 기다림</b></p><p class="muted">가입 신청을 보냈어요. 관리하는 선생님이 승인하면 이 페이지가 저절로 바뀌어요(30초마다 확인해요).</p><div class="row"><button class="btn main" type="button" id="recheck">승인됐는지 다시 보기</button>' + out + '</div>';
+      document.getElementById('recheck').onclick = function () { meMsg('확인하는 중…'); syncMe().then(function () { meMsg(sess() && sess().status === 'approved' ? '승인됐어요!' : '아직 승인 전이에요.'); renderAll(); }); };
+    } else {
+      box.innerHTML = '<p class="muted">' + who + ' · <b class="tag">' + (ST[s.status] || '가입 전') + '</b></p>'
+        + '<p class="muted">' + (s.status === 'revoked' ? '승인이 해제됐어요. 다시 쓰려면 관리하는 선생님께 문의하거나 다시 신청해 주세요.' : s.status === 'denied' ? '지난 신청이 받아들여지지 않았어요. 내용을 고쳐 다시 신청할 수 있어요.' : '수업방을 만들고 수업하려면 가입 신청을 해 주세요. 관리하는 선생님이 승인하면 바로 쓸 수 있어요.') + '</p>'
+        + '<form class="form" id="signup"><label class="grow">이름<input type="text" id="su-name" maxlength="20" autocomplete="name" value="' + esc(s.name || '') + '"></label>'
+        + '<label class="grow">학교<input type="text" id="su-school" maxlength="40" placeholder="예: 한민고등학교" autocomplete="organization"></label>'
+        + '<label class="grow">가르치는 과목·한 마디(선택)<input type="text" id="su-note" maxlength="120" placeholder="예: 통합과학 2학년" autocomplete="off"></label>'
+        + '<button class="btn main" type="submit">가입 신청</button></form><div class="row">' + out + '</div>';
+      document.getElementById('signup').onsubmit = function (e) {
+        e.preventDefault();
+        var b = { session: s.token, dev: devId(), have: have(), name: document.getElementById('su-name').value, school: document.getElementById('su-school').value, note: document.getElementById('su-note').value };
+        if (!b.name.trim() || !b.school.trim()) { meMsg('이름과 학교를 넣어 주세요.'); return; }
+        meMsg('보내는 중…');
+        api('/signup', b).then(function (j) { if (j.login) { signedOut(); renderAll(); return; } if (j.error) { meMsg(j.error); return; } keep(j); meMsg(''); renderAll(); }, function () { meMsg('보내지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+      };
+    }
+    document.getElementById('logout').onclick = function (e) {
+      if (!armed(e.currentTarget, '한 번 더 누르면 로그아웃해요', '로그아웃')) return;
+      meMsg('로그아웃하는 중…'); logout().then(function () { meMsg('로그아웃했어요. 이 기기의 진행 열쇠도 지웠어요.'); renderAll(); });
     };
   }
-  pinCard();
+
+  // ---- 가입 신청 관리(관리자만) ----
+  function adminMsg(t) { document.getElementById('adminmsg').textContent = t; }
+  function adminCard(users, admins) {
+    var card = document.getElementById('admin'), s = sess();
+    card.hidden = !(s && s.admin);
+    if (card.hidden) return;
+    if (!users) { api('/admin/list', { session: s.token }).then(function (j) { if (j.users) adminCard(j.users, j.admins); else adminMsg(j.error || '명단을 불러오지 못했어요.'); }, function () { adminMsg('명단을 불러오지 못했어요.'); }); return; }
+    var row = function (u, acts) {
+      return '<li><span><b>' + esc(u.name || u.email) + '</b>' + (u.school ? ' · ' + esc(u.school) : '') + '<br><span class="small">' + esc(u.email) + (u.note ? ' · ' + esc(u.note) : '') + '</span></span><span class="row">'
+        + acts.map(function (a) { return '<button class="btn' + (a[0] === 'approve' ? ' main' : a[0] === 'deny' || a[0] === 'revoke' ? ' warn' : '') + '" type="button" data-e="' + esc(u.email) + '" data-act="' + a[0] + '">' + a[1] + '</button>'; }).join('') + '</span></li>';
+    };
+    var by = function (st) { return users.filter(function (u) { return u.status === st; }); };
+    var pend = by('pending'), ok = by('approved'), rest = users.filter(function (u) { return u.status === 'denied' || u.status === 'revoked'; });
+    document.getElementById('adminbox').innerHTML =
+      '<p class="muted">' + (pend.length ? '새 가입 신청 <b>' + pend.length + '</b>건' : '새 가입 신청이 없어요.') + '</p>'
+      + (pend.length ? '<ul class="lessons">' + pend.map(function (u) { return row(u, [['approve', '승인'], ['deny', '거절']]); }).join('') + '</ul>' : '')
+      + '<details' + (ok.length ? '' : ' open') + '><summary>승인된 선생님 ' + ok.length + '명</summary><ul class="lessons">' + ok.map(function (u) { return row(u, [['revoke', '승인 해제']]); }).join('') + '</ul>'
+      + '<p class="small">관리자: ' + esc((admins || []).join(', ')) + ' (늘 승인돼 있어요)</p></details>'
+      + (rest.length ? '<details><summary>거절·해제 ' + rest.length + '명</summary><ul class="lessons">' + rest.map(function (u) { return row(u, [['approve', '승인']]); }).join('') + '</ul></details>' : '')
+      + '<form class="form" id="addt"><label class="grow">신청 없이 바로 더하기(구글 계정 이메일)<input type="email" id="addt-email" maxlength="200" autocomplete="off" placeholder="teacher@example.com"></label><button class="btn" type="submit">승인해 더하기</button></form>';
+    var decide = function (email, action) {
+      adminMsg('바꾸는 중…');
+      api('/admin/decide', { session: s.token, email: email, action: action }).then(function (j) { if (j.error) { adminMsg(j.error); return; } adminMsg(email + ' · ' + { approve: '승인했어요', deny: '거절했어요', revoke: '승인을 해제했어요' }[action]); adminCard(j.users, j.admins); }, function () { adminMsg('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+    };
+    document.querySelectorAll('#adminbox [data-act]').forEach(function (b) {
+      b.onclick = function () {
+        if (b.dataset.act !== 'approve' && !armed(b, '한 번 더 누르면 ' + b.textContent, b.textContent)) return;
+        decide(b.dataset.e, b.dataset.act);
+      };
+    });
+    document.getElementById('addt').onsubmit = function (e) {
+      e.preventDefault();
+      var v = document.getElementById('addt-email').value.trim().toLowerCase();
+      if (!/^[^@s]+@[^@s]+$/.test(v)) { adminMsg('이메일을 확인해 주세요.'); return; }
+      decide(v, 'approve');
+    };
+  }
+
+  // ---- 수업방 만들기(승인된 선생님) ----
   var idmode = document.getElementById('idmode');
   idmode.onchange = function () { document.getElementById('sizeWrap').hidden = idmode.value === 'anon'; };
   document.getElementById('make').onsubmit = function (e) {
     e.preventDefault();
-    var name = document.getElementById('name').value.trim();
+    var name = document.getElementById('name').value.trim(), s = sess();
     if (!name) { msg('이름을 넣어 주세요.'); return; }
     if (!API) { msg('수업방 주소가 없어요.'); return; }
-    if (!savedPin()) { msg('먼저 위에서 선생님 비밀번호를 정해 주세요. 다른 기기에서 선생님으로 들어갈 때 써요.'); pinCard(true); var t = document.getElementById('tpin'); if (t) t.focus(); return; }
+    if (!s) { msg('먼저 위에서 구글로 로그인해 주세요.'); return; }
     msg('만드는 중…');
     var mode = idmode.value, size = parseInt(document.getElementById('size').value, 10) || 30, cls = parseCls(document.getElementById('cls').value);
-    fetch(API + '/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ persist: true, name: name, idMode: mode, size: size, pin: savedPin(), classes: cls }) })
-      .then(function (r) { return r.json(); }).then(function (j) {
-        if (!j.code || !j.key) throw new Error(j.error || '만들지 못했어요');
-        var got = j.classes || [];
-        var l = load(); l.push({ code: j.code, key: j.key, name: j.name || name, idMode: j.idMode || mode, size: j.size || size, classes: got }); save(l);
-        document.getElementById('name').value = ''; document.getElementById('cls').value = '';
-        msg(name + ' 수업방을 만들었어요. ' + (got.length ? '과목 링크를 ' + got.join(', ') + ' 클래스룸에 올려 두세요.' : '반 링크를 그 반 클래스룸에 올려 두세요.') + (got.length < cls.length ? ' (반 이름은 글자·숫자로 10자 안, 16개까지예요.)' : '')); render();
-      }).catch(function (err) { msg((err && err.message) || '만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+    api('/rooms', { session: s.token, persist: true, name: name, idMode: mode, size: size, classes: cls }).then(function (j) {
+      if (j.login) { signedOut(); renderAll(); msg('로그인이 풀렸어요. 다시 로그인해 주세요.'); return; }
+      if (!j.code || !j.key) { msg(j.error || '만들지 못했어요.'); return; }
+      var got = j.classes || [];
+      var l = load(); l.push({ code: j.code, key: j.key, name: j.name || name, idMode: j.idMode || mode, size: j.size || size, classes: got }); save(l);
+      document.getElementById('name').value = ''; document.getElementById('cls').value = '';
+      msg(name + ' 수업방을 만들었어요. ' + (got.length ? '과목 링크를 ' + got.join(', ') + ' 클래스룸에 올려 두세요.' : '반 링크를 그 반 클래스룸에 올려 두세요.') + (got.length < cls.length ? ' (반 이름은 글자·숫자로 10자 안, 16개까지예요.)' : '')); render();
+    }, function () { msg('만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   };
-  render();
+
+  // 화면 전체: 로그인 상태에 따라 카드를 보이고 숨긴다
+  function renderAll() {
+    var s = sess(), ok = !!(s && s.status === 'approved');
+    meCard(); adminCard();
+    document.getElementById('makecard').hidden = !ok;
+    document.getElementById('classes').hidden = !ok;
+    if (ok) render(); else document.getElementById('classes').innerHTML = '';
+  }
+  renderAll();
+  if (sess()) syncMe().then(renderAll, renderAll);                  // 다른 기기에서 만든 수업방·승인 여부를 맞춘다
+  // 승인을 기다리는 동안 30초마다 확인해 승인되면 저절로 열어 준다
+  setInterval(function () {
+    var s = sess(); if (!s || s.status !== 'pending' || document.hidden) return;
+    syncMe().then(function (n) { if (n && n.status === 'approved') { renderAll(); meMsg('승인됐어요! 이제 수업방을 만들 수 있어요.'); } });
+  }, Number(qs.get('poll')) || 30000);                              // ?poll=은 시험용
 })();
 </script>
 </body>

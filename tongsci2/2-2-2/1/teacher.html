@@ -843,6 +843,7 @@ table.dirt td.done { color: var(--ink); }
 .rc-row, .rc-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .rc-btn { font: 700 17px/1 var(--f-body); min-height: 46px; padding: 0 20px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); color: var(--ink); cursor: pointer; }
 .rc-btn.main { background: var(--ink); color: var(--paper-2); }
+a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .rc-btn:disabled { opacity: .5; }
 .rc-msg { margin: 0; min-height: 1.5em; color: var(--stamp); font-weight: 600; }
 .rc-join { display: flex; flex-wrap: wrap; gap: clamp(16px, 3vw, 40px); align-items: center; justify-content: center; }
@@ -915,6 +916,37 @@ table.dirt td.done { color: var(--ink); }
 .rs.off, .rs-head i.off { background: var(--paper); border-color: var(--rule); color: var(--ink-3); }
 .rc-input.rc-num { width: 5em; letter-spacing: 0; }
 .rc-input.rc-name { width: 7em; letter-spacing: 0; font-size: 30px; }
+/* 한 낱말: 숨긴 낱말 · 쓴 사람(선생님) · 공감·반대(학생) */
+.rc-words button.hid { opacity: .6; border-style: dashed; }
+.rc-words small { font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.rc-words.rc-wlist { flex-direction: column; flex-wrap: nowrap; gap: 4px; max-height: 36vh; }
+.rw { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 10px; border: 1.5px solid var(--rule); border-radius: 10px; background: var(--paper); }
+.rw.hid { opacity: .65; border-style: dashed; }
+.rw-w { font: 700 18px/1.2 var(--f-body); min-width: 6em; }
+.rw-w b { color: var(--current); }
+.rw-by { flex: 1 1 260px; display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.rw-by span { font: 600 14px/1 var(--f-body); padding: 5px 8px; border-radius: 999px; background: var(--paper-2); border: 1px solid var(--rule); }
+.rw-by i { color: var(--ink-3); font-size: 14px; }
+.rw .rc-btn.small, .rw-note .rc-btn.small { margin-left: 0; }
+.rw-note { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-2); }
+.rw-msg { color: var(--stamp); font-weight: 600; }
+.rc-btn.on { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
+.rc-votebox { display: grid; gap: 8px; }
+.rc-votebox h3 { margin: 0; font: 800 22px/1.2 var(--f-display); }
+.rc-vote { display: grid; gap: 6px; max-height: 46vh; overflow: auto; }
+.rv { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border: 1.5px solid var(--rule); border-radius: 12px; background: var(--paper); }
+.rv-w { flex: 1 1 auto; min-width: 0; font: 700 20px/1.2 var(--f-body); overflow-wrap: anywhere; }
+.rv-w i { font: 600 13px var(--f-body); font-style: normal; color: var(--ink-3); }
+.rv-own { font: 700 14px var(--f-body); color: var(--accent); padding: 0 8px; }
+.rv-b { font: 700 16px/1 var(--f-body); min-height: 44px; min-width: 72px; padding: 0 12px; border: 2px solid var(--rule); border-radius: 999px; background: var(--paper-2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.rv-b span { font-size: 22px; line-height: 1; }
+.rv-b[aria-pressed="true"] { border-color: var(--stamp); background: #ffe3e6; }
+.rv-b.down[aria-pressed="true"] { border-color: var(--ink-2); background: var(--paper); }
+.rv-b:not([aria-pressed="true"]) span { filter: grayscale(.35); }
+.rv-b:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
+/* 수업 패널: 학생 표시 바꾸기 */
+.rc-idm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 15px; font-weight: 700; color: var(--ink-2); }
+.rc-idmsg { font-weight: 600; color: var(--accent); }
 
 </style>
 
@@ -7106,7 +7138,9 @@ if (!window.clearImmediate) {
    응답 모으기(3단계): 예측 보기·○×·여러 개 고르기를 학생이 누르면 이름 없이 답만 방에 보내고,
    선생님 화면에는 보기마다 고른 학생 수가 뜬다. 문항은 아래 ASKS 모양으로 찾아 장 id로 이름을 붙인다.
    한 낱말로 답하기: 선생님이 아무 장에서나 질문을 띄우면 학생 기기에 입력 칸이 뜨고, 선생님 화면에
-   낱말 구름(wordcloud2.js, MIT)이 자란다. 낱말을 누르면 숨긴다.
+   낱말 구름(wordcloud2.js, MIT)이 자란다. 낱말을 누르면 숨긴다(숨긴 낱말은 눌러서 다시 보인다).
+   번호를 받는 반이면 «쓴 사람 보기»로 낱말마다 쓴 학생(반·번호·이름)을 본다. 익명 방이면 그 자리에서 번호를 받게 바꿀 수 있다.
+   «공감·반대 받기»를 켜면 학생 기기에 친구 낱말 목록(이름 없이)이 뜨고, 공감은 구름 글씨를 키우고 반대는 줄인다.
    반 고정 방: 선생님 페이지(teach.html)에서 만든 반 방(6자리)은 이 브라우저에 진행 열쇠가 저장돼 있어,
    교사용을 ?room=으로 열면 저절로 그 반 방에 붙고 «지금 차시»를 알린다. 학생은 클래스룸의 고정 링크(join.html)로
    들어와 선생님이 연 차시로 옮겨 가고, 선생님이 차시를 바꾸면 함께 옮겨 간다.
@@ -7135,6 +7169,8 @@ if (!window.clearImmediate) {
   const passApi = qs.get('roomapi') ? `&roomapi=${encodeURIComponent(qs.get('roomapi'))}` : '';
   const CLASSES = 'science-room:classes';          // 선생님 페이지가 저장한 반 방 [{ code, key, name }]
   const classes = () => { try { return JSON.parse(localStorage.getItem(CLASSES)) || []; } catch { return []; } };
+  // 선생님 로그인(선생님 페이지·과목 링크에서 구글로). 수업방을 열고 진행하는 일은 로그인한 승인 선생님만 한다
+  const signedIn = () => { try { const s = JSON.parse(localStorage.getItem('science-room:session')); return s && s.token ? s : null; } catch { return null; } };
   // 이 반에서 쓰는 내 번호·이름(번호를 받는 반)
   const me = {
     get(code) { try { return JSON.parse(localStorage.getItem('science-room:me:' + code)); } catch { return null; } },
@@ -7159,6 +7195,7 @@ if (!window.clearImmediate) {
       return c;
     } catch { return 's-' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
   })();
+  const UP = '❤️', DOWN = '💔';                       // 낱말 공감·반대(공감은 구름 글씨를 키우고 반대는 줄인다)
   const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6"/><path d="M18 14.5c1.9.8 3 2.9 3 5.5"/></svg>';
 
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -7213,6 +7250,16 @@ if (!window.clearImmediate) {
     state.lesson = { path: LESSON, title: document.title, cls: teachCls };
     send({ t: 'lesson', ...state.lesson }); sendPos(); ui.badge();
   }
+  // 선생님: 학생 표시(익명·번호만·번호와 이름)를 바꾼다. 번호를 받게 바꾸면 학생 기기에 번호 넣는 창이 뜬다
+  async function setIdMode(mode) {
+    let j;
+    try {
+      const r = await fetch(`${API}/rooms/${room.code}/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: room.key, idMode: mode }) });
+      j = await r.json(); if (!r.ok || j.error) throw new Error(j.error);
+    } catch (err) { throw new Error((err && err.message) || '바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); }
+    state.idMode = j.idMode; state.size = j.size;
+    try { const l = classes(), c = l.find((x) => x.code === room.code); if (c) { c.idMode = j.idMode; localStorage.setItem(CLASSES, JSON.stringify(l)); } } catch { /* 선생님 페이지 목록은 다음 로그인 때 맞춰진다 */ }
+  }
   // 과목 방 선생님: 주소의 ?cls=도 같이 바꿔 새로 고쳐도 같은 반으로 붙게 한다
   function setCls(c) {
     teachCls = c || null;
@@ -7254,8 +7301,9 @@ if (!window.clearImmediate) {
     if (m.t === 'reset') { asks.reset(); words.clear(); ui.cloudDraw(); ui.wordSent = null; return; }
     if (m.t === 'ask') {
       if (ROLE === 'student' && waiting()) return;    // 다른 반 수업의 질문
-      state.ask = { id: m.id, prompt: m.prompt, open: m.open }; ui.askChanged(); ui.badge(); return;
+      state.ask = { id: m.id, prompt: m.prompt, open: m.open, vote: !!m.vote }; ui.askChanged(); ui.badge(); return;
     }
+    if (m.t === 'words') { if (!waiting()) ui.gotWords(m); return; }   // 공감·반대: 친구 낱말 목록
     if (m.t === 'lesson') {
       const l = { path: m.path, title: m.title, cls: m.cls || null };
       if (ROLE === 'teacher') {                        // 다른 선생님 기기가 차시(나 반)를 열었다
@@ -7274,6 +7322,7 @@ if (!window.clearImmediate) {
       else { asks.clear(); words.clear(); if (ui.panelOpen) ui.closePanel(); ui.badge(); ui.flash(m.auto ? '오래 조작이 없어 수업이 저절로 끝났어요' : '수업을 마쳤어요 · 다음 수업도 같은 링크예요'); }
       return;
     }
+    if (m.t === 'name') { room.name = m.name; ui.badge(); return; }   // 선생님 페이지에서 이름을 바꿨다
     if (m.t === 'classes') {
       state.classes = m.list || [];
       if (ROLE === 'student' && needId(state, room.code)) ui.idBox(reconnect);
@@ -7284,7 +7333,9 @@ if (!window.clearImmediate) {
     if (m.t === 'idmode') {
       state.idMode = m.mode; state.size = m.size;
       if (ROLE === 'student' && needId(state, room.code)) ui.idBox(reconnect);
-      if (ui.panelOpen) ui.panelCounts(); return;
+      if (ui.panelOpen) ui.panelCounts();
+      if (ui.cloudOpen) ui.cloudDraw(true);
+      return;
     }
     if (m.t === 'attention') {
       if (ROLE === 'student' && waiting()) return;    // 다른 반 수업의 주목
@@ -7311,6 +7362,7 @@ if (!window.clearImmediate) {
         if (ui.panelOpen && !ui.cloudOpen) ui.panel();
       }
       ui.askChanged();
+      if (ROLE === 'student' && m.words && state.ask) ui.gotWords(m.words);
     }
     else if (m.t === 'pos') { state.pos = { h: m.h, f: m.f }; if (ROLE === 'teacher' || following()) apply(state.pos); }
     else if (m.t === 'follow') { state.follow = m.on; if (ROLE === 'student') { if (m.on) solo = false; lockNav(); if (following()) apply(state.pos); } }
@@ -7530,7 +7582,7 @@ if (!window.clearImmediate) {
       }
       b.hidden = false;
       const lost = this.conn === 'lost' ? ' · <b class="rb-lost">다시 연결 중…</b>' : '';
-      const asking = state.ask && state.ask.open;
+      const asking = state.ask && (state.ask.open || (ROLE === 'student' && state.ask.vote));
       const title = (room.name ? esc(room.name) : `수업방 ${room.code}`) + (ROLE === 'teacher' && teachCls && state.lesson ? ` · ${esc(teachCls)}` : '');
       const list = state.classes || [];
       if (ROLE === 'teacher' && room.persist && !state.lesson && list.length) {   // 과목 방: 반을 고르면 이 차시로 수업 시작
@@ -7555,7 +7607,7 @@ if (!window.clearImmediate) {
         b.querySelector('.rb-toggle').onclick = () => { solo = !solo; if (!solo) apply(state.pos); this.badge(); };
       }
       if (ROLE === 'student' && asking && !this.box) {
-        b.insertAdjacentHTML('beforeend', '<button type="button" class="rb-toggle" data-a="word">낱말 답하기</button>');
+        b.insertAdjacentHTML('beforeend', `<button type="button" class="rb-toggle" data-a="word">${state.ask.open ? '낱말 답하기' : `${UP} ${DOWN} 누르기`}</button>`);
         b.querySelector('[data-a="word"]').onclick = () => this.wordBox();
       }
       // 과목 방·번호를 받는 반: 내 반·번호(잘못 넣었으면 눌러서 바꾼다)
@@ -7594,35 +7646,85 @@ if (!window.clearImmediate) {
       document.body.appendChild(o); this.box = o; this.panelOpen = true;
       return o;
     },
-    closePanel() { if (this.box) this.box.remove(); this.box = null; this.panelOpen = false; this.cloudOpen = false; },
+    closePanel() { if (this.box) this.box.remove(); this.box = null; this.panelOpen = false; this.cloudOpen = false; this.wordOpen = false; },
 
     // ---- 한 낱말로 답하기 ----
+    myVotes: new Map(),                                 // 학생: 내가 누른 공감(1)·반대(-1)
     askChanged() {
       const a = state.ask;
       if (ROLE === 'student') {
-        if (a && a.open) { if (this.wordAsk !== a.id) { this.wordAsk = a.id; this.wordSent = null; this.wordBox(); } }
-        else if (this.wordOpen) { this.closePanel(); this.wordOpen = false; this.flash('질문이 마감됐어요'); }
+        if (a && (a.open || a.vote)) {
+          const phase = (a.open ? 'o' : '') + (a.vote ? 'v' : '');
+          if (this.wordAsk !== a.id) { this.wordAsk = a.id; this.wordSent = null; this.voteList = null; this.myVotes = new Map(); this.wordPhase = phase; this.wordBox(); }
+          else if (this.wordPhase !== phase) { this.wordPhase = phase; this.wordBox(); }   // 공감·반대를 켰거나 답 받기를 마감했다
+        } else if (this.wordOpen) { this.closePanel(); this.flash('질문이 마감됐어요'); }
       } else if (this.cloudOpen) this.cloud();
       this.badge();
     },
     wordBox() {
-      const a = state.ask; if (!a || !a.open) return;
-      const o = this.overlay(`<h2 class="rc-q">${esc(a.prompt)}</h2><p class="rc-lead">한 낱말(12자 안)로 써서 보내요. 이름은 가지 않아요.</p>
-        <form class="rc-form"><input class="rc-input rc-word" maxlength="12" autocomplete="off" aria-label="한 낱말 답"><button type="submit" class="rc-btn main">보내기</button></form>
-        <p class="rc-msg ok" aria-live="polite">${this.wordSent ? `보냈어요: <b>${esc(this.wordSent)}</b> · 바꾸려면 다시 써서 보내요` : ''}</p>
+      const a = state.ask; if (!a || !(a.open || a.vote)) return;
+      const named = state.idMode && state.idMode !== 'anon';
+      const sent = this.wordSent ? `보냈어요: <b>${esc(this.wordSent)}</b>${a.open ? ' · 바꾸려면 다시 써서 보내요' : ''}` : '';
+      const o = this.overlay(`<h2 class="rc-q">${esc(a.prompt)}</h2>
+        ${a.open ? `<p class="rc-lead">한 낱말(12자 안)로 써서 보내요. ${named ? '선생님은 누가 썼는지 볼 수 있어요.' : '이름은 가지 않아요.'}</p>
+        <form class="rc-form"><input class="rc-input rc-word" maxlength="12" autocomplete="off" aria-label="한 낱말 답"><button type="submit" class="rc-btn main">보내기</button></form>` : ''}
+        <p class="rc-msg ok" aria-live="polite">${sent}</p>
+        ${a.vote ? `<div class="rc-votebox"><h3>친구 낱말에 ${UP} 공감 · ${DOWN} 반대</h3><p class="rc-lead">${UP}를 받은 낱말은 선생님 화면에서 커지고, ${DOWN}를 받으면 작아져요. 다시 누르면 취소돼요. 누가 눌렀는지는 가지 않아요.</p><div class="rc-vote"></div></div>` : ''}
         <div class="rc-row"><button type="button" class="rc-btn" data-a="hide">닫기</button></div>`);
       this.wordOpen = true;
-      const input = o.querySelector('.rc-word'); input.focus();
-      o.querySelector('[data-a="hide"]').onclick = () => { this.closePanel(); this.wordOpen = false; this.badge(); };
-      o.querySelector('.rc-form').onsubmit = (e) => {
-        e.preventDefault();
-        const v = input.value.replace(/\s+/g, ' ').trim();
-        const msg = o.querySelector('.rc-msg');
-        if (!/^[\p{L}\p{N}][\p{L}\p{N} ]{0,11}$/u.test(v)) { msg.textContent = '글자나 숫자로 12자 안에서 써 주세요.'; return; }
-        send({ t: 'ans', q: 'w-' + state.ask.id, v });
-        this.wordSent = v; input.value = '';
-        msg.innerHTML = `보냈어요: <b>${esc(v)}</b> · 바꾸려면 다시 써서 보내요`;
-      };
+      o.querySelector('[data-a="hide"]').onclick = () => { this.closePanel(); this.badge(); };
+      const form = o.querySelector('.rc-form');
+      if (form) {
+        const input = o.querySelector('.rc-word'); input.focus();
+        form.onsubmit = (e) => {
+          e.preventDefault();
+          const v = input.value.replace(/\s+/g, ' ').trim();
+          const msg = o.querySelector('.rc-msg');
+          if (!/^[\p{L}\p{N}][\p{L}\p{N} ]{0,11}$/u.test(v)) { msg.textContent = '글자나 숫자로 12자 안에서 써 주세요.'; return; }
+          send({ t: 'ans', q: 'w-' + state.ask.id, v });
+          this.wordSent = v; input.value = '';
+          msg.innerHTML = `보냈어요: <b>${esc(v)}</b> · 바꾸려면 다시 써서 보내요`;
+          this.voteDraw();
+        };
+      }
+      this.voteDraw();
+    },
+    // 학생: 친구 낱말 목록(공감·반대를 받는 동안, 누가 썼는지는 없다). 내 낱말에는 못 누른다
+    gotWords(m) {
+      if (ROLE !== 'student' || !state.ask || m.q !== 'w-' + state.ask.id) return;
+      this.voteList = { q: m.q, list: m.list || [] };
+      if (m.mine) this.myVotes = new Map(Object.entries(m.mine).map(([v, d]) => [v, Number(d)]));
+      if (m.own && m.own !== this.wordSent) { this.wordSent = m.own; if (this.wordOpen) { this.wordBox(); return; } }
+      this.voteDraw();
+    },
+    voteDraw() {
+      const box = this.box && this.box.querySelector('.rc-vote'); if (!box) return;
+      const l = this.voteList;
+      if (!l) { box.innerHTML = '<p class="rc-lead">낱말을 불러오는 중…</p>'; return; }
+      if (!l.list.length) { box.innerHTML = '<p class="rc-lead">아직 올라온 낱말이 없어요.</p>'; delete box.dataset.sig; return; }
+      // 낱말이 그대로면 수와 눌림만 바꾼다(누르는 사이에 단추가 새로 그려져 누른 것이 사라지지 않게)
+      const sig = l.list.map(([v, c]) => v + ':' + c).join('|') + '|' + (this.wordSent || '');
+      if (box.dataset.sig === sig) {
+        const by = new Map(l.list.map((x) => [x[0], x]));
+        box.querySelectorAll('.rv-b').forEach((b) => {
+          const it = by.get(b.dataset.v), d = Number(b.dataset.d);
+          b.querySelector('b').textContent = it ? it[d > 0 ? 2 : 3] : 0;
+          b.setAttribute('aria-pressed', String((this.myVotes.get(b.dataset.v) || 0) === d));
+        });
+        return;
+      }
+      box.dataset.sig = sig;
+      box.innerHTML = l.list.map(([v, c, up, down]) => {
+        const my = this.myVotes.get(v) || 0;
+        return `<div class="rv"><span class="rv-w">${esc(v)}${c > 1 ? ` <i>${c}명</i>` : ''}</span>${v === this.wordSent ? '<span class="rv-own">내 낱말</span>'
+          : `<button type="button" class="rv-b" data-v="${esc(v)}" data-d="1" aria-pressed="${my === 1}" aria-label="공감" title="공감"><span aria-hidden="true">${UP}</span> <b>${up}</b></button><button type="button" class="rv-b down" data-v="${esc(v)}" data-d="-1" aria-pressed="${my === -1}" aria-label="반대" title="반대"><span aria-hidden="true">${DOWN}</span> <b>${down}</b></button>`}</div>`;
+      }).join('');
+      box.querySelectorAll('.rv-b').forEach((b) => b.onclick = () => {
+        const v = b.dataset.v, d = Number(b.dataset.d), now = this.myVotes.get(v) === d ? 0 : d;
+        if (now) this.myVotes.set(v, now); else this.myVotes.delete(v);
+        send({ t: 'vote', q: l.q, v, d: now });
+        this.voteDraw();
+      });
     },
     askForm() {
       const o = this.overlay(`<h2>한 낱말 묻기</h2><p class="rc-lead">학생 기기에 질문과 입력 칸이 뜨고, 답이 이 화면에 낱말 구름으로 모여요.</p>
@@ -7634,8 +7736,9 @@ if (!window.clearImmediate) {
         e.preventDefault();
         const prompt = input.value.trim();
         if (!prompt) { o.querySelector('.rc-msg').textContent = '질문을 써 주세요.'; return; }
-        state.ask = { id: 'k' + Date.now().toString(36), prompt, open: true };
+        state.ask = { id: 'k' + Date.now().toString(36), prompt, open: true, vote: false };
         send({ t: 'ask', ...state.ask });
+        this.showWho = false;                         // 새 질문은 이름 없이 시작(교실 화면에 띄우니까)
         this.cloud(); this.badge();
       };
     },
@@ -7643,14 +7746,19 @@ if (!window.clearImmediate) {
       const a = state.ask; if (!a) { this.askForm(); return; }
       const o = this.overlay(`<h2 class="rc-q">${esc(a.prompt)}</h2>
         <div class="rc-cloud"><canvas aria-label="학생 답 낱말 구름"></canvas><p class="rc-empty">학생 답을 기다리는 중…</p></div>
-        <div class="rc-words" aria-label="받은 낱말(누르면 숨김)"></div>
+        <div class="rc-words" aria-label="받은 낱말"></div>
         <div class="rc-ctl"><span class="rc-count"></span>
-          <button type="button" class="rc-btn" data-a="open">${a.open ? '마감하기' : '다시 받기'}</button>
+          <button type="button" class="rc-btn" data-a="who" aria-pressed="${!!this.showWho}" title="교실 화면에 학생 이름이 보여요">${this.showWho ? '쓴 사람 숨기기' : '쓴 사람 보기'}</button>
+          <button type="button" class="rc-btn${a.vote ? ' on' : ''}" data-a="vote">${a.vote ? `${UP}${DOWN} 마감` : `${UP}${DOWN} 공감·반대 받기`}</button>
+          <button type="button" class="rc-btn" data-a="open">${a.open ? '답 받기 마감' : '다시 받기'}</button>
           <button type="button" class="rc-btn" data-a="new">새 질문</button>
           <button type="button" class="rc-btn main" data-a="hide">화면 닫기</button></div>`);
       o.querySelector('.room-card').classList.add('wide');
       this.cloudOpen = true; this.panelOpen = false;
-      o.querySelector('[data-a="open"]').onclick = () => { state.ask.open = !state.ask.open; send({ t: 'ask', ...state.ask }); this.cloud(); this.badge(); };
+      const again = () => { send({ t: 'ask', ...state.ask }); this.cloud(); this.badge(); };
+      o.querySelector('[data-a="open"]').onclick = () => { state.ask.open = !state.ask.open; again(); };
+      o.querySelector('[data-a="vote"]').onclick = () => { state.ask.vote = !state.ask.vote; again(); };
+      o.querySelector('[data-a="who"]').onclick = () => { this.showWho = !this.showWho; this.cloud(); };
       o.querySelector('[data-a="new"]').onclick = () => this.askForm();
       o.querySelector('[data-a="hide"]').onclick = () => this.closePanel();
       this.cloudDraw(true);
@@ -7661,13 +7769,14 @@ if (!window.clearImmediate) {
       if (!now && Date.now() - (this.cloudAt || 0) < 700) { this.cloudT = setTimeout(() => this.cloudDraw(true), 700); return; }
       this.cloudAt = Date.now();
       const q = 'w-' + state.ask.id, t = words.get(q) || { counts: {}, n: 0 };
-      const list = Object.entries(t.counts).sort((x, y) => y[1] - x[1]).slice(0, 60);
+      const up = t.up || {}, down = t.down || {};
+      // 글씨 크기: 쓴 학생 수 + 공감 − 반대(반대가 많아도 가장 작은 글씨로 남는다)
+      const list = Object.entries(t.counts).map(([w, c]) => [w, Math.max(0.2, c + (up[w] || 0) - (down[w] || 0)), c]).sort((x, y) => y[1] - x[1] || y[2] - x[2]).slice(0, 60);
       const box = this.box;
-      box.querySelector('.rc-count').innerHTML = `답한 학생 <b>${t.n}</b>명`;
+      const votes = [...Object.values(up), ...Object.values(down)].reduce((s, x) => s + x, 0);
+      box.querySelector('.rc-count').innerHTML = `답한 학생 <b>${t.n}</b>명${state.ask.vote || votes ? ` · ${UP}${DOWN} <b>${votes}</b>번` : ''}`;
       box.querySelector('.rc-empty').hidden = list.length > 0;
-      const chips = box.querySelector('.rc-words');
-      chips.innerHTML = list.map(([w, c]) => `<button type="button" data-w="${esc(w)}" title="눌러서 숨기기">${esc(w)} <b>${c}</b> ×</button>`).join('');
-      chips.querySelectorAll('[data-w]').forEach((b) => b.onclick = () => send({ t: 'hide', q, v: b.dataset.w }));
+      this.wordsDraw(q, t, list);
       const cv = box.querySelector('.rc-cloud canvas');
       const r = cv.parentElement.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
       cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
@@ -7676,10 +7785,39 @@ if (!window.clearImmediate) {
       const colors = [tok('ink'), tok('accent'), tok('current'), tok('field'), tok('s'), tok('n')];
       const max = list[0][1], base = Math.min(cv.width, cv.height) / 5.2;
       WordCloud(cv, {
-        list, rotateRatio: 0, shuffle: false, gridSize: Math.round(8 * dpr), shrinkToFit: true, drawOutOfBound: false,
+        list: list.map(([w, s]) => [w, s]), rotateRatio: 0, shuffle: false, gridSize: Math.round(8 * dpr), shrinkToFit: true, drawOutOfBound: false,
         fontFamily: css.getPropertyValue('--f-display') || 'sans-serif', fontWeight: 800, backgroundColor: 'rgba(0,0,0,0)',
-        weightFactor: (c) => Math.max(14 * dpr, base * (0.35 + 0.65 * c / max)),
+        weightFactor: (s) => Math.max(14 * dpr, base * (0.35 + 0.65 * s / max)),
         color: (w) => colors[[...w].reduce((h, ch) => Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0, 2166136261) % colors.length],   // 같은 낱말은 늘 같은 색
+      });
+    },
+    // 받은 낱말: 누르면 숨기고, 숨긴 낱말은 눌러서 다시 보인다. «쓴 사람 보기»면 낱말마다 쓴 학생(번호를 받는 반)
+    wordsDraw(q, t, list) {
+      const chips = this.box.querySelector('.rc-words'), up = t.up || {}, down = t.down || {}, hid = Object.entries(t.hid || {});
+      const anon = !state.idMode || state.idMode === 'anon', by = t.by || [];
+      const vote = (w) => (up[w] || down[w] ? ` <small title="공감 ${up[w] || 0} · 반대 ${down[w] || 0}">${UP}${up[w] || 0} ${DOWN}${down[w] || 0}</small>` : '');
+      let html;
+      if (!this.showWho || anon) {
+        html = list.map(([w, , c]) => `<button type="button" data-w="${esc(w)}" title="눌러서 숨기기">${esc(w)} <b>${c}</b>${vote(w)} ×</button>`).join('')
+          + hid.map(([w, c]) => `<button type="button" class="hid" data-u="${esc(w)}" title="눌러서 다시 보이기">숨김 · ${esc(w)} <b>${c}</b> ↺</button>`).join('');
+        if (this.showWho) html = `<div class="rw-note">익명 방이라 누가 썼는지 몰라요. 번호를 받게 바꾸면 학생 기기에 번호 넣는 창이 뜨고, 넣으면 이미 보낸 답에도 붙어요.
+          <button type="button" class="rc-btn small" data-m="num">번호 받기</button><button type="button" class="rc-btn small" data-m="numname">번호와 이름 받기</button><span class="rw-msg"></span></div>` + html;
+      } else {
+        const names = (w) => by.filter((x) => x.v === w).sort((x, y) => String(x.cls || '').localeCompare(String(y.cls || '')) || x.num - y.num)
+          .map((x) => `<span>${x.cls && x.cls !== teachCls ? esc(x.cls) + ' ' : ''}${x.num}번${x.name ? ' ' + esc(x.name) : ''}</span>`).join('');
+        const row = (w, c, h) => `<div class="rw${h ? ' hid' : ''}"><span class="rw-w">${esc(w)} <b>${c}</b>${h ? ' <small>숨김</small>' : vote(w)}</span><span class="rw-by">${names(w) || '<i>누군지 몰라요</i>'}</span>`
+          + (h ? `<button type="button" class="rc-btn small" data-u="${esc(w)}">다시 보이기</button>` : `<button type="button" class="rc-btn small" data-w="${esc(w)}">숨기기</button>`) + '</div>';
+        const unknown = t.n + hid.reduce((s, [, c]) => s + c, 0) - by.length;
+        html = (unknown > 0 ? `<div class="rw-note">${unknown}개는 누가 썼는지 몰라요(번호를 넣기 전에 보낸 답이에요).</div>` : '')
+          + list.map(([w, , c]) => row(w, c, false)).join('') + hid.map(([w, c]) => row(w, c, true)).join('');
+      }
+      chips.className = 'rc-words' + (this.showWho && !anon ? ' rc-wlist' : '');
+      chips.innerHTML = html;
+      chips.querySelectorAll('[data-w]').forEach((b) => b.onclick = () => send({ t: 'hide', q, v: b.dataset.w }));
+      chips.querySelectorAll('[data-u]').forEach((b) => b.onclick = () => send({ t: 'unhide', q, v: b.dataset.u }));
+      chips.querySelectorAll('[data-m]').forEach((b) => b.onclick = () => {
+        b.disabled = true;
+        setIdMode(b.dataset.m).then(() => this.cloudDraw(true)).catch((err) => { chips.querySelector('.rw-msg').textContent = err.message; b.disabled = false; });
       });
     },
 
@@ -7700,6 +7838,12 @@ if (!window.clearImmediate) {
         };
         return;
       }
+      if (!room && !signedIn()) {                      // 로그인 전: 선생님 페이지로 안내
+        const o = this.overlay(`<h2>수업방</h2><p class="rc-lead">수업방은 가입 승인을 받은 선생님만 열 수 있어요. 선생님 페이지에서 구글로 로그인한 뒤 이 화면을 다시 열어 주세요. 학생은 로그인하지 않아요.</p>
+          <div class="rc-row"><a class="rc-btn main" href="${BASE}/teach.html${passApi ? '?' + passApi.slice(1) : ''}">선생님 페이지</a><button type="button" class="rc-btn" data-a="hide">닫기</button></div>`);
+        o.querySelector('[data-a="hide"]').onclick = () => this.closePanel();
+        return;
+      }
       if (!room) {
         const o = this.overlay(`<h2>수업방</h2><p class="rc-lead">방을 열면 학생 화면이 선생님이 넘기는 장을 따라와요. 학생은 로그인 없이 참여 코드나 QR로 들어와요.</p>
           <div class="rc-row"><button type="button" class="rc-btn main" data-a="open">수업방 열기</button><button type="button" class="rc-btn" data-a="hide">닫기</button></div><p class="rc-msg" aria-live="polite"></p>`);
@@ -7707,7 +7851,7 @@ if (!window.clearImmediate) {
         o.querySelector('[data-a="open"]').onclick = async (e) => {
           e.currentTarget.disabled = true;
           try {
-            const r = await fetch(`${API}/rooms`, { method: 'POST' });
+            const r = await fetch(`${API}/rooms`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: (signedIn() || {}).token }) });
             const j = await r.json();
             if (!r.ok) throw new Error(j.error || '방을 열지 못했어요');
             state = { follow: true, locked: false, students: 0, pos: pos() };
@@ -7726,6 +7870,7 @@ if (!window.clearImmediate) {
           <div class="rc-qr">${qr}</div>
         </div>
         <div class="rc-where" aria-live="polite"></div>
+        <div class="rc-idm"><span>학생 표시</span><div class="rc-seg" role="group" aria-label="학생 표시"><button type="button" data-m="anon">익명</button><button type="button" data-m="num">번호만</button><button type="button" data-m="numname">번호와 이름</button></div><span class="rc-idmsg" aria-live="polite"></span></div>
         <div class="rc-roster" hidden></div>
         <div class="rc-ctl">
           <span class="rc-count"></span>
@@ -7738,6 +7883,12 @@ if (!window.clearImmediate) {
           <button type="button" class="rc-btn main" data-a="hide">화면에서 숨기기</button>
         </div>`);
       o.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { state.follow = b.dataset.f === '1'; send({ t: 'follow', on: state.follow }); this.panelCounts(); this.badge(); });
+      o.querySelectorAll('.rc-idm [data-m]').forEach((b) => b.onclick = () => {
+        const say = (t) => { o.querySelector('.rc-idmsg').textContent = t; };
+        if (b.dataset.m === (state.idMode || 'anon')) return;
+        say('바꾸는 중…');
+        setIdMode(b.dataset.m).then(() => { say(state.idMode === 'anon' ? '이제 이름 없이 들어와요' : '학생 기기에 번호 넣는 창이 떴어요'); this.panelCounts(); }).catch((err) => say(err.message));
+      });
       o.querySelector('[data-a="lock"]').onclick = () => { state.locked = !state.locked; send({ t: 'lock', on: state.locked }); this.panelCounts(); this.badge(); };
       o.querySelector('[data-a="hide"]').onclick = () => this.closePanel();
       o.querySelector('[data-a="word"]').onclick = () => (state.ask ? this.cloud() : this.askForm());
@@ -7757,6 +7908,7 @@ if (!window.clearImmediate) {
       c.innerHTML = teachCls ? `${esc(teachCls)} 학생 <b>${n}</b>명 들어옴${others > 0 ? ` · 다른 반 ${others}명 복습 중` : ''}` : `학생 <b>${n}</b>명 들어옴`;
       const w = where(), wb = this.box.querySelector('.rc-where');
       if (wb) wb.innerHTML = `<span><b>${w.same}</b> 선생님과 같은 장</span><span><b>${w.slide}</b> 같은 차시 다른 장</span><span><b>${w.other}</b> 다른 차시</span><span><b>${w.list}</b> 차시 목록</span>`;
+      this.box.querySelectorAll('.rc-idm [data-m]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === (state.idMode || 'anon'))));
       const at = this.box.querySelector('[data-a="attention"]'); if (at) { at.textContent = state.attention ? '주목 풀기' : '주목'; at.classList.toggle('warn', !!state.attention); }
       this.rosterDraw();
     },
@@ -7830,7 +7982,9 @@ if (!window.clearImmediate) {
     asks.find();
     const want = qs.get('room');
     const mine = ROLE === 'teacher' && want && classes().find((c) => c.code === want);
-    if (mine) {                                        // 선생님 페이지에서 고른 반: 열쇠가 이 브라우저에 있다
+    if (mine && !signedIn()) {                          // 열쇠는 있는데 로그인 전: 과목 링크에서 로그인하면 이 계정 수업방으로 옮겨진다
+      ui.badge('선생님 기능은 로그인해야 써요. 과목 링크나 선생님 페이지에서 구글로 로그인해 주세요.');
+    } else if (mine) {                                 // 선생님 페이지에서 고른 반: 열쇠가 이 브라우저에 있다
       classRoom = mine;
       fetch(`${API}/rooms/${mine.code}`).then((r) => r.json()).then((info) => {
         if (info.open) join({ code: mine.code, key: mine.key, name: info.name || mine.name, persist: true });
