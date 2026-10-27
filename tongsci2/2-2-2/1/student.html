@@ -938,8 +938,8 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .rv-w { flex: 1 1 auto; min-width: 0; font: 700 20px/1.2 var(--f-body); overflow-wrap: anywhere; }
 .rv-w i { font: 600 13px var(--f-body); font-style: normal; color: var(--ink-3); }
 .rv-own { font: 700 14px var(--f-body); color: var(--accent); padding: 0 8px; }
-.rv-b { font: 700 16px/1 var(--f-body); min-height: 44px; min-width: 72px; padding: 0 12px; border: 2px solid var(--rule); border-radius: 999px; background: var(--paper-2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.rv-b span { font-size: 22px; line-height: 1; }
+.rv-b { font: 700 15px/1 var(--f-body); min-height: 38px; min-width: 60px; padding: 0 10px; border: 2px solid var(--rule); border-radius: 999px; background: var(--paper-2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.rv-b span { font-size: 15px; line-height: 1; }
 .rv-b[aria-pressed="true"] { border-color: var(--stamp); background: #ffe3e6; }
 .rv-b.down[aria-pressed="true"] { border-color: var(--ink-2); background: var(--paper); }
 .rv-b:not([aria-pressed="true"]) span { filter: grayscale(.35); }
@@ -947,6 +947,12 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 /* 수업 패널: 학생 표시 바꾸기 */
 .rc-idm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 15px; font-weight: 700; color: var(--ink-2); }
 .rc-idmsg { font-weight: 600; color: var(--accent); }
+/* 낱말 구름(글자로 그린다): 자리는 그대로, ❤️·💔로 크기만 바뀐다 */
+.rc-cv { position: absolute; inset: 0; overflow: hidden; }
+.rc-w { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font: 800 20px/1 var(--f-display); letter-spacing: -.01em; transition: font-size .55s cubic-bezier(.3, 1.35, .5, 1), left .5s ease, top .5s ease, opacity .45s ease; }
+.rc-w.new { opacity: 0; }
+.rc-ruler { position: absolute; left: -9999px; top: 0; visibility: hidden; white-space: nowrap; font: 800 100px/1 var(--f-display); letter-spacing: -.01em; }
+@media (prefers-reduced-motion: reduce) { .rc-w { transition: none; } }
 
 </style>
 
@@ -7080,7 +7086,8 @@ if (!window.clearImmediate) {
    응답 모으기(3단계): 예측 보기·○×·여러 개 고르기를 학생이 누르면 이름 없이 답만 방에 보내고,
    선생님 화면에는 보기마다 고른 학생 수가 뜬다. 문항은 아래 ASKS 모양으로 찾아 장 id로 이름을 붙인다.
    한 낱말로 답하기: 선생님이 아무 장에서나 질문을 띄우면 학생 기기에 입력 칸이 뜨고, 선생님 화면에
-   낱말 구름(wordcloud2.js, MIT)이 자란다. 낱말을 누르면 숨긴다(숨긴 낱말은 눌러서 다시 보인다).
+   낱말 구름이 자란다. 처음 놓은 자리는 기억해 두고 ❤️·💔가 오면 그 자리에서 크기만 바뀐다(겹치면 살짝 밀어낸다).
+   낱말을 누르면 숨긴다(숨긴 낱말은 눌러서 다시 보인다).
    번호를 받는 반이면 «쓴 사람 보기»로 낱말마다 쓴 학생(반·번호·이름)을 본다. 익명 방이면 그 자리에서 번호를 받게 바꿀 수 있다.
    «공감·반대 받기»를 켜면 학생 기기에 친구 낱말 목록(이름 없이)이 뜨고, 공감은 구름 글씨를 키우고 반대는 줄인다.
    반 고정 방: 선생님 페이지(teach.html)에서 만든 반 방(6자리)은 이 브라우저에 진행 열쇠가 저장돼 있어,
@@ -7137,7 +7144,8 @@ if (!window.clearImmediate) {
       return c;
     } catch { return 's-' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
   })();
-  const UP = '❤️', DOWN = '💔';                       // 낱말 공감·반대(공감은 구름 글씨를 키우고 반대는 줄인다)
+  const UP = '❤️', DOWN = '💔';
+  const hashW = (w) => [...w].reduce((h, ch) => Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0, 2166136261);   // 같은 낱말은 늘 같은 색·같은 출발 방향                       // 낱말 공감·반대(공감은 구름 글씨를 키우고 반대는 줄인다)
   const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6"/><path d="M18 14.5c1.9.8 3 2.9 3 5.5"/></svg>';
 
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -7687,7 +7695,7 @@ if (!window.clearImmediate) {
     cloud() {
       const a = state.ask; if (!a) { this.askForm(); return; }
       const o = this.overlay(`<h2 class="rc-q">${esc(a.prompt)}</h2>
-        <div class="rc-cloud"><canvas aria-label="학생 답 낱말 구름"></canvas><p class="rc-empty">학생 답을 기다리는 중…</p></div>
+        <div class="rc-cloud"><div class="rc-cv" role="img" aria-label="학생 답 낱말 구름"></div><p class="rc-empty">학생 답을 기다리는 중…</p></div>
         <div class="rc-words" aria-label="받은 낱말"></div>
         <div class="rc-ctl"><span class="rc-count"></span>
           <button type="button" class="rc-btn" data-a="who" aria-pressed="${!!this.showWho}" title="교실 화면에 학생 이름이 보여요">${this.showWho ? '쓴 사람 숨기기' : '쓴 사람 보기'}</button>
@@ -7719,19 +7727,69 @@ if (!window.clearImmediate) {
       box.querySelector('.rc-count').innerHTML = `답한 학생 <b>${t.n}</b>명${state.ask.vote || votes ? ` · ${UP}${DOWN} <b>${votes}</b>번` : ''}`;
       box.querySelector('.rc-empty').hidden = list.length > 0;
       this.wordsDraw(q, t, list);
-      const cv = box.querySelector('.rc-cloud canvas');
-      const r = cv.parentElement.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
-      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
-      if (!window.WordCloud || !WordCloud.isSupported || !list.length) { cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); return; }
-      const css = getComputedStyle(document.documentElement), tok = (k) => css.getPropertyValue('--' + k).trim();
+      this.cloudPlace(q, list);
+    },
+    // 낱말 구름: 새 낱말은 가운데에서 나선을 따라 빈 곳에 놓고(시작 방향은 낱말마다 달라 흩어진다), 놓은 자리는 기억한다.
+    // ❤️·💔로 크기가 바뀌면 그 자리에서 커지고 작아지며, 이웃과 겹치면 조금만 밀어낸다. 자리는 상자 비율로 둔다(화면 크기가 바뀌어도 그대로)
+    cloudPos: null,
+    cloudPlace(q, list, again) {
+      const cv = this.box && this.box.querySelector('.rc-cv'); if (!cv) return;
+      const W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return;
+      if (!this.cloudPos || this.cloudPos.q !== q) this.cloudPos = { q, at: new Map(), k: 1 };
+      const P = this.cloudPos, css = getComputedStyle(document.documentElement), tok = (n) => css.getPropertyValue('--' + n).trim();
       const colors = [tok('ink'), tok('accent'), tok('current'), tok('field'), tok('s'), tok('n')];
-      const max = list[0][1], base = Math.min(cv.width, cv.height) / 5.2;
-      WordCloud(cv, {
-        list: list.map(([w, s]) => [w, s]), rotateRatio: 0, shuffle: false, gridSize: Math.round(8 * dpr), shrinkToFit: true, drawOutOfBound: false,
-        fontFamily: css.getPropertyValue('--f-display') || 'sans-serif', fontWeight: 800, backgroundColor: 'rgba(0,0,0,0)',
-        weightFactor: (s) => Math.max(14 * dpr, base * (0.35 + 0.65 * s / max)),
-        color: (w) => colors[[...w].reduce((h, ch) => Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0, 2166136261) % colors.length],   // 같은 낱말은 늘 같은 색
-      });
+      const keep = new Set(list.map((x) => x[0]));
+      for (const w of [...P.at.keys()]) if (!keep.has(w)) P.at.delete(w);           // 숨긴 낱말·지운 답
+      // 크기는 낱말마다 제 점수(쓴 수 + ❤️ − 💔)로만 정한다: ❤️를 받은 낱말만 커지고 💔를 받은 낱말만 작아진다(점수가 높을수록 덜 커진다)
+      const unit = Math.min(W, H) / 3.6;
+      const sizeOf = (sc) => Math.max(14, unit * P.k * Math.min(1.3, 0.3 + 0.34 * Math.log(1 + sc)));
+      // 글자 폭·높이는 크기에 비례하므로 100px에서 한 번만 잰다
+      const ruler = this.ruler || (this.ruler = el('span', 'rc-ruler'));
+      if (!ruler.isConnected) document.body.appendChild(ruler);
+      const measure = (w) => { ruler.textContent = w; return { rw: ruler.offsetWidth / 100, rh: ruler.offsetHeight / 100 }; };
+      const boxOf = (w, sc) => { const m = P.at.get(w), z = sizeOf(sc); return { w, x: m.cx * W, y: m.cy * H, hw: m.rw * z / 2 + 4, hh: m.rh * z / 2 + 2 }; };
+      const hit = (a, b) => Math.abs(a.x - b.x) < a.hw + b.hw && Math.abs(a.y - b.y) < a.hh + b.hh;
+      const inside = (b) => b.x - b.hw >= 0 && b.x + b.hw <= W && b.y - b.hh >= 0 && b.y + b.hh <= H;
+      const placed = list.filter(([w]) => P.at.has(w)).map(([w, sc]) => boxOf(w, sc));
+      for (const [w, sc] of list) {
+        if (P.at.has(w)) continue;
+        const m = measure(w), z = sizeOf(sc), hw = m.rw * z / 2 + 4, hh = m.rh * z / 2 + 2;
+        const a0 = (hashW(w) % 628) / 100;
+        let spot = null;
+        for (let t = 0; t < 2400 && !spot; t++) {
+          const th = t * 0.1, r = 2.4 * th;
+          const b = { w, x: W / 2 + r * Math.cos(th + a0) * (W / H), y: H / 2 + r * Math.sin(th + a0), hw, hh };
+          if (inside(b) && !placed.some((p) => hit(b, p))) spot = b;
+        }
+        if (!spot && !again && P.k > 0.4) { P.k *= 0.85; P.at.clear(); this.cloudPlace(q, list, false); return; }   // 자리가 모자라면 모두 작게 해서 다시 놓는다
+        spot = spot || { w, x: W / 2 + (Math.random() - 0.5) * W * 0.8, y: H / 2 + (Math.random() - 0.5) * H * 0.8, hw, hh };
+        P.at.set(w, { cx: spot.x / W, cy: spot.y / H, rw: m.rw, rh: m.rh }); placed.push(spot);
+      }
+      // 커진 낱말이 이웃과 겹치면 겹친 만큼만 서로 밀어낸다
+      const boxes = list.map(([w, sc]) => boxOf(w, sc));
+      for (let it = 0; it < 60; it++) {
+        let moved = false;
+        for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i], b = boxes[j]; if (!hit(a, b)) continue;
+          const ox = a.hw + b.hw - Math.abs(a.x - b.x), oy = a.hh + b.hh - Math.abs(a.y - b.y);
+          if (ox * (H / W) < oy) { const d = ox / 2 + 0.5, sx = a.x <= b.x ? -1 : 1; a.x += sx * d; b.x -= sx * d; }
+          else { const d = oy / 2 + 0.5, sy = a.y <= b.y ? -1 : 1; a.y += sy * d; b.y -= sy * d; }
+          moved = true;
+        }
+        for (const b of boxes) { b.x = Math.min(Math.max(b.hw, b.x), Math.max(b.hw, W - b.hw)); b.y = Math.min(Math.max(b.hh, b.y), Math.max(b.hh, H - b.hh)); }
+        if (!moved) break;
+      }
+      for (const b of boxes) { const m = P.at.get(b.w); m.cx = b.x / W; m.cy = b.y / H; }
+      // 그리기: 있던 낱말은 자리·크기만 바꾸고(움직임은 CSS가 부드럽게), 새 낱말은 나타나게 한다
+      const have = new Map([...cv.children].map((e) => [e.dataset.w, e]));
+      for (const [w, sc] of list) {
+        let e = have.get(w); have.delete(w);
+        const m = P.at.get(w), fresh = !e;
+        if (fresh) { e = el('span', 'rc-w new'); e.dataset.w = w; e.textContent = w; e.style.color = colors[hashW(w) % colors.length]; cv.appendChild(e); }
+        e.style.left = (m.cx * 100).toFixed(2) + '%'; e.style.top = (m.cy * 100).toFixed(2) + '%'; e.style.fontSize = sizeOf(sc).toFixed(1) + 'px';
+        if (fresh) { void e.offsetWidth; e.classList.remove('new'); }
+      }
+      for (const e of have.values()) e.remove();
     },
     // 받은 낱말: 누르면 숨기고, 숨긴 낱말은 눌러서 다시 보인다. «쓴 사람 보기»면 낱말마다 쓴 학생(번호를 받는 반)
     wordsDraw(q, t, list) {
