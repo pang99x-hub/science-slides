@@ -79,6 +79,55 @@
         }
       ],
       "updated": "2026-10-27"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "2-2-3",
+      "unitTitle": "에너지 효율과 신재생 에너지",
+      "area": "Ⅱ. 환경과 에너지 › 2. 에너지",
+      "standard": "[10통과2-02-06]",
+      "standardText": "에너지 효율의 의미와 중요성을 이해하고, 지속가능한 발전과 지구 환경 문제 해결에 신재생 에너지 기술을 활용하는 방안을 탐색할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "에너지 전환과 보존",
+          "question": "솔라 임펄스 2호는 연료 없이 어떻게 날았을까?",
+          "pages": "109~110",
+          "slides": 6,
+          "teacher": "tongsci2/2-2-3/1/teacher.html",
+          "student": "tongsci2/2-2-3/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "에너지 효율",
+          "question": "같은 밝기인데 왜 어떤 전구는 더 뜨거울까?",
+          "pages": "111~112",
+          "slides": 7,
+          "teacher": "tongsci2/2-2-3/2/teacher.html",
+          "student": "tongsci2/2-2-3/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "에너지 문제와 신재생 에너지",
+          "question": "지금처럼 써도 미래 세대가 쓸 에너지가 남을까?",
+          "pages": "113~114",
+          "slides": 7,
+          "teacher": "tongsci2/2-2-3/3/teacher.html",
+          "student": "tongsci2/2-2-3/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "자가발전 학교 설계하기",
+          "question": "우리 학교가 쓸 전기를 스스로 만들 수 있을까?",
+          "pages": "115~117",
+          "slides": 5,
+          "teacher": "tongsci2/2-2-3/4/teacher.html",
+          "student": "tongsci2/2-2-3/4/student.html"
+        }
+      ],
+      "updated": "2026-10-27"
     }
   ]
 }
