@@ -50,6 +50,16 @@ ul.lessons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 ul.lessons li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; border-top: 1px dashed var(--rule); padding-top: 8px; }
 ul.lessons li.unit { border-top: 0; padding-top: 10px; font: 700 14px/1.3 var(--f-body); letter-spacing: .04em; color: var(--accent); }
 ul.lessons li.unit:first-child { padding-top: 0; }
+/* 차시 목록: 단원(주제)마다 묶음 */
+.ugroups { display: grid; gap: 22px; }
+.ugroup { border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); padding: 12px 16px 14px; display: grid; gap: 10px; min-width: 0; }
+.uhead { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: 700 20px/1.3 var(--f-display); }
+.uhead .ucode { font: 700 13px/1 var(--f-body); letter-spacing: .04em; color: var(--paper-2); background: var(--accent); border-radius: 999px; padding: 5px 10px; }
+.uhead .ucount { margin-left: auto; font: 600 13px/1.3 var(--f-body); color: var(--ink-3); }
+.ugroup ul.lessons li:first-child { border-top: 0; padding-top: 0; }
+.ugroup ul.lessons li { flex-wrap: nowrap; }
+.ugroup ul.lessons li > span { flex: 1 1 auto; min-width: 0; }
+.ugroup ul.lessons li > .btn { flex: 0 0 auto; }
 .tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font: 700 13px/1.5 var(--f-body); background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
 .tag.now { background: var(--current); color: var(--paper-2); }
 .tag.next { background: var(--hl); color: var(--ink); }
@@ -170,12 +180,12 @@ export function joinPage(site, units) {
   return `${head(site.name + ' · 수업방')}
 <body>
 <div class="wrap">
-  <p class="brand"><a href="index.html">${esc(site.name)}</a></p>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">${esc(site.name)}</span></nav>
   <h1 id="title">수업방</h1>
   <div class="card big" id="app" aria-live="polite"><p class="muted">확인하는 중…</p></div>
   <div class="card" id="lib" hidden>
     <h2 id="libTitle">차시 목록</h2>
-    <ul class="lessons" id="list"></ul>
+    <div class="ugroups" id="list"></div>
   </div>
   <p class="small" id="foot"></p>
 </div>
@@ -193,6 +203,7 @@ ${AUTH_JS}
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function find(path) { return LESSONS.filter(function (l) { return l.path === path; })[0] || null; }
   function label(l) { return l.unit + ' ' + l.n + '차시 ' + l.title; }
+  function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length; return '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
   function nextOf(path) { for (var i = 0; i < LESSONS.length - 1; i++) if (LESSONS[i].path === path) return LESSONS[i + 1].path; return null; }
   var cid; try { cid = localStorage.getItem('science-room:cid'); if (!cid) { cid = 's-' + Array.from(crypto.getRandomValues(new Uint8Array(12)), function (b) { return b.toString(16).padStart(2, '0'); }).join(''); localStorage.setItem('science-room:cid', cid); } } catch (e) { cid = 's-' + Math.random().toString(36).slice(2); }
   // 이 기기에 이 반의 진행 열쇠가 있으면 선생님 화면(같은 링크). ?as=student 이면 학생 화면 미리 보기(연결·학생 수에 안 들어감)
@@ -257,13 +268,13 @@ ${AUTH_JS}
     $('libTitle').textContent = teacher ? '차시 고르기 — 누르면 ' + (selCls || '이 반') + ' 수업이 그 차시로 시작돼요' : withRoom ? '복습 — 아무 차시나 열어 볼 수 있어요' : '차시 목록 — 혼자 볼 수 있어요';
     var html = '', unit = '';
     LESSONS.forEach(function (l) {
-      if (l.unit !== unit) { unit = l.unit; html += '<li class="unit">' + esc(l.unit + ' ' + l.unitTitle) + '</li>'; }
+      if (l.unit !== unit) { html += (unit ? '</ul></section>' : '') + uhead(l); unit = l.unit; }
       var href = teacher ? l.teacher + tq() : l.student + (withRoom ? '?room=' + code + pass : '');
       var tag = mark.now === l.path ? '<b class="tag now">지금 수업 중</b>' : mark.next === l.path ? '<b class="tag next">다음 차시</b>' : mark.last === l.path ? '<b class="tag">지난 수업</b>' : '';
       var main = mark.now === l.path || (teacher ? mark.next === l.path : mark.last === l.path);
       html += '<li><span>' + esc(l.n + '차시 ' + l.title) + tag + '</span><a class="btn' + (main ? ' main' : '') + '" href="' + esc(href) + '">' + (teacher ? (mark.now === l.path ? '이어서 하기' : '수업 시작') : '열기') + '</a></li>';
     });
-    $('list').innerHTML = html;
+    $('list').innerHTML = html + (unit ? '</ul></section>' : '');
   }
   // ---- 선생님 화면: 지금 수업 / (과목 방이면 반 고르기) 지난 수업 · 다음 차시, 들어온 학생 수(10초마다) ----
   var sig = null, pollT = 0, lastInfo = null, selCls = null, CLS_KEY = 'science-room:cls:' + code;
@@ -469,13 +480,14 @@ ${AUTH_JS}
     setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = idle; } }, 3000);
     return false;
   }
+  function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length; return '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
   function lessonsHtml(c) {
     var html = '', unit = '';
     LESSONS.forEach(function (l) {
-      if (l.unit !== unit) { unit = l.unit; html += '<li class="unit">' + esc(l.unit + ' ' + l.unitTitle) + '</li>'; }
+      if (l.unit !== unit) { html += (unit ? '</ul></section>' : '') + uhead(l); unit = l.unit; }
       html += '<li><span>' + esc(l.n + '차시 ' + l.title) + '</span><a class="btn" href="' + esc(l.teacher + '?room=' + c.code + pass) + '">시작</a></li>';
     });
-    return html;
+    return html + (unit ? '</ul></section>' : '');
   }
   // 수업방마다 지금 수업 중인지·지난 수업(과목 방이면 반마다), 반 목록 고치기
   function status(card, c) {
@@ -525,7 +537,7 @@ ${AUTH_JS}
         + '<p class="linkhead"><span class="label" data-ll=" 링크">' + sub + ' 링크</span><span class="small">반 클래스룸에 한 번 올려 두고, 선생님도 수업 때 이 링크를 열어요</span></p>'
         + '<div class="link">' + esc(join) + '</div>'
         + '<div class="row"><a class="btn main" href="' + esc(join + pass) + '" data-ll=" 링크 열기">' + sub + ' 링크 열기</a><button class="btn" type="button" data-a="copy" data-ll=" 링크 복사">' + sub + ' 링크 복사</button></div>'
-        + ((c.classes || []).length ? '' : '<details><summary>차시 바로 시작</summary><ul class="lessons">' + lessonsHtml(c) + '</ul></details>')
+        + ((c.classes || []).length ? '' : '<details><summary>차시 바로 시작</summary><div class="ugroups">' + lessonsHtml(c) + '</div></details>')
         + '<details class="set"' + (openSet[c.code] ? ' open' : '') + '><summary>설정 <span class="opt">이름 · 가르치는 반 · 학생 표시 · 지우기</span></summary><div class="setbox">'
         + '<form class="form" data-a="namef"><label class="grow">수업방 이름<input type="text" maxlength="30" value="' + esc(c.name || '') + '" autocomplete="off"></label><button class="btn" type="submit">이름 저장</button></form>'
         + '<div data-clsf></div>'

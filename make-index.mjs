@@ -69,11 +69,11 @@ const unitHtml = (u) => `
     </div>
     <ol class="lessons">
 ${u.lessons.map((l) => `      <li class="lesson">
-        <span class="no">${l.n}차시</span>
+        <div class="top"><span class="no">${l.n}차시</span>${pdfOf(l) ? `<a class="pdf" href="${esc(pdfOf(l))}" download="${esc(`${u.unit} ${l.n}차시 ${l.title}.pdf`)}" title="장마다 마지막 단계까지 연 화면 모음(A4 가로, 인쇄·복습용)">PDF 받기</a>` : ''}</div>
         <h3>${esc(l.title)}</h3>
         <p class="q">${esc(l.question)}</p>
         <p class="meta">${esc(u.textbook)} ${esc(l.pages)}쪽 기준 · ${l.slides}장</p>
-        <div class="go"><a class="btn main" href="${esc(l.student)}" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="${esc(l.teacher)}" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a>${pdfOf(l) ? `<a class="btn" href="${esc(pdfOf(l))}" title="장마다 마지막 단계까지 연 화면 모음(A4 가로, 인쇄용)">PDF</a>` : ''}</div>
+        <div class="go"><a class="btn main" href="${esc(l.student)}" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="${esc(l.teacher)}" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
       </li>`).join('\n')}
     </ol>
     <p class="upd">${esc(u.updated)} 고침</p>
@@ -127,13 +127,19 @@ kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bot
 .code { font: 600 .55em var(--f-body); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 12px; }
 .std { margin: 0; font-size: 15px; color: var(--ink-2); max-width: 60em; }
 .std b { color: var(--ink); margin-right: 6px; }
-.lessons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.lessons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 262px), 1fr)); gap: 14px; }
 .lesson { border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.lesson .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pdf { font: 600 13px/1 var(--f-body); color: var(--ink-2); text-decoration: none; border: 1.5px solid var(--rule); border-radius: 999px; padding: 5px 10px; background: var(--paper-2); white-space: nowrap; }
+.pdf::before { content: "↓ "; }
+.pdf:hover { border-color: var(--accent); color: var(--accent); }
+.pdf:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 .lesson .no { align-self: flex-start; font-size: 13px; font-weight: 700; color: var(--paper-2); background: var(--accent); border-radius: 999px; padding: 1px 10px; }
 .lesson h3 { font: 700 22px/1.25 var(--f-display); margin: 4px 0 0; }
 .lesson .q { font-family: var(--f-pen); font-size: 24px; line-height: 1.15; color: var(--ink-2); margin: 0; }
 .lesson .meta { font-size: 13px; color: var(--ink-3); margin: 2px 0 8px; }
 .go { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+.go .btn { padding: 0 14px; }
 .btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 999px; color: var(--ink); background: var(--paper-2); text-decoration: none; font-weight: 600; }
 .btn.main { background: var(--ink); color: var(--paper-2); }
 .btn:hover { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }

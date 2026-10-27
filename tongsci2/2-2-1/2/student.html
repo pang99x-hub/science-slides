@@ -945,8 +945,17 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .rv-b:not([aria-pressed="true"]) span { filter: grayscale(.35); }
 .rv-b:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 /* 수업 패널: 학생 표시 바꾸기 */
-.rc-idm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 15px; font-weight: 700; color: var(--ink-2); }
-.rc-idmsg { font-weight: 600; color: var(--accent); }
+/* 수업 패널 아래: 쓰임새대로 세 묶음 + 맨 아래 한 줄 */
+.rc-tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.rc-group { display: grid; gap: 8px; align-content: start; padding: 10px 12px 12px; border: 2px solid var(--rule); border-radius: 12px; background: var(--paper); }
+.rc-group h3 { margin: 0; font: 700 13px/1.2 var(--f-body); letter-spacing: .12em; color: var(--ink-3); }
+.rc-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rc-group .rc-btn { min-height: 42px; padding: 0 16px; font-size: 16px; }
+.rc-group .rc-seg button { min-height: 38px; padding: 0 12px; font-size: 15px; }
+.rc-btn.quiet { border-color: var(--rule); color: var(--ink-2); background: transparent; }
+.rc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding-top: 4px; }
+.rc-foot .rc-count { margin-right: 0; }
+.rc-idmsg { font-size: 14px; font-weight: 600; color: var(--accent); }
 /* 낱말 구름(글자로 그린다): 자리는 그대로, ❤️·💔로 크기만 바뀐다 */
 .rc-cv { position: absolute; inset: 0; overflow: hidden; }
 .rc-w { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font: 800 20px/1 var(--f-display); letter-spacing: -.01em; transition: font-size .55s cubic-bezier(.3, 1.35, .5, 1), left .5s ease, top .5s ease, opacity .45s ease; }
@@ -8310,18 +8319,22 @@ if (!window.clearImmediate) {
           <div class="rc-qr">${qr}</div>
         </div>
         <div class="rc-where" aria-live="polite"></div>
-        <div class="rc-idm"><span>학생 표시</span><div class="rc-seg" role="group" aria-label="학생 표시"><button type="button" data-m="anon">익명</button><button type="button" data-m="num">번호만</button><button type="button" data-m="numname">번호와 이름</button></div><span class="rc-idmsg" aria-live="polite"></span></div>
         <div class="rc-roster" hidden></div>
-        <div class="rc-ctl">
-          <span class="rc-count"></span>
-          <button type="button" class="rc-btn main" data-a="summon">모두 이리로</button>
-          <button type="button" class="rc-btn" data-a="attention"></button>
-          <div class="rc-seg" role="group" aria-label="학생 화면"><button type="button" data-f="1">모두 따라오기</button><button type="button" data-f="0">자유롭게</button></div>
-          <button type="button" class="rc-btn" data-a="lock"></button>
-          <button type="button" class="rc-btn" data-a="word">한 낱말 묻기</button>
-          <button type="button" class="rc-btn" data-a="reset">응답 모두 지우기</button>
-          <button type="button" class="rc-btn main" data-a="hide">화면에서 숨기기</button>
-        </div>`);
+        <div class="rc-tools">
+          <section class="rc-group" aria-label="학생 화면"><h3>학생 화면</h3>
+            <div class="rc-line"><button type="button" class="rc-btn" data-a="summon">모두 이리로</button><button type="button" class="rc-btn" data-a="attention"></button></div>
+            <div class="rc-line"><div class="rc-seg" role="group" aria-label="넘기기"><button type="button" data-f="1">모두 따라오기</button><button type="button" data-f="0">자유롭게</button></div></div>
+          </section>
+          <section class="rc-group" aria-label="묻고 모으기"><h3>묻고 모으기</h3>
+            <div class="rc-line"><button type="button" class="rc-btn" data-a="word">한 낱말 묻기</button></div>
+            <div class="rc-line"><button type="button" class="rc-btn quiet" data-a="reset">응답 모두 지우기</button></div>
+          </section>
+          <section class="rc-group rc-idm" aria-label="수업방"><h3>수업방</h3>
+            <div class="rc-line"><div class="rc-seg" role="group" aria-label="학생 표시"><button type="button" data-m="anon">익명</button><button type="button" data-m="num">번호만</button><button type="button" data-m="numname">번호와 이름</button></div></div>
+            <div class="rc-line"><button type="button" class="rc-btn" data-a="lock"></button><span class="rc-idmsg" aria-live="polite"></span></div>
+          </section>
+        </div>
+        <div class="rc-foot"><span class="rc-count"></span><button type="button" class="rc-btn main" data-a="hide">화면에서 숨기기</button></div>`);
       o.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { state.follow = b.dataset.f === '1'; send({ t: 'follow', on: state.follow }); this.panelCounts(); this.badge(); });
       o.querySelectorAll('.rc-idm [data-m]').forEach((b) => b.onclick = () => {
         const say = (t) => { o.querySelector('.rc-idmsg').textContent = t; };

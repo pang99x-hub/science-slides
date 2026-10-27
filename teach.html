@@ -44,6 +44,16 @@ ul.lessons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 ul.lessons li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; border-top: 1px dashed var(--rule); padding-top: 8px; }
 ul.lessons li.unit { border-top: 0; padding-top: 10px; font: 700 14px/1.3 var(--f-body); letter-spacing: .04em; color: var(--accent); }
 ul.lessons li.unit:first-child { padding-top: 0; }
+/* 차시 목록: 단원(주제)마다 묶음 */
+.ugroups { display: grid; gap: 22px; }
+.ugroup { border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); padding: 12px 16px 14px; display: grid; gap: 10px; min-width: 0; }
+.uhead { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: 700 20px/1.3 var(--f-display); }
+.uhead .ucode { font: 700 13px/1 var(--f-body); letter-spacing: .04em; color: var(--paper-2); background: var(--accent); border-radius: 999px; padding: 5px 10px; }
+.uhead .ucount { margin-left: auto; font: 600 13px/1.3 var(--f-body); color: var(--ink-3); }
+.ugroup ul.lessons li:first-child { border-top: 0; padding-top: 0; }
+.ugroup ul.lessons li { flex-wrap: nowrap; }
+.ugroup ul.lessons li > span { flex: 1 1 auto; min-width: 0; }
+.ugroup ul.lessons li > .btn { flex: 0 0 auto; }
 .tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font: 700 13px/1.5 var(--f-body); background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
 .tag.now { background: var(--current); color: var(--paper-2); }
 .tag.next { background: var(--hl); color: var(--ink); }
@@ -227,13 +237,14 @@ select { height: 48px; }
     setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = idle; } }, 3000);
     return false;
   }
+  function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length; return '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
   function lessonsHtml(c) {
     var html = '', unit = '';
     LESSONS.forEach(function (l) {
-      if (l.unit !== unit) { unit = l.unit; html += '<li class="unit">' + esc(l.unit + ' ' + l.unitTitle) + '</li>'; }
+      if (l.unit !== unit) { html += (unit ? '</ul></section>' : '') + uhead(l); unit = l.unit; }
       html += '<li><span>' + esc(l.n + '차시 ' + l.title) + '</span><a class="btn" href="' + esc(l.teacher + '?room=' + c.code + pass) + '">시작</a></li>';
     });
-    return html;
+    return html + (unit ? '</ul></section>' : '');
   }
   // 수업방마다 지금 수업 중인지·지난 수업(과목 방이면 반마다), 반 목록 고치기
   function status(card, c) {
@@ -283,7 +294,7 @@ select { height: 48px; }
         + '<p class="linkhead"><span class="label" data-ll=" 링크">' + sub + ' 링크</span><span class="small">반 클래스룸에 한 번 올려 두고, 선생님도 수업 때 이 링크를 열어요</span></p>'
         + '<div class="link">' + esc(join) + '</div>'
         + '<div class="row"><a class="btn main" href="' + esc(join + pass) + '" data-ll=" 링크 열기">' + sub + ' 링크 열기</a><button class="btn" type="button" data-a="copy" data-ll=" 링크 복사">' + sub + ' 링크 복사</button></div>'
-        + ((c.classes || []).length ? '' : '<details><summary>차시 바로 시작</summary><ul class="lessons">' + lessonsHtml(c) + '</ul></details>')
+        + ((c.classes || []).length ? '' : '<details><summary>차시 바로 시작</summary><div class="ugroups">' + lessonsHtml(c) + '</div></details>')
         + '<details class="set"' + (openSet[c.code] ? ' open' : '') + '><summary>설정 <span class="opt">이름 · 가르치는 반 · 학생 표시 · 지우기</span></summary><div class="setbox">'
         + '<form class="form" data-a="namef"><label class="grow">수업방 이름<input type="text" maxlength="30" value="' + esc(c.name || '') + '" autocomplete="off"></label><button class="btn" type="submit">이름 저장</button></form>'
         + '<div data-clsf></div>'
