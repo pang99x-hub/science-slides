@@ -108,6 +108,16 @@ select { height: 48px; }
   .makeform label:nth-child(-n+2), .makeform button { grid-column: 1 / -1; }
 }
 </style>
+<!--pwa-->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#fef9e8">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="과학 수업">
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
+<!--/pwa-->
 </head>
 <body>
 <div class="wrap">

@@ -1,5 +1,6 @@
 // 자료실 첫 화면(index.html)을 site.json과 lessons.json으로 만든다. 단원 빌드가 끝날 때마다 불린다.
 //   node make-index.mjs
+import { addPwa } from './pwa.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -173,6 +174,12 @@ button.btn { font: inherit; font-weight: 600; cursor: pointer; }
 .sec h2 { margin: 0; font: 800 clamp(24px, 4vw, 30px)/1.2 var(--f-display); }
 .sec p { margin: 0; color: var(--ink-2); font-size: 15px; }
 .upd { text-align: right; font-size: 12px; color: var(--ink-3); margin: 10px 0 0; }
+.app { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; background: var(--paper-2); border: 2px dashed var(--ink-3); border-radius: 10px; padding: 12px 16px; margin: 0 0 22px; }
+.app img { width: 52px; height: 52px; border-radius: 12px; border: 2px solid var(--ink); }
+.app .txt { flex: 1 1 240px; min-width: 0; display: grid; gap: 2px; }
+.app b { font-size: 17px; }
+.app span { font-size: 14px; color: var(--ink-2); }
+.app .row { display: flex; flex-wrap: wrap; gap: 8px; }
 footer { border-top: 2px solid var(--ink); padding-top: 18px; display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); }
 footer p { margin: 0; }
 footer a { color: var(--accent); }
@@ -186,6 +193,12 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
   <p class="tag">${esc(site.tagline)}</p>
   <p class="pen">보고, 끌어 보고, 다시 생각하기</p>
 </header>
+
+<section class="app" id="app" aria-label="앱으로 설치하기">
+  <img src="icons/icon-192.png" alt="">
+  <div class="txt"><b>앱으로 설치하기</b><span id="apphow">휴대폰·태블릿·컴퓨터에 앱처럼 설치하면 바탕화면 아이콘으로 바로 열려요.</span></div>
+  <div class="row"><button class="btn main" type="button" id="appin" hidden>설치</button><button class="btn" type="button" id="appsave">모든 차시 미리 받아 두기</button></div>
+</section>
 
 <div class="doors">
   <section class="door" id="student">
@@ -228,6 +241,27 @@ ${units.map(unitHtml).join('\n')}
 </footer>
 </div>
 <script>${JOIN_JS}</script>
+<script>
+(() => {
+  const how = document.getElementById('apphow'), inb = document.getElementById('appin'), save = document.getElementById('appsave');
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let ask = null;
+  if (installed) how.textContent = '앱으로 열려 있어요. 한 번 연 차시는 인터넷이 없어도 열려요.';
+  else if (ios) how.textContent = '사파리 아래쪽 공유 단추(□↑)를 누르고 «홈 화면에 추가»를 고르면 앱처럼 설치돼요.';
+  addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); ask = e; inb.hidden = false; how.textContent = '«설치»를 누르면 바탕화면·앱 목록에 아이콘이 생겨요.'; });
+  inb.addEventListener('click', async () => { if (!ask) return; ask.prompt(); const r = await ask.userChoice; ask = null; inb.hidden = true; if (r.outcome === 'accepted') how.textContent = '설치했어요. 바탕화면·앱 목록의 «과학 수업» 아이콘으로 여세요.'; });
+  addEventListener('appinstalled', () => { inb.hidden = true; });
+  save.addEventListener('click', async () => {
+    if (!('serviceWorker' in navigator)) { how.textContent = '이 브라우저는 미리 받아 두기를 지원하지 않아요.'; return; }
+    const reg = await navigator.serviceWorker.ready, data = await (await fetch('lessons.json')).json();
+    const urls = data.units.flatMap((u) => u.lessons.flatMap((l) => [l.teacher, l.student])).map((x) => new URL(x, location.href).href);
+    save.disabled = true; how.textContent = '차시 화면 받는 중… 0 / ' + urls.length;
+    navigator.serviceWorker.addEventListener('message', (e) => { if (e.data && e.data.type === 'save-progress') { how.textContent = e.data.n < e.data.total ? '차시 화면 받는 중… ' + e.data.n + ' / ' + e.data.total : '모든 차시를 받아 두었어요. 인터넷이 없어도 열려요(수업방은 인터넷이 필요해요).'; if (e.data.n >= e.data.total) save.disabled = false; } });
+    reg.active.postMessage({ type: 'save-all', urls });
+  });
+})();
+</script>
 </body>
 </html>
 `;
@@ -236,5 +270,6 @@ writeFileSync(join(here, 'guide.html'), guidePage(site));
 writeFileSync(join(here, 'join.html'), joinPage(site, units));
 writeFileSync(join(here, 'teach.html'), teachPage(site, units));
 writeFileSync(join(here, '.nojekyll'), '');
+console.log(`설치형 웹 앱 머리말 ${addPwa(here)}쪽`);
 console.log(`반 수업방 쪽 join.html · teach.html`);
 console.log(`자료실 첫 화면 index.html · 단원 ${units.length}개 · 차시 ${units.reduce((a, u) => a + u.lessons.length, 0)}개`);

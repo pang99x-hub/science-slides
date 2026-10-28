@@ -1,0 +1,17 @@
+{
+  "name": "움직이는 과학 수업",
+  "short_name": "과학 수업",
+  "description": "교과서 개념을 손으로 움직여 보며 배우는 인터랙티브 수업 슬라이드",
+  "lang": "ko",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fef9e8",
+  "theme_color": "#fef9e8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
