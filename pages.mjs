@@ -31,6 +31,9 @@ h2 { margin: 0; font: 700 22px/1.3 var(--f-display); text-wrap: balance; }
 .card.big { box-shadow: 6px 6px 0 var(--ink); }
 .muted { color: var(--ink-2); margin: 0; }
 .small { font-size: 14px; color: var(--ink-3); margin: 0; }
+.apptip { border: 2px dashed var(--ink-3); border-radius: 8px; padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.apptip p { margin: 0; font-size: 14px; color: var(--ink-2); flex: 1 1 260px; }
+.apptip .appcode { font-size: 16px; letter-spacing: .1em; color: var(--ink); }
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); color: var(--ink); font: 700 16px/1.2 var(--f-body); text-decoration: none; cursor: pointer; text-align: center; }
 .btn.main { background: var(--ink); color: var(--paper-2); }
 .btn.warn { border-color: var(--stamp); color: var(--stamp); }
@@ -210,6 +213,11 @@ ${AUTH_JS}
   var preview = !!mine && qs.get('as') === 'student';
   var teacher = !!mine && !preview;
   var ME = 'science-room:me:' + code;
+  // 아이폰·아이패드 사파리: 홈 화면 앱은 저장 공간이 따로라, 앱에서 이 반 코드나 링크를 한 번 넣게 안내한다
+  var IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var INAPP = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  function appTip() { return IOS && !INAPP && /^\\d{6}$/.test(code) ? '<div class="apptip"><p><b>홈 화면 앱으로 쓰나요?</b> 앱 첫 화면의 참여 칸에 이 반 코드(<b class="appcode">' + code + '</b>)나 링크를 넣으면, 다음부터 앱에서 바로 들어와요.</p><button class="btn small" type="button" id="copylink">링크 복사</button></div>' : ''; }
+  function wireTip() { var b = $('copylink'); if (!b) return; b.onclick = function () { var u = location.href.split(/[?#]/)[0] + '?room=' + code; var ok = function () { b.textContent = '복사했어요'; }; if (navigator.clipboard) navigator.clipboard.writeText(u).then(ok, function () { prompt('복사해서 쓰세요', u); }); else prompt('복사해서 쓰세요', u); }; }
   function getMe() { try { return JSON.parse(localStorage.getItem(ME)); } catch (e) { return null; } }
   function idQuery() { var m = getMe(); return m ? (m.cls ? '&cls=' + encodeURIComponent(m.cls) : '') + (m.num ? '&num=' + m.num : '') + (m.name ? '&name=' + encodeURIComponent(m.name) : '') : ''; }
   // 처음 한 번 넣을 것: 과목 방이면 우리 반, 번호를 받는 반이면 번호(와 이름)
@@ -381,7 +389,8 @@ ${AUTH_JS}
       var tag = [mc ? esc(mc) : '', info.idMode && info.idMode !== 'anon' && who.num ? who.num + '번' + (who.name ? ' ' + esc(who.name) : '') : ''].filter(Boolean).join(' ');
       show('<h2><span class="dot" aria-hidden="true"></span>지금은 복습 시간이에요</h2><p class="muted">아래 차시를 자유롭게 열어 볼 수 있어요. 선생님이 ' + (mc ? '우리 반 ' : '') + '수업을 시작하면 어느 화면에 있든 저절로 수업 차시로 넘어가요.</p>'
         + (lastL ? '<div class="row"><a class="btn main" href="' + esc(lastL.student + '?room=' + code + pass) + '">지난 수업 다시 보기 · ' + esc(lastL.n + '차시 ' + lastL.title) + '</a></div>' : '')
-        + '<p class="small">' + (tag ? '이 기기는 <b>' + tag + '</b> 학생으로 들어와 있어요. <a href="#" id="reid">바꾸기</a>' : '이름은 보내지 않아요.') + '</p>');
+        + '<p class="small">' + (tag ? '이 기기는 <b>' + tag + '</b> 학생으로 들어와 있어요. <a href="#" id="reid">바꾸기</a>' : '이름은 보내지 않아요.') + '</p>' + appTip());
+      wireTip();
       var re = $('reid'); if (re) re.onclick = function (e) { e.preventDefault(); try { localStorage.removeItem(ME); } catch (x) {} if (ws) { gone = true; ws.close(); gone = false; ws = null; } check(); };
       library(true, { last: lastL && lastL.path });
       if (!ws || ws.readyState > 1) listen();

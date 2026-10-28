@@ -45,10 +45,52 @@ const JOIN_JS = String.raw`
     sm.innerHTML = '<p class="who2">이 기기로 들어갔던 수업방</p><ul>' + list.map(function (x) { return '<li><span><b>' + esc(x.i.name || '수업방') + '</b> <span class="sub">' + esc([x.me.cls, x.me.num ? x.me.num + '번' : ''].filter(Boolean).join(' ')) + '</span></span><a class="btn main" href="join.html?room=' + x.c + tail + '">다시 들어가기</a></li>'; }).join('') + '</ul>';
     sm.hidden = false;
   });
-  f.onsubmit = function (e) {
-    e.preventDefault();
-    var code = f.code.value.replace(/\s+/g, '');
-    if (!/^(\d{4}|\d{6})$/.test(code)) { say('참여 코드는 숫자 네 자리나 여섯 자리예요.'); return; }
+  // 참여 코드(네·여섯 자리) 또는 수업 링크(…?room=코드)에서 코드를 꺼낸다
+  var codeOf = function (v) { v = String(v || ''); var m = v.match(/[?&]room=(\d{6}|\d{4})(?!\d)/); if (m) return m[1]; v = v.replace(/\s+/g, ''); return /^(\d{4}|\d{6})$/.test(v) ? v : ''; };
+  f.onsubmit = function (e) { e.preventDefault(); enter(f.code.value); };
+  f.code.addEventListener('input', function () { if (/room=/.test(f.code.value)) { var c = codeOf(f.code.value); if (c) { f.code.value = c; enter(c); } } });
+  var pb = document.getElementById('pastego');
+  if (pb && navigator.clipboard && navigator.clipboard.readText) { pb.hidden = false; pb.onclick = function () { navigator.clipboard.readText().then(function (x) { var c = codeOf(x); if (!c) { say('복사해 둔 글에 수업 링크나 코드가 없어요.'); return; } f.code.value = c; enter(c); }, function () { say('붙여넣기를 허용하지 않았어요. 칸을 길게 눌러 붙여 넣어 주세요.'); }); }; }
+  var qb = document.getElementById('qrgo');
+  if (qb) { if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) qb.hidden = true; else qb.onclick = scan; }
+  // 카메라로 QR 읽기: 브라우저가 QR을 읽을 줄 알면(BarcodeDetector) 그것으로, 아니면(아이폰 등) jsQR을 불러 읽는다
+  function scan() {
+    var box = document.createElement('div'); box.className = 'qrcam'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'QR 찍기');
+    box.innerHTML = '<div class="qv"><video playsinline muted autoplay></video><div class="qf"></div></div><p class="qm" aria-live="polite">카메라를 켜는 중…</p><button class="btn" type="button">닫기</button>';
+    document.body.appendChild(box);
+    var v = box.querySelector('video'), m = box.querySelector('.qm'), stream = null, stop = false, det = null;
+    var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+    var close = function () { stop = true; if (stream) stream.getTracks().forEach(function (k) { k.stop(); }); box.remove(); };
+    box.querySelector('button').onclick = close;
+    var found = function (x) { if (stop) return; var c = codeOf(x); if (!c) { m.textContent = '수업 QR이 아니에요. 선생님 화면의 QR을 찍어 주세요.'; return; } close(); f.code.value = c; enter(c); };
+    var lib = function () { return window.jsQR ? Promise.resolve() : new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); };
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }).then(function (s) {
+      if (stop) { s.getTracks().forEach(function (k) { k.stop(); }); return; }
+      stream = s; v.srcObject = s; return v.play();
+    }).then(function () {
+      if ('BarcodeDetector' in window) { try { det = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { det = null; } }
+      return det ? null : lib();
+    }).then(function () {
+      if (stop) return;
+      m.textContent = '선생님 화면의 QR을 노란 네모 안에 맞춰 주세요';
+      var last = 0, busy = false;
+      var tick = function (now) {
+        if (stop) return; requestAnimationFrame(tick);
+        if (busy || now - last < 180 || v.readyState < 2 || !v.videoWidth) return; last = now;
+        if (det) { busy = true; det.detect(v).then(function (r) { busy = false; if (r && r[0]) found(r[0].rawValue); }, function () { busy = false; }); return; }
+        var k = Math.min(1, 720 / Math.max(v.videoWidth, v.videoHeight)); cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k);
+        cx.drawImage(v, 0, 0, cv.width, cv.height);
+        var img = cx.getImageData(0, 0, cv.width, cv.height), q = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+        if (q && q.data) found(q.data);
+      };
+      requestAnimationFrame(tick);
+    }).catch(function (e) {
+      m.textContent = e && e.name === 'NotAllowedError' ? '카메라를 허용하지 않았어요. 설정에서 카메라를 허용하거나, 링크를 붙여 넣어 주세요.' : '카메라나 QR 읽기를 열지 못했어요. 코드나 링크를 넣어 주세요.';
+    });
+  }
+  function enter(raw) {
+    var code = codeOf(raw);
+    if (!code) { say('참여 코드(숫자 네·여섯 자리)나 수업 링크를 넣어 주세요.'); return; }
     say('확인하는 중…');
     fetch(API + '/rooms/' + code).then(function (r) { return r.json(); }).then(function (info) {
       if (!info.open) { say('열려 있는 수업방이 아니에요. 코드를 다시 확인해 주세요.'); return; }
@@ -155,6 +197,13 @@ kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bot
 .joinf input { font: 800 30px/1 var(--f-display); letter-spacing: .18em; width: 7.4em; max-width: 100%; min-height: 56px; padding: 6px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); text-align: center; }
 .joinf input:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 .joinf .btn { min-height: 56px; }
+.joinmore { display: flex; flex-wrap: wrap; gap: 8px; }
+.qrcam { position: fixed; inset: 0; z-index: 50; background: rgba(20, 24, 33, .94); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; }
+.qrcam .qv { position: relative; width: min(92vw, 560px); }
+.qrcam video { display: block; width: 100%; max-height: 66vh; object-fit: cover; border-radius: 12px; background: #000; }
+.qrcam .qf { position: absolute; left: 50%; top: 50%; width: min(58vw, 280px); aspect-ratio: 1; transform: translate(-50%, -50%); border: 4px solid #ffd84a; border-radius: 16px; box-shadow: 0 0 0 999px rgba(0, 0, 0, .25); pointer-events: none; }
+.qrcam .qm { color: #fff; font-weight: 600; text-align: center; margin: 0; max-width: 560px; }
+.qrcam .btn { background: #fff; }
 .joinmsg { min-height: 1.4em; font-weight: 600; color: var(--stamp) !important; }
 .joinmsg:empty { display: none; }
 .door ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; color: var(--ink-2); }
@@ -205,7 +254,9 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
     <p class="who">학생</p>
     <h2>수업 참여하기</h2>
     <p>클래스룸에 올라온 <b>과목 링크</b>를 누르면 바로 들어가요. 선생님이 화면에 참여 코드를 띄웠다면 여기에 넣어요.</p>
-    <form class="joinf" id="joinf" data-api="${esc(site.roomApi || '')}"><input name="code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="000000" aria-label="참여 코드"><button class="btn main" type="submit">들어가기</button></form>
+    <form class="joinf" id="joinf" data-api="${esc(site.roomApi || '')}"><input name="code" inputmode="numeric" maxlength="400" autocomplete="off" placeholder="000000" aria-label="참여 코드 또는 수업 링크"><button class="btn main" type="submit">들어가기</button></form>
+    <div class="joinmore"><button class="btn" type="button" id="qrgo">QR 찍어서 들어가기</button><button class="btn" type="button" id="pastego" hidden>링크 붙여넣기</button></div>
+    <p class="small">선생님 화면의 QR을 찍거나 받은 수업 링크를 붙여 넣어도 돼요. 한 번 들어가면 이 기기(앱)가 기억해요.</p>
     <p class="joinmsg" id="joinmsg" aria-live="polite"></p>
     <div id="smine" class="mine" hidden></div>
     <div class="links"><a class="btn" href="guide.html">참여 방법 미리 해 보기 →</a></div>
