@@ -917,6 +917,8 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .rs.slide, .rs-head i.slide { background: #fff3c4; border-color: #c99a1a; }
 .rs.away, .rs-head i.away { background: #ffe0cc; border-color: var(--current); }
 .rs.off, .rs-head i.off { background: var(--paper); border-color: var(--rule); color: var(--ink-3); }
+.rs.over { border-style: dashed; }                     /* 인원보다 큰 번호(잘못 넣었을 수 있다) */
+.rs.dup { box-shadow: 0 0 0 2px var(--stamp); }        /* 같은 번호로 두 기기 이상 */
 .rc-input.rc-num { width: 5em; letter-spacing: 0; }
 .rc-input.rc-name { width: 7em; letter-spacing: 0; font-size: 30px; }
 /* 한 낱말: 숨긴 낱말 · 쓴 사람(선생님) · 공감·반대(학생) */
@@ -970,6 +972,66 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .rc-size input { width: 4.6em; min-height: 42px; padding: 0 10px; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper-2); color: var(--ink); font: 700 17px/1 var(--f-body); }
 .rc-size input:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 .rc-size[hidden] { display: none; }
+
+/* ===================== 개념 다지기 조각(concept.js) ===================== */
+@keyframes c-shake { 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+.cb { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cb-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.cb-line { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; padding: 8px 16px; font-size: 25px; line-height: 2.1; transition: border-color .3s, box-shadow .3s; }
+.cb-line.done { border-color: var(--induced); box-shadow: inset 8px 0 0 var(--induced); }
+.cb-lab { display: inline-block; font: 800 22px/1.2 var(--f-display); color: var(--accent); margin-right: 10px; }
+.cb-blank { display: inline-block; min-width: 4.6em; min-height: 1.55em; padding: 0 12px; margin: 0 4px; line-height: 1.5; text-align: center; border: 2.5px dashed var(--ink-3); border-radius: 10px; background: var(--paper); color: var(--ink); vertical-align: middle; cursor: pointer; transition: border-color .2s, background .2s, box-shadow .2s; }
+.cb-blank:empty::before { content: "?"; color: var(--ink-3); font-weight: 700; }
+.cb-blank.on { border-style: solid; border-color: var(--accent); background: var(--accent-soft); font-weight: 800; cursor: default; }
+.cb-blank.target { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 4px var(--hl); }
+.cb-blank:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
+.cb-blank.bad, .cb-word.bad, .pr-in.bad { animation: c-shake .45s ease; }
+.cb-frac { display: inline-flex; flex-direction: column; align-items: stretch; vertical-align: middle; gap: 4px; margin: 0 6px; line-height: 1.5; }
+.cb-frac .cb-blank { margin: 0; }
+.cb-bar { display: block; height: 3px; background: var(--ink); border-radius: 2px; }
+.cb-words { display: flex; flex-wrap: wrap; gap: 10px; min-height: 52px; }
+.cb-word { font: 700 22px/1 var(--f-body); color: var(--ink); padding: 12px 18px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); box-shadow: 0 4px 0 var(--ink); cursor: grab; touch-action: none; user-select: none; position: relative; z-index: 2; }
+.cb-word.drag { cursor: grabbing; box-shadow: 0 10px 18px rgba(29, 36, 51, .3); z-index: 5; }
+.cb-word[aria-pressed="true"] { outline: 4px solid var(--hl); outline-offset: 2px; }
+.cb-word.used { display: none; }
+.cb-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cb-msg { font: 400 30px/1.15 var(--f-pen); margin: 0; min-height: 1.15em; color: var(--ink); flex: 1 1 auto; min-width: 0; }
+
+.pr { position: relative; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; transition: border-color .3s, box-shadow .3s; }
+.pr.goal { border-color: var(--induced); box-shadow: 0 0 0 5px color-mix(in srgb, var(--induced) 35%, transparent); }
+.pr-head { display: flex; align-items: center; gap: 12px; }
+.pr-kind { font: 700 19px var(--f-body); letter-spacing: .1em; color: var(--accent); margin-right: auto; }
+.pr-streak { font: 400 32px var(--f-pen); color: var(--induced); }
+.pr-head .btn { font-size: 19px; padding: 9px 16px; }
+.pr-q { font-size: 26px; line-height: 1.5; }
+.pr-q b { font-variant-numeric: tabular-nums; }
+.pr-fig { display: block; width: 100%; height: auto; }
+.pr-ans { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pr-ans label { display: inline-flex; align-items: baseline; gap: 8px; font: 700 24px var(--f-body); }
+.pr-in { width: 170px; font: 800 32px var(--f-display); padding: 6px 12px; border: 2.5px solid var(--ink); border-radius: 10px; background: var(--paper); color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+.pr-in:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
+.pr-in.ok { border-color: var(--induced); background: #e3f1e8; }
+.pr-in.no { border-color: var(--stamp); background: #fbe4df; }
+.pr-steps { margin: 0; padding-left: 28px; display: flex; flex-direction: column; gap: 4px; font-size: 22px; line-height: 1.45; }
+.pr-steps li { visibility: hidden; }
+.pr-steps li.on { visibility: visible; }
+.pr-msg { font: 400 29px/1.15 var(--f-pen); margin: 0; min-height: 1.15em; }
+.pr.locked > :not(.pr-lock) { opacity: .25; pointer-events: none; }
+.pr-lock { display: none; }
+.pr.locked .pr-lock { display: grid; position: absolute; inset: 0; place-items: center; text-align: center; font: 400 36px/1.2 var(--f-pen); color: var(--ink); padding: 20px; }
+
+.cl { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.cl-claim { border: 3px solid var(--stamp); border-radius: 10px; background: var(--paper-2); padding: 12px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; }
+.cl-claim .tag { grid-column: 1 / -1; font-size: 19px; letter-spacing: .12em; font-weight: 700; color: var(--stamp); }
+.cl-claim p { font: 700 26px/1.35 var(--f-display); }
+.cl-claim .btn { font-size: 20px; padding: 11px 16px; }
+.cl-fig { display: block; width: 100%; height: auto; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 8px; }
+.cl-q { font: 700 22px var(--f-body); }
+.cl-opts { grid-template-columns: 1fr; gap: 8px; }
+.cl-opts button { text-align: left; font-size: 21px; padding: 11px 16px; line-height: 1.35; }
+.cl-opts button.right { background: var(--induced); border-color: var(--induced); color: var(--paper-2); }
+.cl-opts button.wrong { background: var(--stamp); border-color: var(--stamp); color: var(--paper-2); }
+.cl-msg { font-size: 21px; line-height: 1.45; min-height: 2.9em; margin: 0; }
 
 /* ===================== 2-2-1 태양 에너지의 생성과 전환 ===================== */
 /* 빛에너지 색: 밝은 노랑이라 바탕 대비가 낮다 → 늘 진한 테두리·글자 이름표와 함께 쓴다(전기 노랑과 색각 ΔE 18.5) */
@@ -7518,19 +7580,27 @@ if (!window.clearImmediate) {
   let state = { follow: true, locked: false, students: 0, pos: { h: 0, f: -1 }, ask: null };
   const words = new Map();                            // 낱말 문항 → { counts, n } (선생님)
   let applying = 0;                                   // 방에서 온 넘김을 적용하는 중(그동안 일어난 넘김 사건은 내 것이 아니다)
+  let pongAt = 0, takeSeat = false;                   // 마지막 연결 확인 답 · 다음 연결에서 내 번호를 이 기기로 옮기기
 
   function connect() {
-    clearTimeout(retryTimer);
+    clearTimeout(retryTimer); retryTimer = 0;
+    if (ws) { const old = ws; ws = null; try { old.close(); } catch {} }   // 앞 연결이 남아 있으면 닫고 붙는다(한 화면에 연결 하나)
     const who = ROLE === 'student' ? (me.get(room.code) || me.mem) : null;
     const id = who ? `${who.cls ? '&cls=' + encodeURIComponent(who.cls) : ''}${who.num ? '&num=' + who.num : ''}${who.name ? '&name=' + encodeURIComponent(who.name) : ''}` : '';
-    const q = ROLE === 'teacher' ? `?role=teacher&key=${encodeURIComponent(room.key)}` : `?role=student&cid=${CID}${id}`;
-    const sock = ws = new WebSocket(`${WS}/rooms/${room.code}/ws${q}`);
+    const q = ROLE === 'teacher' ? `?role=teacher&key=${encodeURIComponent(room.key)}` : `?role=student&cid=${CID}${id}${takeSeat ? '&take=1' : ''}`;
+    takeSeat = false;
+    const sock = ws = new WebSocket(`${WS}/rooms/${room.code}/ws${q}&hb=1`);
     ws.onopen = () => {
-      retry = 0; ui.status('ok');
+      retry = 0; pongAt = Date.now(); ui.status('ok');
       if (ROLE === 'teacher') { if (!room.persist) sendPos(); }       // 반 방은 방 상태(state)를 받고 정한다
       else { asks.sendAll(); sendWhere(); }
     };
-    ws.onmessage = (e) => { if (ws !== sock) return; let m; try { m = JSON.parse(e.data); } catch { return; } onMessage(m); };
+    ws.onmessage = (e) => {
+      if (ws !== sock) return;
+      if (e.data === 'pong') { pongAt = Date.now(); pongSeen = true; return; }
+      let m; try { m = JSON.parse(e.data); } catch { return; }
+      onMessage(m);
+    };
     ws.onclose = (e) => {
       if (ws !== sock) return;                        // 바꿔 붙인 옛 연결
       ws = null;
@@ -7544,11 +7614,32 @@ if (!window.clearImmediate) {
           if (!info.open) { end('수업방이 끝났어요'); return; }
           if (ROLE === 'student' && info.locked) { end('선생님이 방을 잠갔어요'); return; }
         } catch { /* 네트워크가 아직 안 돌아왔다 → 다시 시도 */ }
-        connect();
+        if (room && !leaving && !ws) connect();        // 기다리는 사이 이미 다시 붙었으면 두 번 붙지 않는다
       }, Math.min(10000, 1000 * 2 ** retry++));
     };
   }
   const send = (m) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); };
+  // 연결 확인: 25초마다 'ping'(방이 'pong'으로 자동 응답). 70초 넘게 답이 없으면 끊긴 연결이라 새로 붙는다.
+  // 화면이 다시 보이거나 인터넷이 돌아오면 바로 확인한다(휴대폰이 잠들면 연결이 소리 없이 끊긴다)
+  // pong을 한 번도 못 받았으면(예전 수업방) 확인만 하고 끊지 않는다
+  let pongSeen = false;
+  function beat() {
+    if (ws && ws.readyState > 1) { ui.status('lost'); connect(); return; }   // 방이 닫았는데 닫힘이 끝나지 않은 연결
+    if (!ws || ws.readyState !== 1) return;
+    if (pongSeen && Date.now() - pongAt > 70000) { ui.status('lost'); connect(); return; }
+    try { ws.send('ping'); } catch {}
+  }
+  function wake() {
+    if (!room || leaving || document.visibilityState === 'hidden') return;
+    if (!ws) { if (retryTimer) connect(); return; }    // 다시 붙기를 기다리는 중이면 지금 붙는다
+    if (ws.readyState > 1) { ui.status('lost'); connect(); return; }
+    if (ws.readyState !== 1 || !pongSeen) return;
+    const sent = Date.now(); try { ws.send('ping'); } catch {}
+    setTimeout(() => { if (room && !leaving && ws && ws.readyState === 1 && pongAt < sent) { ui.status('lost'); connect(); } }, 4000);
+  }
+  setInterval(beat, 25000);
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('online', wake);
   // 번호를 바꿨을 때처럼 같은 방에 새로 붙는다
   function reconnect() { const old = ws; ws = null; if (old) try { old.close(); } catch {} connect(); }
   // 반 방 선생님: 이 차시로 수업 시작
@@ -7628,6 +7719,11 @@ if (!window.clearImmediate) {
       if (ROLE === 'student') { solo = false; ui.attention(); lockNav(); ui.session(); ui.askChanged(); ui.badge(); if (had) ui.flash('수업이 끝났어요 · 이제 복습할 수 있어요'); }
       else { asks.clear(); words.clear(); if (ui.panelOpen) ui.closePanel(); ui.badge(); ui.flash(m.auto ? '오래 조작이 없어 수업이 저절로 끝났어요' : '수업을 마쳤어요 · 다음 수업도 같은 링크예요'); }
       return;
+    }
+    if (m.t === 'seat') {                              // 같은 번호로 다른 기기가 들어와 있다(taken) · 내 번호가 다른 기기로 옮겨 갔다(moved)
+      if (ROLE !== 'student') return;
+      if (m.moved) { const w = me.get(room.code) || me.mem || {}; me.set(room.code, { ...w, num: null, name: '' }); }
+      ui.idBox(reconnect, m); ui.badge(); return;
     }
     if (m.t === 'name') { room.name = m.name; ui.badge(); return; }   // 선생님 페이지에서 이름을 바꿨다
     if (m.t === 'classes') {
@@ -7827,16 +7923,19 @@ if (!window.clearImmediate) {
       home.hidden = ROLE === 'student' && !!(room && state.lesson);
     },
     // 처음 한 번: 과목 방이면 반 고르기, 번호를 받는 반이면 번호(와 이름)
-    idBox(done) {
+    // seat: 방이 알린 번호 겹침 { taken: 번호 }(다른 기기가 이미 그 번호) · { moved: 번호 }(다른 기기가 이 기기 번호로 들어옴)
+    idBox(done, seat) {
       const mode = state.idMode || 'anon', withNum = mode !== 'anon', withName = mode === 'numname';
       const list = state.classes || [], old = me.get(room.code) || me.mem || {};
-      let cls = list.includes(old.cls) ? old.cls : null;
+      let cls = list.includes(old.cls) ? old.cls : null, take = false;
       const what = withName ? '번호와 이름' : '번호';
-      const lead = list.length ? (withNum ? `우리 반을 고르고 ${what}을 넣어요.` : '우리 반을 골라요.') + ' 처음 한 번만 하면 돼요.' : `선생님이 ${what}을 받기로 했어요. 처음 한 번만 넣으면 돼요.`;
+      const lead = seat && seat.taken ? `<b>${seat.taken}번</b>은 다른 기기에서 이미 들어와 있어요. 번호가 맞는지 확인해 주세요. 내 번호가 맞으면 «이 기기로 옮기기»를 눌러요.`
+        : seat && seat.moved ? `다른 기기가 <b>${seat.moved}번</b>으로 들어와서 이 기기의 번호가 빠졌어요. 이 기기로 계속하려면 번호를 다시 넣어 주세요.`
+        : list.length ? (withNum ? `우리 반을 고르고 ${what}을 넣어요.` : '우리 반을 골라요.') + ' 처음 한 번만 하면 돼요.' : `선생님이 ${what}을 받기로 했어요. 처음 한 번만 넣으면 돼요.`;
       const o = this.overlay(`<h2>${esc(room.name || '수업방')}</h2><p class="rc-lead">${lead}</p>
         <form class="rc-form">${list.length ? `<div class="rc-cls" role="group" aria-label="우리 반">${list.map((c) => `<button type="button" class="rc-btn" data-c="${esc(c)}" aria-pressed="${c === cls}">${esc(c)}</button>`).join('')}</div>` : ''}
         ${withNum ? `<input class="rc-input rc-num" inputmode="numeric" type="number" min="1" max="99" placeholder="번호" aria-label="번호" value="${old.num || ''}">` : ''}${withName ? `<input class="rc-input rc-name" maxlength="12" placeholder="이름" aria-label="이름" autocomplete="off" value="${esc(old.name || '')}">` : ''}
-        ${withNum || !list.length ? '<button type="submit" class="rc-btn main">들어가기</button>' : ''}</form>
+        ${withNum || !list.length ? '<button type="submit" class="rc-btn main">들어가기</button>' : ''}${withNum && seat && seat.taken ? '<button type="button" class="rc-btn" data-a="take">이 기기로 옮기기</button>' : ''}</form>
         <p class="rc-msg" aria-live="polite"></p>`);
       const form = o.querySelector('.rc-form'), say = (t) => { o.querySelector('.rc-msg').textContent = t; };
       o.querySelectorAll('[data-c]').forEach((b) => b.onclick = () => {
@@ -7854,8 +7953,11 @@ if (!window.clearImmediate) {
         if (withNum && !(num >= 1 && num <= 99)) { say('번호를 1~99 사이로 넣어 주세요.'); return; }
         if (withName && !/^[\p{L} ]{1,12}$/u.test(name)) { say('이름을 글자로 12자 안에서 넣어 주세요.'); return; }
         me.set(room.code, { cls, num, name });
+        if (take) takeSeat = true;                     // 다음 연결에서 이 번호를 이 기기로 옮긴다
         this.closePanel(); done();
       };
+      const tk = o.querySelector('[data-a="take"]');
+      if (tk) tk.onclick = () => { take = true; form.requestSubmit(); take = false; };
     },
     attention() {
       let a = document.querySelector('.room-attention');
@@ -8291,19 +8393,21 @@ if (!window.clearImmediate) {
       box.hidden = !on; if (!on) return;
       const my = Reveal.getIndices().h, by = new Map();
       for (const r of state.roster || []) { if (!inClass(r)) continue; if (!by.has(r.num)) by.set(r.num, []); by.get(r.num).push(r); }
-      // 인원을 정했으면 1번부터 인원(또는 들어온 가장 큰 번호)까지, 안 정했으면 들어온 번호만
-      const size = state.size || 0;
-      const nums = size ? Array.from({ length: Math.max(size, ...by.keys()) }, (_, i) => i + 1) : [...by.keys()].sort((a, b) => a - b);
+      // 인원을 정했으면 1번부터 인원까지(인원보다 큰 번호는 뒤에 따로), 안 정했으면 들어온 번호만
+      const size = state.size || 0, seen = [...by.keys()].sort((a, b) => a - b);
+      const nums = size ? [...Array.from({ length: size }, (_, i) => i + 1), ...seen.filter((n) => n > size)] : seen;
       if (!nums.length) { box.innerHTML = '<p class="rs-empty">학생이 번호를 넣고 들어오면 번호 칸이 생겨요. 인원을 넣으면 안 들어온 번호도 보여요.</p>'; return; }
       const showName = this.showNames && state.idMode === 'numname';
       let cells = '';
       for (const n of nums) {
         const rs = by.get(n) || [], r = rs[0];
         const cls = !r ? 'off' : r.path === LESSON ? (r.h === my ? 'same' : 'slide') : 'away';
-        const tip = r ? `${n}번${r.name ? ' ' + r.name : ''} · ${cls === 'same' ? '같은 장' : cls === 'slide' ? (r.h + 1) + '장' : r.path === 'library' ? '차시 목록' : '다른 차시'} · 답 ${r.a}개` : `${n}번 · 안 들어옴`;
-        cells += `<span class="rs ${cls}" title="${esc(tip)}"><b>${n}</b>${showName && r && r.name ? `<i>${esc(r.name)}</i>` : ''}${r ? `<em>${r.a}</em>` : ''}${rs.length > 1 ? `<u>×${rs.length}</u>` : ''}</span>`;
+        const over = size && n > size, dup = rs.length > 1;
+        const tip = (r ? `${n}번${r.name ? ' ' + r.name : ''} · ${cls === 'same' ? '같은 장' : cls === 'slide' ? (r.h + 1) + '장' : r.path === 'library' ? '차시 목록' : '다른 차시'} · 답 ${r.a}개` : `${n}번 · 안 들어옴`)
+          + (over ? ` · 인원(${size}명)보다 큰 번호예요` : '') + (dup ? ` · 같은 번호로 기기 ${rs.length}대가 들어왔어요(번호를 잘못 넣은 학생이 있을 수 있어요)` : '');
+        cells += `<span class="rs ${cls}${over ? ' over' : ''}${dup ? ' dup' : ''}" title="${esc(tip)}"><b>${n}</b>${showName && r && r.name ? `<i>${esc(r.name)}</i>` : ''}${r ? `<em>${r.a}</em>` : ''}${dup ? `<u>×${rs.length}</u>` : ''}</span>`;
       }
-      const off = size ? nums.filter((n) => !by.has(n)) : null;
+      const off = size ? nums.filter((n) => n <= size && !by.has(n)) : null;
       box.innerHTML = `<div class="rs-head"><span><i class="same"></i>같은 장</span><span><i class="slide"></i>다른 장</span><span><i class="away"></i>다른 곳</span>${off ? `<span><i class="off"></i>안 들어옴 ${off.length}명</span>` : '<span>들어온 번호만 보여요</span>'}`
         + `${state.idMode === 'numname' ? `<button type="button" class="rc-btn small" data-a="names">${showName ? '이름 숨기기' : '이름 보기'}</button>` : ''}</div><div class="rs-grid">${cells}</div>`;
       const nb = box.querySelector('[data-a="names"]'); if (nb) nb.onclick = () => { this.showNames = !this.showNames; this.rosterDraw(); };
