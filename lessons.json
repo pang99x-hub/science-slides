@@ -3,6 +3,366 @@
     {
       "subject": "통합과학2",
       "subjectSlug": "tongsci2",
+      "unit": "1-1-1",
+      "unitTitle": "지질 시대의 환경과 생물 변화",
+      "area": "Ⅰ. 변화와 다양성",
+      "standard": "[10통과2-01-01]",
+      "standardText": "지질 시대를 통해 지구 환경이 끊임없이 변화해 왔으며 이러한 환경 변화가 생물다양성에 미치는 영향을 추론할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "지질 시대와 화석",
+          "question": "공룡이 살던 때와 그곳의 환경을 무엇으로 알 수 있을까?",
+          "pages": "14~15",
+          "slides": 7,
+          "teacher": "tongsci2/1-1-1/1/teacher.html",
+          "student": "tongsci2/1-1-1/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "지질 시대의 환경과 생물",
+          "question": "지질 시대마다 환경과 생물은 어떻게 달랐을까?",
+          "pages": "16~17",
+          "slides": 5,
+          "teacher": "tongsci2/1-1-1/2/teacher.html",
+          "student": "tongsci2/1-1-1/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "움직이는 대륙과 달라지는 환경",
+          "question": "대륙이 움직이면 지구 환경과 생물은 어떻게 달라질까?",
+          "pages": "16~17",
+          "slides": 4,
+          "teacher": "tongsci2/1-1-1/3/teacher.html",
+          "student": "tongsci2/1-1-1/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "생물 대멸종과 생물다양성",
+          "question": "생물 대멸종은 왜 일어났고, 그 뒤 생물은 어떻게 달라졌을까?",
+          "pages": "18~19",
+          "slides": 5,
+          "teacher": "tongsci2/1-1-1/4/teacher.html",
+          "student": "tongsci2/1-1-1/4/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "1-1-2",
+      "unitTitle": "생물의 진화",
+      "area": "Ⅰ. 변화와 다양성",
+      "standard": "[10통과2-01-02]",
+      "standardText": "변이의 발생과 자연선택 과정을 통해 생물의 진화가 일어나고, 진화의 과정을 통해 생물다양성이 형성되었음을 추론할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "변이와 자연선택",
+          "question": "한 종의 쥐가 사는 곳마다 털빛이 다른 까닭은 무엇일까?",
+          "pages": "20~21",
+          "slides": 6,
+          "teacher": "tongsci2/1-1-2/1/teacher.html",
+          "student": "tongsci2/1-1-2/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "자연선택 모의실험",
+          "question": "노란 도화지 위에서는 어떤 색 초콜릿이 끝까지 남을까?",
+          "pages": "22~23",
+          "slides": 5,
+          "teacher": "tongsci2/1-1-2/2/teacher.html",
+          "student": "tongsci2/1-1-2/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "진화와 생물다양성",
+          "question": "갈라파고스 제도에는 왜 부리가 서로 다른 핀치가 여러 종 살까?",
+          "pages": "24~25, 32",
+          "slides": 5,
+          "teacher": "tongsci2/1-1-2/3/teacher.html",
+          "student": "tongsci2/1-1-2/3/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "1-1-3",
+      "unitTitle": "생물다양성과 보전",
+      "area": "Ⅰ. 변화와 다양성",
+      "standard": "[10통과2-01-02]",
+      "standardText": "변이의 발생과 자연선택 과정을 통해 생물의 진화가 일어나고, 진화의 과정을 통해 생물다양성이 형성되었음을 추론할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "생물다양성의 세 가지 요소",
+          "question": "생물다양성은 왜 지켜야 할까?",
+          "pages": "26~27",
+          "slides": 5,
+          "teacher": "tongsci2/1-1-3/1/teacher.html",
+          "student": "tongsci2/1-1-3/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "생물다양성의 가치와 보전",
+          "question": "생물 한 종이 사라지면 생태계와 우리에게 무슨 일이 생길까?",
+          "pages": "28~29",
+          "slides": 6,
+          "teacher": "tongsci2/1-1-3/2/teacher.html",
+          "student": "tongsci2/1-1-3/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "보전 사례 조사와 실천 방안",
+          "question": "생물다양성을 지키려고 우리는 무엇을 할 수 있을까?",
+          "pages": "30~31",
+          "slides": 6,
+          "teacher": "tongsci2/1-1-3/3/teacher.html",
+          "student": "tongsci2/1-1-3/3/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "1-2-1",
+      "unitTitle": "산화와 환원",
+      "area": "Ⅰ. 변화와 다양성",
+      "standard": "[10통과2-01-03]",
+      "standardText": "자연과 인류의 큰 변화를 가져온 광합성, 화석 연료 사용, 철의 제련 등에서 공통점을 찾아 산화와 환원을 이해하고, 생활 주변의 다양한 변화를 산화와 환원의 특징과 규칙성으로 분석할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "산소를 주고받는 산화와 환원",
+          "question": "철검을 붉게 녹슬게 한 기체는 무엇이고, 그때 무슨 일이 일어났을까?",
+          "pages": "38~41",
+          "slides": 7,
+          "teacher": "tongsci2/1-2-1/1/teacher.html",
+          "student": "tongsci2/1-2-1/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "전자를 주고받는 산화와 환원",
+          "question": "산소가 끼어들지 않는 반응도 산화와 환원이라고 할 수 있을까?",
+          "pages": "42~45",
+          "slides": 8,
+          "teacher": "tongsci2/1-2-1/2/teacher.html",
+          "student": "tongsci2/1-2-1/2/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "1-2-2",
+      "unitTitle": "산과 염기",
+      "area": "Ⅰ. 변화와 다양성",
+      "standard": "[10통과2-01-04]",
+      "standardText": "대표적인 산·염기 물질의 특징을 알고, 산과 염기를 혼합할 때 나타나는 중화 반응을 생활 속에서 이용할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "산성과 염기성",
+          "question": "레몬즙과 식초에는 어떤 공통점이 있을까?",
+          "pages": "46~47",
+          "slides": 5,
+          "teacher": "tongsci2/1-2-2/1/teacher.html",
+          "student": "tongsci2/1-2-2/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "산과 염기의 이온화",
+          "question": "산과 염기의 수용액에는 왜 전류가 흐를까?",
+          "pages": "48~49",
+          "slides": 5,
+          "teacher": "tongsci2/1-2-2/2/teacher.html",
+          "student": "tongsci2/1-2-2/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "탐구: 산과 염기를 섞을 때의 온도",
+          "question": "염산과 NaOH 수용액을 섞으면 온도는 어떻게 변할까?",
+          "pages": "50~51",
+          "slides": 5,
+          "teacher": "tongsci2/1-2-2/3/teacher.html",
+          "student": "tongsci2/1-2-2/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "중화 반응과 그 이용",
+          "question": "산과 염기가 만나면 무엇이 생기고, 생활에서는 어떻게 쓸까?",
+          "pages": "52~53",
+          "slides": 5,
+          "teacher": "tongsci2/1-2-2/4/teacher.html",
+          "student": "tongsci2/1-2-2/4/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "1-2-3",
+      "unitTitle": "에너지의 흡수와 방출",
+      "area": "Ⅰ. 변화와 다양성",
+      "standard": "[10통과2-01-05]",
+      "standardText": "생활 주변에서 에너지를 흡수하거나 방출하는 현상을 찾아 에너지의 흡수 방출이 우리 생활에 어떻게 이용되는지 토의할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "에너지를 흡수하거나 방출하는 현상",
+          "question": "드라이아이스 곁의 아이스크림은 왜 녹지 않을까?",
+          "pages": "54~55",
+          "slides": 5,
+          "teacher": "tongsci2/1-2-3/1/teacher.html",
+          "student": "tongsci2/1-2-3/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "에너지의 흡수와 방출 이용",
+          "question": "손난로는 따뜻해지고 냉찜질 팩은 차가워지는 까닭은?",
+          "pages": "56~57",
+          "slides": 6,
+          "teacher": "tongsci2/1-2-3/2/teacher.html",
+          "student": "tongsci2/1-2-3/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "탐구: 물과 산화 칼슘으로 음식 조리하기",
+          "question": "불 없이 물과 산화 칼슘만으로 음식을 익힐 수 있을까?",
+          "pages": "58~59",
+          "slides": 6,
+          "teacher": "tongsci2/1-2-3/3/teacher.html",
+          "student": "tongsci2/1-2-3/3/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "2-1-1",
+      "unitTitle": "생물과 환경",
+      "area": "Ⅱ. 환경과 에너지",
+      "standard": "[10통과2-02-01]",
+      "standardText": "생태계구성요소를 이해하고 생물과 환경 사이의 상호 관계를 설명할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "생태계구성요소",
+          "question": "지렁이가 많은 밭에서는 왜 작물이 잘 클까?",
+          "pages": "72~73",
+          "slides": 6,
+          "teacher": "tongsci2/2-1-1/1/teacher.html",
+          "student": "tongsci2/2-1-1/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "생물과 환경의 상호 관계",
+          "question": "생물과 환경은 서로 어떤 영향을 주고받을까?",
+          "pages": "74~75",
+          "slides": 7,
+          "teacher": "tongsci2/2-1-1/2/teacher.html",
+          "student": "tongsci2/2-1-1/2/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "2-1-2",
+      "unitTitle": "생태계평형",
+      "area": "Ⅱ. 환경과 에너지",
+      "standard": "[10통과2-02-02]",
+      "standardText": "먹이 관계와 생태피라미드를 중심으로 생태계평형이 유지되는 과정을 이해하고, 환경의 변화가 생태계에 미칠 수 있는 영향에 대해 협력적으로 소통할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "먹이 관계와 생태계평형",
+          "question": "참새가 줄어들자 왜 메뚜기가 많아졌을까?",
+          "pages": "76~78",
+          "slides": 6,
+          "teacher": "tongsci2/2-1-2/1/teacher.html",
+          "student": "tongsci2/2-1-2/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "탐구: 개체군 변동 모의실험",
+          "question": "참새와 메뚜기의 수는 세대가 지나며 어떻게 달라질까?",
+          "pages": "79",
+          "slides": 5,
+          "teacher": "tongsci2/2-1-2/2/teacher.html",
+          "student": "tongsci2/2-1-2/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "환경 변화와 생태계",
+          "question": "환경이 크게 바뀌면 생태계에는 어떤 일이 생길까?",
+          "pages": "80~81",
+          "slides": 5,
+          "teacher": "tongsci2/2-1-2/3/teacher.html",
+          "student": "tongsci2/2-1-2/3/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
+      "unit": "2-1-3",
+      "unitTitle": "지구 환경의 변화",
+      "area": "Ⅱ. 환경과 에너지",
+      "standard": "[10통과2-02-03]",
+      "standardText": "온실 효과 강화로 인한 지구 온난화의 메커니즘을 이해하고, 엘니뇨, 사막화 등과 같은 현상이 지구 환경과 인간 생활에 미치는 영향과 대처 방안을 분석할 수 있다.",
+      "textbook": "미래엔 통합과학2",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "온실 효과와 지구 온난화",
+          "question": "대기 중 온실 기체가 늘어나면 지구의 기온은 왜 높아질까?",
+          "pages": "82~84",
+          "slides": 6,
+          "teacher": "tongsci2/2-1-3/1/teacher.html",
+          "student": "tongsci2/2-1-3/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "사막화와 엘니뇨",
+          "question": "사막화와 엘니뇨는 환경과 사람의 생활을 어떻게 바꿀까?",
+          "pages": "85~87",
+          "slides": 6,
+          "teacher": "tongsci2/2-1-3/2/teacher.html",
+          "student": "tongsci2/2-1-3/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "기후 변화의 영향과 미래 시나리오",
+          "question": "2100년의 지구는 어떤 모습일까?",
+          "pages": "88~91",
+          "slides": 6,
+          "teacher": "tongsci2/2-1-3/3/teacher.html",
+          "student": "tongsci2/2-1-3/3/student.html"
+        }
+      ],
+      "updated": "2026-10-30"
+    },
+    {
+      "subject": "통합과학2",
+      "subjectSlug": "tongsci2",
       "unit": "2-2-1",
       "unitTitle": "태양 에너지의 생성과 전환",
       "area": "Ⅱ. 환경과 에너지 › 2. 에너지",
@@ -29,7 +389,7 @@
           "student": "tongsci2/2-2-1/2/student.html"
         }
       ],
-      "updated": "2026-10-29"
+      "updated": "2026-10-30"
     },
     {
       "subject": "통합과학2",
@@ -78,7 +438,7 @@
           "student": "tongsci2/2-2-2/4/student.html"
         }
       ],
-      "updated": "2026-10-29"
+      "updated": "2026-10-30"
     },
     {
       "subject": "통합과학2",
@@ -127,7 +487,7 @@
           "student": "tongsci2/2-2-3/4/student.html"
         }
       ],
-      "updated": "2026-10-29"
+      "updated": "2026-10-30"
     },
     {
       "subject": "통합과학2",
@@ -158,7 +518,7 @@
           "student": "tongsci2/3-1/2/student.html"
         }
       ],
-      "updated": "2026-10-29"
+      "updated": "2026-10-30"
     },
     {
       "subject": "통합과학2",
@@ -189,7 +549,7 @@
           "student": "tongsci2/3-2/2/student.html"
         }
       ],
-      "updated": "2026-10-29"
+      "updated": "2026-10-30"
     }
   ]
 }

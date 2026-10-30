@@ -41,6 +41,9 @@ h1 { font: 800 clamp(36px, 7vw, 64px)/1.05 var(--f-display); margin: 0; letter-s
 kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bottom-width: 3px; border-radius: 5px; padding: 0 6px; background: var(--paper); }
 .unit { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 6px 6px 0 var(--ink); padding: 22px 22px 14px; margin-bottom: 32px; }
 .unit-head { display: grid; gap: 6px; margin-bottom: 16px; }
+.subj { margin: 28px 0 4px; font: 800 clamp(28px, 5vw, 40px)/1.15 var(--f-display); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; border-bottom: 3px solid var(--ink); padding-bottom: 8px; }
+.subj span { font: 600 15px/1.3 var(--f-body); color: var(--ink-2); }
+.area { margin: 22px 0 10px; font: 700 21px/1.3 var(--f-display); color: var(--accent); }
 .crumbs { margin: 0; font-size: 14px; color: var(--ink-2); letter-spacing: .02em; }
 .unit h2 { font: 800 clamp(26px, 4.4vw, 36px)/1.15 var(--f-display); margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
 .code { font: 600 .55em var(--f-body); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 12px; }
@@ -159,7 +162,7 @@ footer a { color: var(--accent); }
       </ol>
     </div>
     <div id="tmine" class="mine" hidden></div>
-    <div class="links"><a class="btn main" href="teach.html" id="tgo">구글로 로그인하고 시작하기</a><a class="btn" href="guide.html">학생 쪽 화면 보기</a></div>
+    <div class="links"><a class="btn main" href="teach.html" id="tgo">구글로 로그인하고 시작하기</a><a class="btn" href="guide.html">학생 쪽 화면 보기</a><a class="btn" href="board.html">선생님 게시판</a></div>
     <details><summary>수업방 없이 화면만 띄울 때</summary>
       <p>자료 카드의 <b>선생님 화면</b>에는 장마다 발표자 메모(발문·예시 답·지도 유의점)가 있어요.</p>
       <p><kbd>S</kbd> 발표자 화면 · <kbd>→</kbd> 다음 단계 · <kbd>F</kbd> 전체 화면 · <kbd>C</kbd> 판서 · <kbd>B</kbd> 칠판 · <kbd>Esc</kbd> 한눈에 보기</p>
@@ -170,6 +173,294 @@ footer a { color: var(--accent); }
 
 <div class="sec"><h2>수업 자료</h2><p><b>체험하기</b>는 학생 화면을 혼자 넘겨 보며 그림 속 자석·코일·단추를 직접 움직여 보는 거예요.</p></div>
 
+<h2 class="subj" id="tongsci2">통합과학2<span>미래엔 통합과학2 기준</span></h2><h3 class="area">Ⅰ. 변화와 다양성</h3>
+  <section class="unit" id="tongsci2-1-1-1">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅰ. 변화와 다양성</p>
+      <h2><span class="code">1-1-1</span>지질 시대의 환경과 생물 변화</h2>
+      <p class="std"><b>성취기준 [10통과2-01-01]</b> 지질 시대를 통해 지구 환경이 끊임없이 변화해 왔으며 이러한 환경 변화가 생물다양성에 미치는 영향을 추론할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>지질 시대와 화석</h3>
+        <p class="q">공룡이 살던 때와 그곳의 환경을 무엇으로 알 수 있을까?</p>
+        <p class="meta">미래엔 통합과학2 14~15쪽 기준 · 7장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-1/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-1/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>지질 시대의 환경과 생물</h3>
+        <p class="q">지질 시대마다 환경과 생물은 어떻게 달랐을까?</p>
+        <p class="meta">미래엔 통합과학2 16~17쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-1/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-1/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">3차시</span></div>
+        <h3>움직이는 대륙과 달라지는 환경</h3>
+        <p class="q">대륙이 움직이면 지구 환경과 생물은 어떻게 달라질까?</p>
+        <p class="meta">미래엔 통합과학2 16~17쪽 기준 · 4장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-1/3/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-1/3/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">4차시</span></div>
+        <h3>생물 대멸종과 생물다양성</h3>
+        <p class="q">생물 대멸종은 왜 일어났고, 그 뒤 생물은 어떻게 달라졌을까?</p>
+        <p class="meta">미래엔 통합과학2 18~19쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-1/4/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-1/4/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+
+  <section class="unit" id="tongsci2-1-1-2">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅰ. 변화와 다양성</p>
+      <h2><span class="code">1-1-2</span>생물의 진화</h2>
+      <p class="std"><b>성취기준 [10통과2-01-02]</b> 변이의 발생과 자연선택 과정을 통해 생물의 진화가 일어나고, 진화의 과정을 통해 생물다양성이 형성되었음을 추론할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>변이와 자연선택</h3>
+        <p class="q">한 종의 쥐가 사는 곳마다 털빛이 다른 까닭은 무엇일까?</p>
+        <p class="meta">미래엔 통합과학2 20~21쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-2/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-2/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>자연선택 모의실험</h3>
+        <p class="q">노란 도화지 위에서는 어떤 색 초콜릿이 끝까지 남을까?</p>
+        <p class="meta">미래엔 통합과학2 22~23쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-2/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-2/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">3차시</span></div>
+        <h3>진화와 생물다양성</h3>
+        <p class="q">갈라파고스 제도에는 왜 부리가 서로 다른 핀치가 여러 종 살까?</p>
+        <p class="meta">미래엔 통합과학2 24~25, 32쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-2/3/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-2/3/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+
+  <section class="unit" id="tongsci2-1-1-3">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅰ. 변화와 다양성</p>
+      <h2><span class="code">1-1-3</span>생물다양성과 보전</h2>
+      <p class="std"><b>성취기준 [10통과2-01-02]</b> 변이의 발생과 자연선택 과정을 통해 생물의 진화가 일어나고, 진화의 과정을 통해 생물다양성이 형성되었음을 추론할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>생물다양성의 세 가지 요소</h3>
+        <p class="q">생물다양성은 왜 지켜야 할까?</p>
+        <p class="meta">미래엔 통합과학2 26~27쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-3/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-3/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>생물다양성의 가치와 보전</h3>
+        <p class="q">생물 한 종이 사라지면 생태계와 우리에게 무슨 일이 생길까?</p>
+        <p class="meta">미래엔 통합과학2 28~29쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-3/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-3/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">3차시</span></div>
+        <h3>보전 사례 조사와 실천 방안</h3>
+        <p class="q">생물다양성을 지키려고 우리는 무엇을 할 수 있을까?</p>
+        <p class="meta">미래엔 통합과학2 30~31쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-1-3/3/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-1-3/3/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+
+  <section class="unit" id="tongsci2-1-2-1">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅰ. 변화와 다양성</p>
+      <h2><span class="code">1-2-1</span>산화와 환원</h2>
+      <p class="std"><b>성취기준 [10통과2-01-03]</b> 자연과 인류의 큰 변화를 가져온 광합성, 화석 연료 사용, 철의 제련 등에서 공통점을 찾아 산화와 환원을 이해하고, 생활 주변의 다양한 변화를 산화와 환원의 특징과 규칙성으로 분석할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>산소를 주고받는 산화와 환원</h3>
+        <p class="q">철검을 붉게 녹슬게 한 기체는 무엇이고, 그때 무슨 일이 일어났을까?</p>
+        <p class="meta">미래엔 통합과학2 38~41쪽 기준 · 7장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-1/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-1/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>전자를 주고받는 산화와 환원</h3>
+        <p class="q">산소가 끼어들지 않는 반응도 산화와 환원이라고 할 수 있을까?</p>
+        <p class="meta">미래엔 통합과학2 42~45쪽 기준 · 8장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-1/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-1/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+
+  <section class="unit" id="tongsci2-1-2-2">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅰ. 변화와 다양성</p>
+      <h2><span class="code">1-2-2</span>산과 염기</h2>
+      <p class="std"><b>성취기준 [10통과2-01-04]</b> 대표적인 산·염기 물질의 특징을 알고, 산과 염기를 혼합할 때 나타나는 중화 반응을 생활 속에서 이용할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>산성과 염기성</h3>
+        <p class="q">레몬즙과 식초에는 어떤 공통점이 있을까?</p>
+        <p class="meta">미래엔 통합과학2 46~47쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-2/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-2/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>산과 염기의 이온화</h3>
+        <p class="q">산과 염기의 수용액에는 왜 전류가 흐를까?</p>
+        <p class="meta">미래엔 통합과학2 48~49쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-2/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-2/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">3차시</span></div>
+        <h3>탐구: 산과 염기를 섞을 때의 온도</h3>
+        <p class="q">염산과 NaOH 수용액을 섞으면 온도는 어떻게 변할까?</p>
+        <p class="meta">미래엔 통합과학2 50~51쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-2/3/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-2/3/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">4차시</span></div>
+        <h3>중화 반응과 그 이용</h3>
+        <p class="q">산과 염기가 만나면 무엇이 생기고, 생활에서는 어떻게 쓸까?</p>
+        <p class="meta">미래엔 통합과학2 52~53쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-2/4/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-2/4/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+
+  <section class="unit" id="tongsci2-1-2-3">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅰ. 변화와 다양성</p>
+      <h2><span class="code">1-2-3</span>에너지의 흡수와 방출</h2>
+      <p class="std"><b>성취기준 [10통과2-01-05]</b> 생활 주변에서 에너지를 흡수하거나 방출하는 현상을 찾아 에너지의 흡수 방출이 우리 생활에 어떻게 이용되는지 토의할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>에너지를 흡수하거나 방출하는 현상</h3>
+        <p class="q">드라이아이스 곁의 아이스크림은 왜 녹지 않을까?</p>
+        <p class="meta">미래엔 통합과학2 54~55쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-3/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-3/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>에너지의 흡수와 방출 이용</h3>
+        <p class="q">손난로는 따뜻해지고 냉찜질 팩은 차가워지는 까닭은?</p>
+        <p class="meta">미래엔 통합과학2 56~57쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-3/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-3/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">3차시</span></div>
+        <h3>탐구: 물과 산화 칼슘으로 음식 조리하기</h3>
+        <p class="q">불 없이 물과 산화 칼슘만으로 음식을 익힐 수 있을까?</p>
+        <p class="meta">미래엔 통합과학2 58~59쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/1-2-3/3/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/1-2-3/3/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+<h3 class="area">Ⅱ. 환경과 에너지</h3>
+  <section class="unit" id="tongsci2-2-1-1">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅱ. 환경과 에너지</p>
+      <h2><span class="code">2-1-1</span>생물과 환경</h2>
+      <p class="std"><b>성취기준 [10통과2-02-01]</b> 생태계구성요소를 이해하고 생물과 환경 사이의 상호 관계를 설명할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>생태계구성요소</h3>
+        <p class="q">지렁이가 많은 밭에서는 왜 작물이 잘 클까?</p>
+        <p class="meta">미래엔 통합과학2 72~73쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-1/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-1/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>생물과 환경의 상호 관계</h3>
+        <p class="q">생물과 환경은 서로 어떤 영향을 주고받을까?</p>
+        <p class="meta">미래엔 통합과학2 74~75쪽 기준 · 7장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-1/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-1/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+
+  <section class="unit" id="tongsci2-2-1-2">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅱ. 환경과 에너지</p>
+      <h2><span class="code">2-1-2</span>생태계평형</h2>
+      <p class="std"><b>성취기준 [10통과2-02-02]</b> 먹이 관계와 생태피라미드를 중심으로 생태계평형이 유지되는 과정을 이해하고, 환경의 변화가 생태계에 미칠 수 있는 영향에 대해 협력적으로 소통할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>먹이 관계와 생태계평형</h3>
+        <p class="q">참새가 줄어들자 왜 메뚜기가 많아졌을까?</p>
+        <p class="meta">미래엔 통합과학2 76~78쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-2/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-2/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>탐구: 개체군 변동 모의실험</h3>
+        <p class="q">참새와 메뚜기의 수는 세대가 지나며 어떻게 달라질까?</p>
+        <p class="meta">미래엔 통합과학2 79쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-2/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-2/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">3차시</span></div>
+        <h3>환경 변화와 생태계</h3>
+        <p class="q">환경이 크게 바뀌면 생태계에는 어떤 일이 생길까?</p>
+        <p class="meta">미래엔 통합과학2 80~81쪽 기준 · 5장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-2/3/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-2/3/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
+
+  <section class="unit" id="tongsci2-2-1-3">
+    <div class="unit-head">
+      <p class="crumbs">통합과학2 · Ⅱ. 환경과 에너지</p>
+      <h2><span class="code">2-1-3</span>지구 환경의 변화</h2>
+      <p class="std"><b>성취기준 [10통과2-02-03]</b> 온실 효과 강화로 인한 지구 온난화의 메커니즘을 이해하고, 엘니뇨, 사막화 등과 같은 현상이 지구 환경과 인간 생활에 미치는 영향과 대처 방안을 분석할 수 있다.</p>
+    </div>
+    <ol class="lessons">
+      <li class="lesson">
+        <div class="top"><span class="no">1차시</span></div>
+        <h3>온실 효과와 지구 온난화</h3>
+        <p class="q">대기 중 온실 기체가 늘어나면 지구의 기온은 왜 높아질까?</p>
+        <p class="meta">미래엔 통합과학2 82~84쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-3/1/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-3/1/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">2차시</span></div>
+        <h3>사막화와 엘니뇨</h3>
+        <p class="q">사막화와 엘니뇨는 환경과 사람의 생활을 어떻게 바꿀까?</p>
+        <p class="meta">미래엔 통합과학2 85~87쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-3/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-3/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+      <li class="lesson">
+        <div class="top"><span class="no">3차시</span></div>
+        <h3>기후 변화의 영향과 미래 시나리오</h3>
+        <p class="q">2100년의 지구는 어떤 모습일까?</p>
+        <p class="meta">미래엔 통합과학2 88~91쪽 기준 · 6장</p>
+        <div class="go"><a class="btn main" href="tongsci2/2-1-3/3/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-1-3/3/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
+      </li>
+    </ol>
+    <p class="upd">2026-10-30 고침</p>
+  </section>
 
   <section class="unit" id="tongsci2-2-2-1">
     <div class="unit-head">
@@ -193,7 +484,7 @@ footer a { color: var(--accent); }
         <div class="go"><a class="btn main" href="tongsci2/2-2-1/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-2-1/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
       </li>
     </ol>
-    <p class="upd">2026-10-29 고침</p>
+    <p class="upd">2026-10-30 고침</p>
   </section>
 
   <section class="unit" id="tongsci2-2-2-2">
@@ -232,7 +523,7 @@ footer a { color: var(--accent); }
         <div class="go"><a class="btn main" href="tongsci2/2-2-2/4/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-2-2/4/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
       </li>
     </ol>
-    <p class="upd">2026-10-29 고침</p>
+    <p class="upd">2026-10-30 고침</p>
   </section>
 
   <section class="unit" id="tongsci2-2-2-3">
@@ -271,9 +562,9 @@ footer a { color: var(--accent); }
         <div class="go"><a class="btn main" href="tongsci2/2-2-3/4/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/2-2-3/4/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
       </li>
     </ol>
-    <p class="upd">2026-10-29 고침</p>
+    <p class="upd">2026-10-30 고침</p>
   </section>
-
+<h3 class="area">Ⅲ. 과학과 미래 사회</h3>
   <section class="unit" id="tongsci2-3-1">
     <div class="unit-head">
       <p class="crumbs">통합과학2 · Ⅲ. 과학과 미래 사회</p>
@@ -296,7 +587,7 @@ footer a { color: var(--accent); }
         <div class="go"><a class="btn main" href="tongsci2/3-1/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/3-1/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
       </li>
     </ol>
-    <p class="upd">2026-10-29 고침</p>
+    <p class="upd">2026-10-30 고침</p>
   </section>
 
   <section class="unit" id="tongsci2-3-2">
@@ -321,7 +612,7 @@ footer a { color: var(--accent); }
         <div class="go"><a class="btn main" href="tongsci2/3-2/2/student.html" title="학생 화면으로 혼자 넘겨 보며 조작해 봐요">체험하기</a><a class="btn" href="tongsci2/3-2/2/teacher.html" title="발표자 메모가 있는 선생님 화면(수업방 없이 띄울 때)">선생님 화면</a></div>
       </li>
     </ol>
-    <p class="upd">2026-10-29 고침</p>
+    <p class="upd">2026-10-30 고침</p>
   </section>
 
 <footer>

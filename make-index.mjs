@@ -4,7 +4,7 @@ import { addPwa } from './pwa.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { joinPage, teachPage } from './pages.mjs';
+import { joinPage, teachPage, boardPage } from './pages.mjs';
 import { guidePage } from './guide.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -165,6 +165,9 @@ h1 { font: 800 clamp(36px, 7vw, 64px)/1.05 var(--f-display); margin: 0; letter-s
 kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bottom-width: 3px; border-radius: 5px; padding: 0 6px; background: var(--paper); }
 .unit { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 6px 6px 0 var(--ink); padding: 22px 22px 14px; margin-bottom: 32px; }
 .unit-head { display: grid; gap: 6px; margin-bottom: 16px; }
+.subj { margin: 28px 0 4px; font: 800 clamp(28px, 5vw, 40px)/1.15 var(--f-display); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; border-bottom: 3px solid var(--ink); padding-bottom: 8px; }
+.subj span { font: 600 15px/1.3 var(--f-body); color: var(--ink-2); }
+.area { margin: 22px 0 10px; font: 700 21px/1.3 var(--f-display); color: var(--accent); }
 .crumbs { margin: 0; font-size: 14px; color: var(--ink-2); letter-spacing: .02em; }
 .unit h2 { font: 800 clamp(26px, 4.4vw, 36px)/1.15 var(--f-display); margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
 .code { font: 600 .55em var(--f-body); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 12px; }
@@ -273,7 +276,7 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
       </ol>
     </div>
     <div id="tmine" class="mine" hidden></div>
-    <div class="links"><a class="btn main" href="teach.html" id="tgo">구글로 로그인하고 시작하기</a><a class="btn" href="guide.html">학생 쪽 화면 보기</a></div>
+    <div class="links"><a class="btn main" href="teach.html" id="tgo">구글로 로그인하고 시작하기</a><a class="btn" href="guide.html">학생 쪽 화면 보기</a><a class="btn" href="board.html">선생님 게시판</a></div>
     <details><summary>수업방 없이 화면만 띄울 때</summary>
       <p>자료 카드의 <b>선생님 화면</b>에는 장마다 발표자 메모(발문·예시 답·지도 유의점)가 있어요.</p>
       <p><kbd>S</kbd> 발표자 화면 · <kbd>→</kbd> 다음 단계 · <kbd>F</kbd> 전체 화면 · <kbd>C</kbd> 판서 · <kbd>B</kbd> 칠판 · <kbd>Esc</kbd> 한눈에 보기</p>
@@ -284,7 +287,7 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
 
 <div class="sec"><h2>수업 자료</h2><p><b>체험하기</b>는 학생 화면을 혼자 넘겨 보며 그림 속 자석·코일·단추를 직접 움직여 보는 거예요.</p></div>
 
-${units.map(unitHtml).join('\n')}
+${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.subject ? `<h2 class="subj" id="${esc(u.subjectSlug)}">${esc(u.subject)}<span>${esc(u.textbook || '')} 기준</span></h2>` : '') + (!p || p.area.split(' › ')[0] !== u.area.split(' › ')[0] || p.subject !== u.subject ? `<h3 class="area">${esc(u.area.split(' › ')[0])}</h3>` : '') + unitHtml(u); }).join('\n')}
 
 <footer>
   <p>${site.author ? `만든 곳: ${esc(site.author)} · ` : ''}수업자료는 <a href="${esc(site.licenseUrl)}" target="_blank" rel="noopener">${esc(site.license)}</a> — 출처를 밝히면 비영리로 고쳐 쓰고 나눌 수 있습니다.${site.contact ? ` 문의·고칠 점: ${esc(site.contact)}` : ''}</p>
@@ -320,6 +323,7 @@ writeFileSync(join(here, 'index.html'), html);
 writeFileSync(join(here, 'guide.html'), guidePage(site));
 writeFileSync(join(here, 'join.html'), joinPage(site, units));
 writeFileSync(join(here, 'teach.html'), teachPage(site, units));
+writeFileSync(join(here, 'board.html'), boardPage(site, units));
 writeFileSync(join(here, '.nojekyll'), '');
 console.log(`설치형 웹 앱 머리말 ${addPwa(here)}쪽`);
 console.log(`반 수업방 쪽 join.html · teach.html`);

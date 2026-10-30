@@ -57,6 +57,7 @@ ul.lessons li.unit:first-child { padding-top: 0; }
 .ugroups { display: grid; gap: 22px; }
 .ugroup { border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); padding: 12px 16px 14px; display: grid; gap: 10px; min-width: 0; }
 .uhead { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: 700 20px/1.3 var(--f-display); }
+.subjl { margin: 6px 0 -8px; font: 800 26px/1.2 var(--f-display); }
 .uhead .ucode { font: 700 13px/1 var(--f-body); letter-spacing: .04em; color: var(--paper-2); background: var(--accent); border-radius: 999px; padding: 5px 10px; }
 .uhead .ucount { margin-left: auto; font: 600 13px/1.3 var(--f-body); color: var(--ink-3); }
 .ugroup ul.lessons li:first-child { border-top: 0; padding-top: 0; }
@@ -120,7 +121,7 @@ select { height: 48px; }
 </head>`;
 
 const lessonList = (units) => units.flatMap((u) => u.lessons.map((l) => ({ ...l, unit: u.unit, unitTitle: u.unitTitle, subject: u.subject, path: l.student.replace(/\/student\.html$/, '') })));
-const lessonData = (lessons) => JSON.stringify(lessons.map((l) => ({ unit: l.unit, unitTitle: l.unitTitle, n: l.n, title: l.title, path: l.path, student: l.student, teacher: l.teacher })));
+const lessonData = (lessons) => JSON.stringify(lessons.map((l) => ({ subject: l.subject, unit: l.unit, unitTitle: l.unitTitle, n: l.n, title: l.title, path: l.path, student: l.student, teacher: l.teacher })));
 
 // 선생님 로그인(구글)·이 기기의 수업방 열쇠 — join.html과 teach.html이 같이 쓴다. 바깥 스크립트에 API·GID가 있어야 한다
 // (템플릿 안에 그대로 들어가므로 이 안에는 달러+중괄호를 쓰지 않는다)
@@ -205,7 +206,7 @@ ${AUTH_JS}
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function find(path) { return LESSONS.filter(function (l) { return l.path === path; })[0] || null; }
   function label(l) { return l.unit + ' ' + l.n + '차시 ' + l.title; }
-  function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length; return '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
+  function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length, first = LESSONS.filter(function (x) { return x.subject === l.subject; })[0]; return (first && first.unit === l.unit && l.subject ? '<h3 class="subjl">' + esc(l.subject) + '</h3>' : '') + '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
   function nextOf(path) { for (var i = 0; i < LESSONS.length - 1; i++) if (LESSONS[i].path === path) return LESSONS[i + 1].path; return null; }
   var cid; try { cid = localStorage.getItem('science-room:cid'); if (!cid) { cid = 's-' + Array.from(crypto.getRandomValues(new Uint8Array(12)), function (b) { return b.toString(16).padStart(2, '0'); }).join(''); localStorage.setItem('science-room:cid', cid); } } catch (e) { cid = 's-' + Math.random().toString(36).slice(2); }
   // 이 기기에 이 반의 진행 열쇠가 있으면 선생님 화면(같은 링크). ?as=student 이면 학생 화면 미리 보기(연결·학생 수에 안 들어감)
@@ -444,7 +445,7 @@ export function teachPage(site, units) {
   return `${head('선생님 페이지 · ' + site.name)}
 <body>
 <div class="wrap">
-  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">${esc(site.name)}</span></nav>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><a class="btn small" href="board.html">선생님 게시판</a><span class="brand">${esc(site.name)}</span></nav>
   <header class="pagehead">
     <h1>선생님 페이지</h1>
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
@@ -518,7 +519,7 @@ ${AUTH_JS}
     setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = idle; } }, 3000);
     return false;
   }
-  function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length; return '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
+  function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length, first = LESSONS.filter(function (x) { return x.subject === l.subject; })[0]; return (first && first.unit === l.unit && l.subject ? '<h3 class="subjl">' + esc(l.subject) + '</h3>' : '') + '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
   function lessonsHtml(c) {
     var html = '', unit = '';
     LESSONS.forEach(function (l) {
@@ -752,6 +753,203 @@ ${AUTH_JS}
     var s = sess(); if (!s || s.status !== 'pending' || document.hidden) return;
     syncMe().then(function (n) { if (n && n.status === 'approved') { renderAll(); meMsg('승인됐어요! 이제 수업방을 만들 수 있어요.'); } });
   }, Number(qs.get('poll')) || 30000);                              // ?poll=은 시험용
+})();
+</script>
+</body>
+</html>
+`;
+}
+
+// 선생님 게시판(board.html, 2026-10-30): 오류 신고·요청·의견·수업 후기. 승인된 선생님만(수업방과 같은 구글 로그인).
+//   board.html?lesson=tongsci2/2-2-2/1&slide=3 → 그 차시·장이 붙은 새 글 쓰기 · board.html#p12 → 12번 글
+//   글은 마크다운. 화면에 띄울 때 marked(MIT)로 바꾸고 DOMPurify(Apache-2.0/MPL)로 위험한 태그를 걸러 낸다
+const BOARD_JS = String.raw`
+  var KIND = { bug: '오류 신고', ask: '요청', idea: '의견', review: '수업 후기' };
+  var STAT = { open: '접수', planned: '계획', started: '고치는 중', completed: '반영됨', declined: '보류' };
+  var S = { kind: '', status: '', sort: 'new', q: '', page: 0, lesson: qs.get('lesson') || '' };
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function md(t) { try { return DOMPurify.sanitize(marked.parse(String(t || ''), { breaks: true })); } catch (e) { return '<p>' + esc(t).replace(/\n/g, '<br>') + '</p>'; } }
+  function when(ms) { var d = new Date(ms), now = Date.now(), m = Math.round((now - ms) / 60000); return m < 1 ? '방금' : m < 60 ? m + '분 전' : m < 1440 ? Math.round(m / 60) + '시간 전' : (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; }
+  function lessonName(p) { var l = LESSONS.filter(function (x) { return x.path === p; })[0]; return l ? l.unit + ' ' + l.n + '차시 ' + l.title : p; }
+  function lessonLink(p, slide) { var l = LESSONS.filter(function (x) { return x.path === p; })[0]; return l ? '<a href="' + esc(l.teacher) + (slide ? '#/' + (slide - 1) : '') + '" target="_blank" rel="noopener">' + esc(lessonName(p)) + (slide ? ' · ' + slide + '장' : '') + '</a>' : esc(p || ''); }
+  function call(op, body) { var s = sess(); body = body || {}; body.session = s && s.token; return api('/board/' + op, body).then(function (j) { if (j.login) { signedOut(); gate(); throw new Error(j.error); } if (j.error) throw new Error(j.error); return j; }); }
+  function say(t) { $('bmsg').textContent = t || ''; }
+
+  // ---- 들어오기: 로그인 → 승인 확인 ----
+  function gate() {
+    var s = sess();
+    $('board').hidden = true;
+    if (!s) {
+      $('gate').hidden = false;
+      $('gatebox').innerHTML = '<p class="muted">가입 승인을 받은 선생님만 볼 수 있어요. 수업방과 같은 구글 계정으로 로그인해 주세요.</p><div id="gbtn"></div><p class="small" id="gmsg"></p>';
+      googleButton($('gbtn'), function (who, err) { if (!who) { $('gmsg').textContent = err; return; } gate(); });
+      return;
+    }
+    if (s.status !== 'approved') {
+      $('gate').hidden = false;
+      $('gatebox').innerHTML = '<p class="muted">' + esc(s.email) + ' 계정은 아직 가입 승인 전이에요. <a href="teach.html">선생님 페이지</a>에서 가입 신청을 해 주세요.</p>';
+      return;
+    }
+    $('gate').hidden = true; $('board').hidden = false;
+    $('who').innerHTML = esc(s.name || s.email) + (s.admin ? ' · 관리' : '');
+    route();
+  }
+  function route() { var m = /^#p(\d+)$/.exec(location.hash); if (m) openPost(+m[1]); else { $('detail').hidden = true; $('listv').hidden = false; list(); } }
+  addEventListener('hashchange', function () { if (sess()) route(); });
+
+  // ---- 목록 ----
+  function list(more) {
+    if (!more) S.page = 0;
+    call('list', { kind: S.kind, status: S.status, sort: S.sort, q: S.q, lesson: S.lesson, page: S.page }).then(function (j) {
+      var c = j.counts || {};
+      $('counts').innerHTML = Object.keys(STAT).map(function (k) { return '<span class="st st-' + k + '">' + STAT[k] + ' ' + (c[k] || 0) + '</span>'; }).join('');
+      $('lessonf').hidden = !S.lesson; $('lessonf').innerHTML = S.lesson ? esc(lessonName(S.lesson)) + ' 글만 보는 중 · <a href="#" id="alll">모두 보기</a>' : '';
+      if (S.lesson) $('alll').onclick = function (e) { e.preventDefault(); S.lesson = ''; list(); };
+      var html = j.posts.map(function (p) {
+        return '<li class="bp' + (p.hidden ? ' hid' : '') + '"><a href="#p' + p.id + '"><span class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span><span class="st st-' + p.status + '">' + STAT[p.status] + '</span>' + (p.replied ? '<span class="tagr">답 있음</span>' : '') + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</span>'
+          + '<b class="bt">' + esc(p.title) + '</b><span class="pv">' + esc(p.preview) + '</span>'
+          + '<span class="meta">' + (p.lesson ? esc(lessonName(p.lesson)) + (p.slide ? ' · ' + p.slide + '장' : '') + ' · ' : '') + esc(p.author_name) + ' · ' + when(p.created_at) + ' · ❤️ ' + p.likes + ' · 💬 ' + p.comments + '</span></a></li>';
+      }).join('');
+      if (more) $('plist').insertAdjacentHTML('beforeend', html); else $('plist').innerHTML = html || '<li class="empty">아직 글이 없어요. 첫 글을 남겨 주세요.</li>';
+      $('more').hidden = !j.more;
+    }).catch(function (e) { say(e.message); });
+  }
+  function filters() {
+    document.querySelectorAll('[data-k]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === S.kind)); b.onclick = function () { S.kind = b.dataset.k; filters(); list(); }; });
+    $('fstat').onchange = function () { S.status = this.value; list(); };
+    $('fsort').onchange = function () { S.sort = this.value; list(); };
+    $('fq').onkeydown = function (e) { if (e.key === 'Enter') { S.q = this.value.trim(); list(); } };
+    $('more').onclick = function () { S.page++; list(true); };
+  }
+
+  // ---- 새 글 ----
+  function writer(edit) {
+    var w = $('write'), slide = parseInt(qs.get('slide'), 10) || '';
+    w.hidden = false; $('detail').hidden = true; $('listv').hidden = true;
+    $('wlesson').innerHTML = '<option value="">차시 없음(전체 이야기)</option>' + LESSONS.map(function (l) { return '<option value="' + esc(l.path) + '">' + esc(l.unit + ' ' + l.n + '차시 ' + l.title) + '</option>'; }).join('');
+    $('wkind').value = edit ? edit.kind : (S.lesson ? 'bug' : 'idea'); $('wkind').disabled = !!edit;
+    $('wlesson').value = edit ? edit.lesson || '' : S.lesson || ''; $('wlesson').disabled = !!edit;
+    $('wslide').value = edit ? edit.slide || '' : (S.lesson ? slide : ''); $('wslide').disabled = !!edit;
+    $('wtitle').value = edit ? edit.title : ''; $('wbody').value = edit ? edit.body : '';
+    $('whead').textContent = edit ? '글 고치기' : '새 글 쓰기';
+    $('wtitle').focus();
+    $('wform').onsubmit = function (e) {
+      e.preventDefault();
+      var b = { kind: $('wkind').value, title: $('wtitle').value, body: $('wbody').value, lesson: $('wlesson').value || null, slide: parseInt($('wslide').value, 10) || null };
+      $('wsend').disabled = true;
+      (edit ? call('edit', { id: edit.id, title: b.title, body: b.body }).then(function () { return { id: edit.id }; }) : call('post', b))
+        .then(function (j) { w.hidden = true; $('wsend').disabled = false; if (location.hash === '#p' + j.id) route(); else location.hash = '#p' + j.id; })
+        .catch(function (err) { $('wsend').disabled = false; $('wmsg').textContent = err.message; });
+    };
+    $('wcancel').onclick = function () { w.hidden = true; route(); };
+  }
+
+  // ---- 글 보기 ----
+  function openPost(id) {
+    $('listv').hidden = true; $('write').hidden = true;
+    call('get', { id: id }).then(function (j) {
+      var p = j.post, d = $('detail'); d.hidden = false;
+      var h = '<p><a href="#" id="back">← 목록</a></p><div class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span><span class="st st-' + p.status + '">' + STAT[p.status] + '</span>' + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</div>'
+        + '<h2>' + esc(p.title) + '</h2><p class="meta">' + (p.lesson ? lessonLink(p.lesson, p.slide) + ' · ' : '') + esc(p.author_name) + ' · ' + when(p.created_at) + '</p>'
+        + '<div class="mdb">' + md(p.body) + '</div>'
+        + '<div class="row"><button class="btn" type="button" id="like" aria-pressed="' + j.liked + '">❤️ 공감 ' + p.likes + '</button>'
+        + (p.mine || j.admin ? '<button class="btn" type="button" id="edit">고치기</button><button class="btn warn" type="button" id="del">' + (p.hidden && j.admin ? '다시 보이기' : '지우기') + '</button>' : '') + '</div>';
+      if (p.reply) h += '<div class="reply"><b>관리자 답</b>' + md(p.reply) + '</div>';
+      if (j.admin) h += '<div class="admin"><b>처리 상태</b><div class="row">' + Object.keys(STAT).map(function (k) { return '<button class="btn small" type="button" data-s="' + k + '" aria-pressed="' + (k === p.status) + '">' + STAT[k] + '</button>'; }).join('') + '</div><textarea id="reply" rows="3" placeholder="답 달기(선택) — 상태를 누르면 함께 저장돼요"></textarea></div>';
+      h += '<h3>댓글 ' + j.comments.filter(function (c) { return !c.hidden; }).length + '</h3><ul class="cl">' + j.comments.map(function (c) {
+        return '<li' + (c.hidden ? ' class="hid"' : '') + '><p class="meta">' + esc(c.author_name) + ' · ' + when(c.created_at) + (c.mine || j.admin ? ' · <a href="#" data-c="' + c.id + '" data-on="' + (c.hidden ? 0 : 1) + '">' + (c.hidden ? '다시 보이기' : '지우기') + '</a>' : '') + '</p>' + md(c.body) + '</li>';
+      }).join('') + '</ul><form id="cform" class="cform"><textarea id="cbody" rows="3" placeholder="댓글 쓰기"></textarea><button class="btn main" type="submit">댓글 달기</button></form><p class="small" id="dmsg"></p>';
+      d.innerHTML = h;
+      var dm = function (t) { $('dmsg').textContent = t; };
+      $('back').onclick = function (e) { e.preventDefault(); location.hash = ''; };
+      $('like').onclick = function () { var on = this.getAttribute('aria-pressed') !== 'true', b = this; call('like', { id: id, on: on }).then(function (r) { b.setAttribute('aria-pressed', String(on)); b.textContent = '❤️ 공감 ' + r.likes; }).catch(function (e) { dm(e.message); }); };
+      if ($('edit')) $('edit').onclick = function () { writer(p); };
+      if ($('del')) $('del').onclick = function () { var on = !(p.hidden && j.admin); if (on && !armed(this, '한 번 더 누르면 지워져요', '지우기')) return; call('hide', { id: id, on: on }).then(function () { location.hash = ''; }).catch(function (e) { dm(e.message); }); };
+      d.querySelectorAll('[data-s]').forEach(function (b) { b.onclick = function () { call('status', { id: id, status: b.dataset.s, reply: $('reply').value }).then(function () { openPost(id); }).catch(function (e) { dm(e.message); }); }; });
+      d.querySelectorAll('[data-c]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); call('hide', { comment: +a.dataset.c, on: a.dataset.on === '1' }).then(function () { openPost(id); }).catch(function (er) { dm(er.message); }); }; });
+      $('cform').onsubmit = function (e) { e.preventDefault(); call('comment', { id: id, body: $('cbody').value }).then(function () { openPost(id); }).catch(function (er) { dm(er.message); }); };
+    }).catch(function (e) { say(e.message); location.hash = ''; });
+  }
+  function armed(b, text, idle) { if (b.dataset.armed) return true; b.dataset.armed = '1'; b.textContent = text; setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = idle; } }, 3000); return false; }
+
+  filters();
+  $('new').onclick = function () { writer(); };
+  $('out').onclick = function (e) { e.preventDefault(); logout().then(gate); };
+  syncMe().then(function () { gate(); if (qs.get('lesson') && sess() && sess().status === 'approved' && !location.hash) writer(); });
+`;
+
+export function boardPage(site, units) {
+  const lessons = lessonList(units);
+  return `${head('선생님 게시판 · ' + site.name)}
+<style>
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.bfil { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bfil input { flex: 1 1 200px; }
+.counts { display: flex; flex-wrap: wrap; gap: 6px; }
+.st, .kd, .tagr { font: 700 13px/1 var(--f-body); padding: 5px 9px; border-radius: 999px; border: 1.5px solid var(--ink-3); color: var(--ink-2); background: var(--paper); }
+.kd-bug { border-color: var(--stamp); color: var(--stamp); } .kd-ask { border-color: var(--accent); color: var(--accent); }
+.st-open { background: #fff3c4; } .st-planned { background: #dcebf7; } .st-started { background: #ffe0cc; } .st-completed { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); } .st-declined { background: #eee; }
+ul.plist, ul.cl { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bp a { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper-2); color: var(--ink); text-decoration: none; }
+.bp a:hover { border-color: var(--accent); }
+.bp.hid a, .cl li.hid { opacity: .5; }
+.bt { font: 700 18px/1.35 var(--f-body); } .pv { color: var(--ink-2); font-size: 15px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.meta { font-size: 13px; color: var(--ink-3); margin: 0; }
+.empty { color: var(--ink-3); padding: 12px; }
+.mdb { line-height: 1.7; overflow-wrap: anywhere; } .mdb img { max-width: 100%; }
+.reply { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 6px; }
+.admin { border: 2px dashed var(--ink-3); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; }
+textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
+.cl li { border-top: 1px dashed var(--rule); padding-top: 8px; }
+.cform { display: grid; gap: 8px; justify-items: start; }
+.btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+</style>
+<body>
+<div class="wrap">
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">${esc(site.name)}</span></nav>
+  <header class="pagehead">
+    <h1>선생님 게시판</h1>
+    <p class="muted">수업자료를 쓰다 찾은 오류, 바라는 점, 수업 후기를 남겨 주세요. 차시 화면의 «의견» 단추로 오면 그 차시와 장이 저절로 붙어요.</p>
+  </header>
+  <div class="card" id="gate" hidden><div id="gatebox"></div></div>
+  <div id="board" hidden class="stack">
+    <div class="row between"><span class="small"><b id="who"></b> · <a href="#" id="out">로그아웃</a></span><button class="btn main" type="button" id="new">새 글 쓰기</button></div>
+    <p class="small" id="bmsg" aria-live="polite"></p>
+    <div id="listv" class="stack">
+      <div class="kinds" role="group" aria-label="종류"><button class="btn small" type="button" data-k="">전체</button><button class="btn small" type="button" data-k="bug">오류 신고</button><button class="btn small" type="button" data-k="ask">요청</button><button class="btn small" type="button" data-k="idea">의견</button><button class="btn small" type="button" data-k="review">수업 후기</button></div>
+      <div class="bfil"><select id="fstat" aria-label="처리 상태"><option value="">모든 상태</option><option value="open">접수</option><option value="planned">계획</option><option value="started">고치는 중</option><option value="completed">반영됨</option><option value="declined">보류</option></select>
+        <select id="fsort" aria-label="정렬"><option value="new">최신순</option><option value="top">공감순</option></select><input type="text" id="fq" placeholder="찾기(엔터)" aria-label="찾기"></div>
+      <div class="counts" id="counts"></div>
+      <p class="small" id="lessonf" hidden></p>
+      <ul class="plist" id="plist"></ul>
+      <button class="btn" type="button" id="more" hidden>더 보기</button>
+    </div>
+    <div class="card" id="write" hidden>
+      <h2 id="whead">새 글 쓰기</h2>
+      <form id="wform" class="stack">
+        <div class="form"><label>종류<select id="wkind"><option value="bug">오류 신고</option><option value="ask">요청</option><option value="idea">의견</option><option value="review">수업 후기</option></select></label>
+          <label class="grow">차시<select id="wlesson"></select></label><label>장<input type="text" inputmode="numeric" id="wslide" style="width:80px" placeholder="몇 장"></label></div>
+        <label class="form"><span class="small">제목</span><input type="text" id="wtitle" maxlength="80" style="width:100%"></label>
+        <textarea id="wbody" rows="8" maxlength="6000" placeholder="무엇이 어떻게 보였는지, 어떻게 바뀌면 좋을지 적어 주세요. 마크다운(**굵게**, 목록, 링크)을 쓸 수 있어요."></textarea>
+        <div class="row"><button class="btn main" type="submit" id="wsend">올리기</button><button class="btn" type="button" id="wcancel">그만두기</button></div>
+        <p class="small" id="wmsg" aria-live="polite"></p>
+      </form>
+    </div>
+    <div class="card" id="detail" hidden></div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var qs = new URLSearchParams(location.search);
+  var API = (qs.get('roomapi') || ${JSON.stringify(site.roomApi || '')}).replace(/\\/$/, '');
+  var GID = qs.get('gid') || ${JSON.stringify(site.googleClientId || '')};
+  var LESSONS = ${lessonData(lessons)};
+${AUTH_JS}
+${BOARD_JS}
 })();
 </script>
 </body>

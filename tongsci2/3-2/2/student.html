@@ -1032,6 +1032,12 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .cl-opts button.right { background: var(--induced); border-color: var(--induced); color: var(--paper-2); }
 .cl-opts button.wrong { background: var(--stamp); border-color: var(--stamp); color: var(--paper-2); }
 .cl-msg { font-size: 21px; line-height: 1.45; min-height: 2.9em; margin: 0; }
+/* 화학식 첨자: reveal 초기화가 sub·sup을 없애서 되살린다(2026-10-30, 1-2-2에서 옮김) */
+.reveal sub, .reveal sup { font-size: .68em; line-height: 0; position: relative; vertical-align: baseline; }
+.reveal sup { top: -.5em; }
+.reveal sub { bottom: -.25em; }
+/* 선생님 화면 도구 막대의 «의견» 단추(게시판으로) */
+.toolbar .tool-board { text-decoration: none; }
 
 /* ===================== 3-2 과학기술의 발전과 윤리 ===================== */
 /* 엔진 색에 좋아지는 점(초록)·문제(빨강)·센서와 통신(파랑)을 더한다. 색만으로 뜻을 전하지 않도록 늘 글자 이름표와 함께 쓴다. */
@@ -8496,6 +8502,13 @@ if (!window.clearImmediate) {
       btn.setAttribute('aria-label', btn.title);
       btn.onclick = () => { btn.blur(); if (ROLE === 'teacher') ui.panel(); else if (!room) ui.joinBox(); };
       bar.appendChild(btn);
+      // 선생님 화면: 지금 차시·장을 붙여 선생님 게시판(오류 신고·요청·의견)으로
+      if (ROLE === 'teacher') {
+        const fb = el('button', 'tool-board', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>');
+        fb.type = 'button'; fb.title = '이 장에 의견·오류 남기기(선생님 게시판)'; fb.setAttribute('aria-label', fb.title);
+        fb.onclick = () => { fb.blur(); window.open(`${BASE}/board.html?lesson=${encodeURIComponent(LESSON)}&slide=${Reveal.getIndices().h + 1}${passApi}`, '_blank', 'noopener'); };
+        bar.appendChild(fb);
+      }
     }
     for (const ev of ['slidechanged', 'fragmentshown', 'fragmenthidden']) Reveal.on(ev, onLocalMove);
     asks.find();

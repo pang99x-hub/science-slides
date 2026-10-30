@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>선생님 게시판 · 움직이는 과학 수업</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root { color-scheme: light; --paper: #f2f5f3; --paper-2: #fbfcf9; --grid: #dbe4e2; --ink: #1d2433; --ink-2: #4b566a; --ink-3: #6b7587; --rule: #c3cecd; --accent: #1f5f4a; --accent-soft: #dcebe4; --hl: #ffe27a; --stamp: #c8402f; --current: #e9731a;
+  --f-display: "Hahmlet", "Apple SD Gothic Neo", "Malgun Gothic", serif; --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; color: var(--ink); font: 400 17px/1.6 var(--f-body); word-break: keep-all; overflow-wrap: break-word; background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 32px 32px; }
+.wrap { max-width: 880px; margin: 0 auto; padding-block: 36px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+.brand { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--accent); }
+.brand a { color: inherit; text-decoration: none; }
+a { color: var(--accent); }
+h1 { margin: 0; font: 800 clamp(30px, 6vw, 46px)/1.1 var(--f-display); text-wrap: balance; }
+h2 { margin: 0; font: 700 22px/1.3 var(--f-display); text-wrap: balance; }
+.card { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.card.big { box-shadow: 6px 6px 0 var(--ink); }
+.muted { color: var(--ink-2); margin: 0; }
+.small { font-size: 14px; color: var(--ink-3); margin: 0; }
+.apptip { border: 2px dashed var(--ink-3); border-radius: 8px; padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.apptip p { margin: 0; font-size: 14px; color: var(--ink-2); flex: 1 1 260px; }
+.apptip .appcode { font-size: 16px; letter-spacing: .1em; color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); color: var(--ink); font: 700 16px/1.2 var(--f-body); text-decoration: none; cursor: pointer; text-align: center; }
+.btn.main { background: var(--ink); color: var(--paper-2); }
+.btn.warn { border-color: var(--stamp); color: var(--stamp); }
+.btn.warn[data-armed] { background: var(--stamp); color: var(--paper-2); }
+.btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
+.btn:hover { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
+.btn:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.between { justify-content: space-between; }
+.link { font: 500 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--paper); border: 1.5px dashed var(--rule); border-radius: 8px; padding: 8px 10px; overflow-wrap: anywhere; user-select: all; }
+input[type=text], input[type=email], select { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; }
+.form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.form label { display: grid; gap: 4px; font: 600 14px/1.3 var(--f-body); color: var(--ink-2); min-width: 0; }
+.form label.grow { flex: 1 1 220px; }
+.form input, .form select { width: 100%; }
+ul.lessons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.lessons li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; border-top: 1px dashed var(--rule); padding-top: 8px; }
+ul.lessons li.unit { border-top: 0; padding-top: 10px; font: 700 14px/1.3 var(--f-body); letter-spacing: .04em; color: var(--accent); }
+ul.lessons li.unit:first-child { padding-top: 0; }
+/* 차시 목록: 단원(주제)마다 묶음 */
+.ugroups { display: grid; gap: 22px; }
+.ugroup { border: 2px solid var(--ink); border-radius: 10px; background: var(--paper); padding: 12px 16px 14px; display: grid; gap: 10px; min-width: 0; }
+.uhead { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: 700 20px/1.3 var(--f-display); }
+.subjl { margin: 6px 0 -8px; font: 800 26px/1.2 var(--f-display); }
+.uhead .ucode { font: 700 13px/1 var(--f-body); letter-spacing: .04em; color: var(--paper-2); background: var(--accent); border-radius: 999px; padding: 5px 10px; }
+.uhead .ucount { margin-left: auto; font: 600 13px/1.3 var(--f-body); color: var(--ink-3); }
+.ugroup ul.lessons li:first-child { border-top: 0; padding-top: 0; }
+.ugroup ul.lessons li { flex-wrap: nowrap; }
+.ugroup ul.lessons li > span { flex: 1 1 auto; min-width: 0; }
+.ugroup ul.lessons li > .btn { flex: 0 0 auto; }
+.tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font: 700 13px/1.5 var(--f-body); background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.tag.now { background: var(--current); color: var(--paper-2); }
+.tag.next { background: var(--hl); color: var(--ink); }
+.code { font: 800 34px/1 var(--f-display); letter-spacing: .06em; }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--current); margin-right: 8px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
+.note { border-left: 4px solid var(--stamp); padding-left: 10px; }
+.status { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--paper); color: var(--ink-2); }
+.status.live { background: #fde9d9; color: var(--ink); }
+details { border-top: 1px dashed var(--rule); padding-top: 8px; }
+details > summary { cursor: pointer; font-weight: 700; color: var(--ink-2); list-style-position: inside; }
+details[open] > summary { margin-bottom: 8px; }
+.sizebox { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--ink-3); }
+.sizebox input { width: 64px; font-size: 16px; padding: 6px 8px; }
+input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; width: 100%; }
+.btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+.namebox { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-width: 0; flex: 1 1 auto; }
+.namebox form { flex: 1 1 100%; }
+/* 선생님 페이지 */
+.topnav { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.pagehead { display: grid; gap: 8px; }
+.stack { display: grid; gap: 16px; }
+.h2 { font: 700 22px/1.3 var(--f-display); }
+.acct { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.acct .tag { margin-left: 4px; }
+details.fold { border-top: 0; padding-top: 0; }
+details.fold > summary { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--ink); }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after { content: '▾'; margin-left: auto; font-size: 18px; color: var(--ink-3); transition: transform .15s; }
+details.fold:not([open]) > summary::after { transform: rotate(-90deg); }
+details.fold[open] > summary { margin-bottom: 12px; }
+.fold-body { display: grid; gap: 12px; }
+.roomhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.linkhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; }
+.label { font: 700 15px/1.3 var(--f-body); color: var(--ink); }
+.setbox { display: grid; gap: 16px; }
+.field { display: grid; gap: 6px; }
+.flabel { font: 600 14px/1.3 var(--f-body); color: var(--ink-2); }
+.makeform { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) auto auto auto; gap: 12px; align-items: end; }
+.makeform label { display: grid; gap: 4px; font: 600 14px/1.3 var(--f-body); color: var(--ink-2); min-width: 0; }
+.makeform input, .makeform select { width: 100%; }
+input[type=text], input[type=email], select { min-height: 48px; }
+.opt { font-weight: 500; color: var(--ink-3); }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: var(--ink-2); }
+#msg:empty, .card p.small:empty { display: none; }
+.makeform .btn { min-height: 48px; }
+select { height: 48px; }
+#msg { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+@media (max-width: 720px) {
+  .makeform { grid-template-columns: 1fr 1fr; }
+  .makeform label:nth-child(-n+2), .makeform button { grid-column: 1 / -1; }
+}
+</style>
+<!--pwa-->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#fef9e8">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="과학 수업">
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
+<!--/pwa-->
+</head>
+<style>
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.bfil { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bfil input { flex: 1 1 200px; }
+.counts { display: flex; flex-wrap: wrap; gap: 6px; }
+.st, .kd, .tagr { font: 700 13px/1 var(--f-body); padding: 5px 9px; border-radius: 999px; border: 1.5px solid var(--ink-3); color: var(--ink-2); background: var(--paper); }
+.kd-bug { border-color: var(--stamp); color: var(--stamp); } .kd-ask { border-color: var(--accent); color: var(--accent); }
+.st-open { background: #fff3c4; } .st-planned { background: #dcebf7; } .st-started { background: #ffe0cc; } .st-completed { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); } .st-declined { background: #eee; }
+ul.plist, ul.cl { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bp a { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper-2); color: var(--ink); text-decoration: none; }
+.bp a:hover { border-color: var(--accent); }
+.bp.hid a, .cl li.hid { opacity: .5; }
+.bt { font: 700 18px/1.35 var(--f-body); } .pv { color: var(--ink-2); font-size: 15px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.meta { font-size: 13px; color: var(--ink-3); margin: 0; }
+.empty { color: var(--ink-3); padding: 12px; }
+.mdb { line-height: 1.7; overflow-wrap: anywhere; } .mdb img { max-width: 100%; }
+.reply { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 6px; }
+.admin { border: 2px dashed var(--ink-3); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; }
+textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
+.cl li { border-top: 1px dashed var(--rule); padding-top: 8px; }
+.cform { display: grid; gap: 8px; justify-items: start; }
+.btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+</style>
+<body>
+<div class="wrap">
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">움직이는 과학 수업</span></nav>
+  <header class="pagehead">
+    <h1>선생님 게시판</h1>
+    <p class="muted">수업자료를 쓰다 찾은 오류, 바라는 점, 수업 후기를 남겨 주세요. 차시 화면의 «의견» 단추로 오면 그 차시와 장이 저절로 붙어요.</p>
+  </header>
+  <div class="card" id="gate" hidden><div id="gatebox"></div></div>
+  <div id="board" hidden class="stack">
+    <div class="row between"><span class="small"><b id="who"></b> · <a href="#" id="out">로그아웃</a></span><button class="btn main" type="button" id="new">새 글 쓰기</button></div>
+    <p class="small" id="bmsg" aria-live="polite"></p>
+    <div id="listv" class="stack">
+      <div class="kinds" role="group" aria-label="종류"><button class="btn small" type="button" data-k="">전체</button><button class="btn small" type="button" data-k="bug">오류 신고</button><button class="btn small" type="button" data-k="ask">요청</button><button class="btn small" type="button" data-k="idea">의견</button><button class="btn small" type="button" data-k="review">수업 후기</button></div>
+      <div class="bfil"><select id="fstat" aria-label="처리 상태"><option value="">모든 상태</option><option value="open">접수</option><option value="planned">계획</option><option value="started">고치는 중</option><option value="completed">반영됨</option><option value="declined">보류</option></select>
+        <select id="fsort" aria-label="정렬"><option value="new">최신순</option><option value="top">공감순</option></select><input type="text" id="fq" placeholder="찾기(엔터)" aria-label="찾기"></div>
+      <div class="counts" id="counts"></div>
+      <p class="small" id="lessonf" hidden></p>
+      <ul class="plist" id="plist"></ul>
+      <button class="btn" type="button" id="more" hidden>더 보기</button>
+    </div>
+    <div class="card" id="write" hidden>
+      <h2 id="whead">새 글 쓰기</h2>
+      <form id="wform" class="stack">
+        <div class="form"><label>종류<select id="wkind"><option value="bug">오류 신고</option><option value="ask">요청</option><option value="idea">의견</option><option value="review">수업 후기</option></select></label>
+          <label class="grow">차시<select id="wlesson"></select></label><label>장<input type="text" inputmode="numeric" id="wslide" style="width:80px" placeholder="몇 장"></label></div>
+        <label class="form"><span class="small">제목</span><input type="text" id="wtitle" maxlength="80" style="width:100%"></label>
+        <textarea id="wbody" rows="8" maxlength="6000" placeholder="무엇이 어떻게 보였는지, 어떻게 바뀌면 좋을지 적어 주세요. 마크다운(**굵게**, 목록, 링크)을 쓸 수 있어요."></textarea>
+        <div class="row"><button class="btn main" type="submit" id="wsend">올리기</button><button class="btn" type="button" id="wcancel">그만두기</button></div>
+        <p class="small" id="wmsg" aria-live="polite"></p>
+      </form>
+    </div>
+    <div class="card" id="detail" hidden></div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var qs = new URLSearchParams(location.search);
+  var API = (qs.get('roomapi') || "https://science-room.pang99x.workers.dev").replace(/\/$/, '');
+  var GID = qs.get('gid') || "817402337132-ern5o53sgva1350h34a633b5l3e6lof0.apps.googleusercontent.com";
+  var LESSONS = [{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":1,"title":"지질 시대와 화석","path":"tongsci2/1-1-1/1","student":"tongsci2/1-1-1/1/student.html","teacher":"tongsci2/1-1-1/1/teacher.html"},{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":2,"title":"지질 시대의 환경과 생물","path":"tongsci2/1-1-1/2","student":"tongsci2/1-1-1/2/student.html","teacher":"tongsci2/1-1-1/2/teacher.html"},{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":3,"title":"움직이는 대륙과 달라지는 환경","path":"tongsci2/1-1-1/3","student":"tongsci2/1-1-1/3/student.html","teacher":"tongsci2/1-1-1/3/teacher.html"},{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":4,"title":"생물 대멸종과 생물다양성","path":"tongsci2/1-1-1/4","student":"tongsci2/1-1-1/4/student.html","teacher":"tongsci2/1-1-1/4/teacher.html"},{"subject":"통합과학2","unit":"1-1-2","unitTitle":"생물의 진화","n":1,"title":"변이와 자연선택","path":"tongsci2/1-1-2/1","student":"tongsci2/1-1-2/1/student.html","teacher":"tongsci2/1-1-2/1/teacher.html"},{"subject":"통합과학2","unit":"1-1-2","unitTitle":"생물의 진화","n":2,"title":"자연선택 모의실험","path":"tongsci2/1-1-2/2","student":"tongsci2/1-1-2/2/student.html","teacher":"tongsci2/1-1-2/2/teacher.html"},{"subject":"통합과학2","unit":"1-1-2","unitTitle":"생물의 진화","n":3,"title":"진화와 생물다양성","path":"tongsci2/1-1-2/3","student":"tongsci2/1-1-2/3/student.html","teacher":"tongsci2/1-1-2/3/teacher.html"},{"subject":"통합과학2","unit":"1-1-3","unitTitle":"생물다양성과 보전","n":1,"title":"생물다양성의 세 가지 요소","path":"tongsci2/1-1-3/1","student":"tongsci2/1-1-3/1/student.html","teacher":"tongsci2/1-1-3/1/teacher.html"},{"subject":"통합과학2","unit":"1-1-3","unitTitle":"생물다양성과 보전","n":2,"title":"생물다양성의 가치와 보전","path":"tongsci2/1-1-3/2","student":"tongsci2/1-1-3/2/student.html","teacher":"tongsci2/1-1-3/2/teacher.html"},{"subject":"통합과학2","unit":"1-1-3","unitTitle":"생물다양성과 보전","n":3,"title":"보전 사례 조사와 실천 방안","path":"tongsci2/1-1-3/3","student":"tongsci2/1-1-3/3/student.html","teacher":"tongsci2/1-1-3/3/teacher.html"},{"subject":"통합과학2","unit":"1-2-1","unitTitle":"산화와 환원","n":1,"title":"산소를 주고받는 산화와 환원","path":"tongsci2/1-2-1/1","student":"tongsci2/1-2-1/1/student.html","teacher":"tongsci2/1-2-1/1/teacher.html"},{"subject":"통합과학2","unit":"1-2-1","unitTitle":"산화와 환원","n":2,"title":"전자를 주고받는 산화와 환원","path":"tongsci2/1-2-1/2","student":"tongsci2/1-2-1/2/student.html","teacher":"tongsci2/1-2-1/2/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":1,"title":"산성과 염기성","path":"tongsci2/1-2-2/1","student":"tongsci2/1-2-2/1/student.html","teacher":"tongsci2/1-2-2/1/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":2,"title":"산과 염기의 이온화","path":"tongsci2/1-2-2/2","student":"tongsci2/1-2-2/2/student.html","teacher":"tongsci2/1-2-2/2/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":3,"title":"탐구: 산과 염기를 섞을 때의 온도","path":"tongsci2/1-2-2/3","student":"tongsci2/1-2-2/3/student.html","teacher":"tongsci2/1-2-2/3/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":4,"title":"중화 반응과 그 이용","path":"tongsci2/1-2-2/4","student":"tongsci2/1-2-2/4/student.html","teacher":"tongsci2/1-2-2/4/teacher.html"},{"subject":"통합과학2","unit":"1-2-3","unitTitle":"에너지의 흡수와 방출","n":1,"title":"에너지를 흡수하거나 방출하는 현상","path":"tongsci2/1-2-3/1","student":"tongsci2/1-2-3/1/student.html","teacher":"tongsci2/1-2-3/1/teacher.html"},{"subject":"통합과학2","unit":"1-2-3","unitTitle":"에너지의 흡수와 방출","n":2,"title":"에너지의 흡수와 방출 이용","path":"tongsci2/1-2-3/2","student":"tongsci2/1-2-3/2/student.html","teacher":"tongsci2/1-2-3/2/teacher.html"},{"subject":"통합과학2","unit":"1-2-3","unitTitle":"에너지의 흡수와 방출","n":3,"title":"탐구: 물과 산화 칼슘으로 음식 조리하기","path":"tongsci2/1-2-3/3","student":"tongsci2/1-2-3/3/student.html","teacher":"tongsci2/1-2-3/3/teacher.html"},{"subject":"통합과학2","unit":"2-1-1","unitTitle":"생물과 환경","n":1,"title":"생태계구성요소","path":"tongsci2/2-1-1/1","student":"tongsci2/2-1-1/1/student.html","teacher":"tongsci2/2-1-1/1/teacher.html"},{"subject":"통합과학2","unit":"2-1-1","unitTitle":"생물과 환경","n":2,"title":"생물과 환경의 상호 관계","path":"tongsci2/2-1-1/2","student":"tongsci2/2-1-1/2/student.html","teacher":"tongsci2/2-1-1/2/teacher.html"},{"subject":"통합과학2","unit":"2-1-2","unitTitle":"생태계평형","n":1,"title":"먹이 관계와 생태계평형","path":"tongsci2/2-1-2/1","student":"tongsci2/2-1-2/1/student.html","teacher":"tongsci2/2-1-2/1/teacher.html"},{"subject":"통합과학2","unit":"2-1-2","unitTitle":"생태계평형","n":2,"title":"탐구: 개체군 변동 모의실험","path":"tongsci2/2-1-2/2","student":"tongsci2/2-1-2/2/student.html","teacher":"tongsci2/2-1-2/2/teacher.html"},{"subject":"통합과학2","unit":"2-1-2","unitTitle":"생태계평형","n":3,"title":"환경 변화와 생태계","path":"tongsci2/2-1-2/3","student":"tongsci2/2-1-2/3/student.html","teacher":"tongsci2/2-1-2/3/teacher.html"},{"subject":"통합과학2","unit":"2-1-3","unitTitle":"지구 환경의 변화","n":1,"title":"온실 효과와 지구 온난화","path":"tongsci2/2-1-3/1","student":"tongsci2/2-1-3/1/student.html","teacher":"tongsci2/2-1-3/1/teacher.html"},{"subject":"통합과학2","unit":"2-1-3","unitTitle":"지구 환경의 변화","n":2,"title":"사막화와 엘니뇨","path":"tongsci2/2-1-3/2","student":"tongsci2/2-1-3/2/student.html","teacher":"tongsci2/2-1-3/2/teacher.html"},{"subject":"통합과학2","unit":"2-1-3","unitTitle":"지구 환경의 변화","n":3,"title":"기후 변화의 영향과 미래 시나리오","path":"tongsci2/2-1-3/3","student":"tongsci2/2-1-3/3/student.html","teacher":"tongsci2/2-1-3/3/teacher.html"},{"subject":"통합과학2","unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":1,"title":"태양 에너지의 생성","path":"tongsci2/2-2-1/1","student":"tongsci2/2-2-1/1/student.html","teacher":"tongsci2/2-2-1/1/teacher.html"},{"subject":"통합과학2","unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":2,"title":"태양 에너지의 전환과 흐름","path":"tongsci2/2-2-1/2","student":"tongsci2/2-2-1/2/student.html","teacher":"tongsci2/2-2-1/2/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":1,"title":"전기 에너지의 생산","path":"tongsci2/2-2-2/1","student":"tongsci2/2-2-2/1/student.html","teacher":"tongsci2/2-2-2/1/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":2,"title":"전자기 유도","path":"tongsci2/2-2-2/2","student":"tongsci2/2-2-2/2/student.html","teacher":"tongsci2/2-2-2/2/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":3,"title":"발전기","path":"tongsci2/2-2-2/3","student":"tongsci2/2-2-2/3/student.html","teacher":"tongsci2/2-2-2/3/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":4,"title":"화력 발전과 핵발전","path":"tongsci2/2-2-2/4","student":"tongsci2/2-2-2/4/student.html","teacher":"tongsci2/2-2-2/4/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":1,"title":"에너지 전환과 보존","path":"tongsci2/2-2-3/1","student":"tongsci2/2-2-3/1/student.html","teacher":"tongsci2/2-2-3/1/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":2,"title":"에너지 효율","path":"tongsci2/2-2-3/2","student":"tongsci2/2-2-3/2/student.html","teacher":"tongsci2/2-2-3/2/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":3,"title":"에너지 문제와 신재생 에너지","path":"tongsci2/2-2-3/3","student":"tongsci2/2-2-3/3/student.html","teacher":"tongsci2/2-2-3/3/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":4,"title":"자가발전 학교 설계하기","path":"tongsci2/2-2-3/4","student":"tongsci2/2-2-3/4/student.html","teacher":"tongsci2/2-2-3/4/teacher.html"},{"subject":"통합과학2","unit":"3-1","unitTitle":"과학의 유용성과 빅데이터의 활용","n":1,"title":"감염병 진단과 과학의 유용성","path":"tongsci2/3-1/1","student":"tongsci2/3-1/1/student.html","teacher":"tongsci2/3-1/1/teacher.html"},{"subject":"통합과학2","unit":"3-1","unitTitle":"과학의 유용성과 빅데이터의 활용","n":2,"title":"빅데이터의 활용","path":"tongsci2/3-1/2","student":"tongsci2/3-1/2/student.html","teacher":"tongsci2/3-1/2/teacher.html"},{"subject":"통합과학2","unit":"3-2","unitTitle":"과학기술의 발전과 윤리","n":1,"title":"과학기술의 발전과 한계","path":"tongsci2/3-2/1","student":"tongsci2/3-2/1/student.html","teacher":"tongsci2/3-2/1/teacher.html"},{"subject":"통합과학2","unit":"3-2","unitTitle":"과학기술의 발전과 윤리","n":2,"title":"과학 관련 사회적 쟁점과 과학 윤리","path":"tongsci2/3-2/2","student":"tongsci2/3-2/2/student.html","teacher":"tongsci2/3-2/2/teacher.html"}];
+
+  var SESS = 'science-room:session', ROOMS = 'science-room:classes';
+  function stored(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function sess() { var s = stored(SESS); return s && s.token ? s : null; }          // { token, email, name, status, admin, pending }
+  function devId() {
+    var d = null; try { d = localStorage.getItem('science-room:dev'); } catch (e) {}
+    if (!/^d-[0-9a-f]{20}$/.test(d || '')) { d = 'd-' + Array.from(crypto.getRandomValues(new Uint8Array(10)), function (b) { return b.toString(16).padStart(2, '0'); }).join(''); try { localStorage.setItem('science-room:dev', d); } catch (e) {} }
+    return d;
+  }
+  function myRooms() { return stored(ROOMS) || []; }
+  function have() { return myRooms().filter(function (c) { return c && c.code && c.key; }).map(function (c) { return { code: c.code, key: c.key }; }); }
+  function api(path, body) {
+    return fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().then(function (j) { j.http = r.status; return j; }); });
+  }
+  // 로그인·맞추기 결과를 이 기기에 둔다(승인된 선생님이면 내 수업방과 이 기기용 진행 열쇠까지)
+  function keep(j, token) {
+    var s = sess() || {};
+    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0 });
+    if (j.rooms) store(ROOMS, j.rooms.map(function (r) { return { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; }));
+    return sess();
+  }
+  function signedOut() { store(SESS, null); store(ROOMS, null); }
+  // 로그인돼 있으면 서버와 맞춘다 → 로그인 정보(로그인 안 됐거나 풀렸으면 null)
+  function syncMe() {
+    var s = sess(); if (!s) return Promise.resolve(null);
+    return api('/me', { session: s.token, dev: devId(), have: have() }).then(function (j) { if (j.login) { signedOut(); return null; } return j.error ? s : keep(j); }, function () { return s; });
+  }
+  // 로그아웃: 이 기기의 진행 열쇠도 서버에서 못 쓰게 한다(공용 컴퓨터)
+  function logout() {
+    var s = sess(), done = function () { signedOut(); try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {} };
+    return api('/auth/logout', { session: s && s.token, have: have() }).then(done, done);
+  }
+  // 구글 로그인 단추. 구글 스크립트는 이 단추를 띄울 때만 불러온다(학생 화면은 구글에 연결하지 않는다)
+  function googleButton(box, onDone) {
+    if (!GID) { box.innerHTML = '<p class="small">구글 로그인을 준비하고 있어요. 조금 뒤에 다시 와 주세요.</p>'; return; }
+    var go = function () {
+      if (!window.google || !google.accounts || !google.accounts.id) { box.innerHTML = '<p class="small">구글 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>'; return; }
+      google.accounts.id.initialize({ client_id: GID, auto_select: false, callback: function (r) {
+        onDone(null, '확인하는 중…', true);
+        api('/auth/google', { credential: r.credential, dev: devId(), have: have() }).then(function (j) {
+          if (j.error) onDone(null, j.error); else onDone(keep(j, j.session));
+        }, function () { onDone(null, '연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+      } });
+      box.innerHTML = '';
+      google.accounts.id.renderButton(box, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko' });
+    };
+    if (window.google && google.accounts && google.accounts.id) { go(); return; }
+    var sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = go; sc.onerror = go; document.head.appendChild(sc);
+  }
+
+
+  var KIND = { bug: '오류 신고', ask: '요청', idea: '의견', review: '수업 후기' };
+  var STAT = { open: '접수', planned: '계획', started: '고치는 중', completed: '반영됨', declined: '보류' };
+  var S = { kind: '', status: '', sort: 'new', q: '', page: 0, lesson: qs.get('lesson') || '' };
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function md(t) { try { return DOMPurify.sanitize(marked.parse(String(t || ''), { breaks: true })); } catch (e) { return '<p>' + esc(t).replace(/\n/g, '<br>') + '</p>'; } }
+  function when(ms) { var d = new Date(ms), now = Date.now(), m = Math.round((now - ms) / 60000); return m < 1 ? '방금' : m < 60 ? m + '분 전' : m < 1440 ? Math.round(m / 60) + '시간 전' : (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; }
+  function lessonName(p) { var l = LESSONS.filter(function (x) { return x.path === p; })[0]; return l ? l.unit + ' ' + l.n + '차시 ' + l.title : p; }
+  function lessonLink(p, slide) { var l = LESSONS.filter(function (x) { return x.path === p; })[0]; return l ? '<a href="' + esc(l.teacher) + (slide ? '#/' + (slide - 1) : '') + '" target="_blank" rel="noopener">' + esc(lessonName(p)) + (slide ? ' · ' + slide + '장' : '') + '</a>' : esc(p || ''); }
+  function call(op, body) { var s = sess(); body = body || {}; body.session = s && s.token; return api('/board/' + op, body).then(function (j) { if (j.login) { signedOut(); gate(); throw new Error(j.error); } if (j.error) throw new Error(j.error); return j; }); }
+  function say(t) { $('bmsg').textContent = t || ''; }
+
+  // ---- 들어오기: 로그인 → 승인 확인 ----
+  function gate() {
+    var s = sess();
+    $('board').hidden = true;
+    if (!s) {
+      $('gate').hidden = false;
+      $('gatebox').innerHTML = '<p class="muted">가입 승인을 받은 선생님만 볼 수 있어요. 수업방과 같은 구글 계정으로 로그인해 주세요.</p><div id="gbtn"></div><p class="small" id="gmsg"></p>';
+      googleButton($('gbtn'), function (who, err) { if (!who) { $('gmsg').textContent = err; return; } gate(); });
+      return;
+    }
+    if (s.status !== 'approved') {
+      $('gate').hidden = false;
+      $('gatebox').innerHTML = '<p class="muted">' + esc(s.email) + ' 계정은 아직 가입 승인 전이에요. <a href="teach.html">선생님 페이지</a>에서 가입 신청을 해 주세요.</p>';
+      return;
+    }
+    $('gate').hidden = true; $('board').hidden = false;
+    $('who').innerHTML = esc(s.name || s.email) + (s.admin ? ' · 관리' : '');
+    route();
+  }
+  function route() { var m = /^#p(\d+)$/.exec(location.hash); if (m) openPost(+m[1]); else { $('detail').hidden = true; $('listv').hidden = false; list(); } }
+  addEventListener('hashchange', function () { if (sess()) route(); });
+
+  // ---- 목록 ----
+  function list(more) {
+    if (!more) S.page = 0;
+    call('list', { kind: S.kind, status: S.status, sort: S.sort, q: S.q, lesson: S.lesson, page: S.page }).then(function (j) {
+      var c = j.counts || {};
+      $('counts').innerHTML = Object.keys(STAT).map(function (k) { return '<span class="st st-' + k + '">' + STAT[k] + ' ' + (c[k] || 0) + '</span>'; }).join('');
+      $('lessonf').hidden = !S.lesson; $('lessonf').innerHTML = S.lesson ? esc(lessonName(S.lesson)) + ' 글만 보는 중 · <a href="#" id="alll">모두 보기</a>' : '';
+      if (S.lesson) $('alll').onclick = function (e) { e.preventDefault(); S.lesson = ''; list(); };
+      var html = j.posts.map(function (p) {
+        return '<li class="bp' + (p.hidden ? ' hid' : '') + '"><a href="#p' + p.id + '"><span class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span><span class="st st-' + p.status + '">' + STAT[p.status] + '</span>' + (p.replied ? '<span class="tagr">답 있음</span>' : '') + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</span>'
+          + '<b class="bt">' + esc(p.title) + '</b><span class="pv">' + esc(p.preview) + '</span>'
+          + '<span class="meta">' + (p.lesson ? esc(lessonName(p.lesson)) + (p.slide ? ' · ' + p.slide + '장' : '') + ' · ' : '') + esc(p.author_name) + ' · ' + when(p.created_at) + ' · ❤️ ' + p.likes + ' · 💬 ' + p.comments + '</span></a></li>';
+      }).join('');
+      if (more) $('plist').insertAdjacentHTML('beforeend', html); else $('plist').innerHTML = html || '<li class="empty">아직 글이 없어요. 첫 글을 남겨 주세요.</li>';
+      $('more').hidden = !j.more;
+    }).catch(function (e) { say(e.message); });
+  }
+  function filters() {
+    document.querySelectorAll('[data-k]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === S.kind)); b.onclick = function () { S.kind = b.dataset.k; filters(); list(); }; });
+    $('fstat').onchange = function () { S.status = this.value; list(); };
+    $('fsort').onchange = function () { S.sort = this.value; list(); };
+    $('fq').onkeydown = function (e) { if (e.key === 'Enter') { S.q = this.value.trim(); list(); } };
+    $('more').onclick = function () { S.page++; list(true); };
+  }
+
+  // ---- 새 글 ----
+  function writer(edit) {
+    var w = $('write'), slide = parseInt(qs.get('slide'), 10) || '';
+    w.hidden = false; $('detail').hidden = true; $('listv').hidden = true;
+    $('wlesson').innerHTML = '<option value="">차시 없음(전체 이야기)</option>' + LESSONS.map(function (l) { return '<option value="' + esc(l.path) + '">' + esc(l.unit + ' ' + l.n + '차시 ' + l.title) + '</option>'; }).join('');
+    $('wkind').value = edit ? edit.kind : (S.lesson ? 'bug' : 'idea'); $('wkind').disabled = !!edit;
+    $('wlesson').value = edit ? edit.lesson || '' : S.lesson || ''; $('wlesson').disabled = !!edit;
+    $('wslide').value = edit ? edit.slide || '' : (S.lesson ? slide : ''); $('wslide').disabled = !!edit;
+    $('wtitle').value = edit ? edit.title : ''; $('wbody').value = edit ? edit.body : '';
+    $('whead').textContent = edit ? '글 고치기' : '새 글 쓰기';
+    $('wtitle').focus();
+    $('wform').onsubmit = function (e) {
+      e.preventDefault();
+      var b = { kind: $('wkind').value, title: $('wtitle').value, body: $('wbody').value, lesson: $('wlesson').value || null, slide: parseInt($('wslide').value, 10) || null };
+      $('wsend').disabled = true;
+      (edit ? call('edit', { id: edit.id, title: b.title, body: b.body }).then(function () { return { id: edit.id }; }) : call('post', b))
+        .then(function (j) { w.hidden = true; $('wsend').disabled = false; if (location.hash === '#p' + j.id) route(); else location.hash = '#p' + j.id; })
+        .catch(function (err) { $('wsend').disabled = false; $('wmsg').textContent = err.message; });
+    };
+    $('wcancel').onclick = function () { w.hidden = true; route(); };
+  }
+
+  // ---- 글 보기 ----
+  function openPost(id) {
+    $('listv').hidden = true; $('write').hidden = true;
+    call('get', { id: id }).then(function (j) {
+      var p = j.post, d = $('detail'); d.hidden = false;
+      var h = '<p><a href="#" id="back">← 목록</a></p><div class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span><span class="st st-' + p.status + '">' + STAT[p.status] + '</span>' + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</div>'
+        + '<h2>' + esc(p.title) + '</h2><p class="meta">' + (p.lesson ? lessonLink(p.lesson, p.slide) + ' · ' : '') + esc(p.author_name) + ' · ' + when(p.created_at) + '</p>'
+        + '<div class="mdb">' + md(p.body) + '</div>'
+        + '<div class="row"><button class="btn" type="button" id="like" aria-pressed="' + j.liked + '">❤️ 공감 ' + p.likes + '</button>'
+        + (p.mine || j.admin ? '<button class="btn" type="button" id="edit">고치기</button><button class="btn warn" type="button" id="del">' + (p.hidden && j.admin ? '다시 보이기' : '지우기') + '</button>' : '') + '</div>';
+      if (p.reply) h += '<div class="reply"><b>관리자 답</b>' + md(p.reply) + '</div>';
+      if (j.admin) h += '<div class="admin"><b>처리 상태</b><div class="row">' + Object.keys(STAT).map(function (k) { return '<button class="btn small" type="button" data-s="' + k + '" aria-pressed="' + (k === p.status) + '">' + STAT[k] + '</button>'; }).join('') + '</div><textarea id="reply" rows="3" placeholder="답 달기(선택) — 상태를 누르면 함께 저장돼요"></textarea></div>';
+      h += '<h3>댓글 ' + j.comments.filter(function (c) { return !c.hidden; }).length + '</h3><ul class="cl">' + j.comments.map(function (c) {
+        return '<li' + (c.hidden ? ' class="hid"' : '') + '><p class="meta">' + esc(c.author_name) + ' · ' + when(c.created_at) + (c.mine || j.admin ? ' · <a href="#" data-c="' + c.id + '" data-on="' + (c.hidden ? 0 : 1) + '">' + (c.hidden ? '다시 보이기' : '지우기') + '</a>' : '') + '</p>' + md(c.body) + '</li>';
+      }).join('') + '</ul><form id="cform" class="cform"><textarea id="cbody" rows="3" placeholder="댓글 쓰기"></textarea><button class="btn main" type="submit">댓글 달기</button></form><p class="small" id="dmsg"></p>';
+      d.innerHTML = h;
+      var dm = function (t) { $('dmsg').textContent = t; };
+      $('back').onclick = function (e) { e.preventDefault(); location.hash = ''; };
+      $('like').onclick = function () { var on = this.getAttribute('aria-pressed') !== 'true', b = this; call('like', { id: id, on: on }).then(function (r) { b.setAttribute('aria-pressed', String(on)); b.textContent = '❤️ 공감 ' + r.likes; }).catch(function (e) { dm(e.message); }); };
+      if ($('edit')) $('edit').onclick = function () { writer(p); };
+      if ($('del')) $('del').onclick = function () { var on = !(p.hidden && j.admin); if (on && !armed(this, '한 번 더 누르면 지워져요', '지우기')) return; call('hide', { id: id, on: on }).then(function () { location.hash = ''; }).catch(function (e) { dm(e.message); }); };
+      d.querySelectorAll('[data-s]').forEach(function (b) { b.onclick = function () { call('status', { id: id, status: b.dataset.s, reply: $('reply').value }).then(function () { openPost(id); }).catch(function (e) { dm(e.message); }); }; });
+      d.querySelectorAll('[data-c]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); call('hide', { comment: +a.dataset.c, on: a.dataset.on === '1' }).then(function () { openPost(id); }).catch(function (er) { dm(er.message); }); }; });
+      $('cform').onsubmit = function (e) { e.preventDefault(); call('comment', { id: id, body: $('cbody').value }).then(function () { openPost(id); }).catch(function (er) { dm(er.message); }); };
+    }).catch(function (e) { say(e.message); location.hash = ''; });
+  }
+  function armed(b, text, idle) { if (b.dataset.armed) return true; b.dataset.armed = '1'; b.textContent = text; setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = idle; } }, 3000); return false; }
+
+  filters();
+  $('new').onclick = function () { writer(); };
+  $('out').onclick = function (e) { e.preventDefault(); logout().then(gate); };
+  syncMe().then(function () { gate(); if (qs.get('lesson') && sess() && sess().status === 'approved' && !location.hash) writer(); });
+
+})();
+</script>
+</body>
+</html>
