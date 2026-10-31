@@ -104,12 +104,14 @@ const JOIN_JS = String.raw`
 `;
 
 const unitHtml = (u) => `
-  <section class="unit" id="${esc(u.subjectSlug)}-${esc(u.unit)}">
-    <div class="unit-head">
-      <p class="crumbs">${esc(u.subject)} · ${esc(u.area)}</p>
+  <details class="unit" id="${esc(u.subjectSlug)}-${esc(u.unit)}">
+    <summary class="unit-head">
       <h2><span class="code">${esc(u.unit)}</span>${esc(u.unitTitle)}</h2>
-      <p class="std"><b>성취기준 ${esc(u.standard)}</b> ${esc(u.standardText)}</p>
-    </div>
+      <span class="cnt">${u.lessons.length}차시</span>
+    </summary>
+    <div class="unit-body">
+    <p class="crumbs">${esc(u.subject)} · ${esc(u.area)}</p>
+    <p class="std"><b>성취기준 ${esc(u.standard)}</b> ${esc(u.standardText)}</p>
     <ol class="lessons">
 ${u.lessons.map((l) => `      <li class="lesson">
         <div class="top"><span class="no">${l.n}차시</span>${pdfOf(l) ? `<a class="pdf" href="${esc(pdfOf(l))}" download="${esc(`${u.unit} ${l.n}차시 ${l.title}.pdf`)}" title="장마다 마지막 단계까지 연 화면 모음(A4 가로, 인쇄·복습용)">PDF 받기</a>` : ''}</div>
@@ -120,7 +122,8 @@ ${u.lessons.map((l) => `      <li class="lesson">
       </li>`).join('\n')}
     </ol>
     <p class="upd">${esc(u.updated)} 고침</p>
-  </section>`;
+    </div>
+  </details>`;
 
 const html = `<!doctype html>
 <html lang="ko">
@@ -163,13 +166,25 @@ h1 { font: 800 clamp(36px, 7vw, 64px)/1.05 var(--f-display); margin: 0; letter-s
 .card h2 { font: 700 20px var(--f-display); margin: 0 0 8px; }
 .card ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bottom-width: 3px; border-radius: 5px; padding: 0 6px; background: var(--paper); }
-.unit { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 6px 6px 0 var(--ink); padding: 22px 22px 14px; margin-bottom: 32px; }
-.unit-head { display: grid; gap: 6px; margin-bottom: 16px; }
+.unit { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 4px 4px 0 var(--ink); margin-bottom: 12px; scroll-margin-top: 12px; }
+.unit[open] { box-shadow: 6px 6px 0 var(--ink); margin-bottom: 24px; }
+.unit-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; list-style: none; border-radius: 8px; }
+.unit-head::-webkit-details-marker { display: none; }
+.unit-head::after { content: ""; flex: none; width: 12px; height: 12px; border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); transform: rotate(45deg) translateY(-3px); transition: transform .2s; }
+.unit[open] > .unit-head::after { transform: rotate(-135deg) translateY(-3px); }
+.unit-head:hover { background: var(--accent-soft); }
+.unit-head:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
+.unit-head h2 { flex: 1 1 auto; min-width: 0; }
+.unit-head .cnt { flex: none; font-size: 14px; font-weight: 600; color: var(--ink-2); border: 1.5px solid var(--rule); border-radius: 999px; padding: 2px 10px; background: var(--paper); }
+.unit-body { display: grid; gap: 6px; padding: 0 22px 14px; }
+.unit-body .lessons { margin-top: 10px; }
+.allbtn { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.allbtn .btn { min-height: 38px; font-size: 15px; }
 .subj { margin: 28px 0 4px; font: 800 clamp(28px, 5vw, 40px)/1.15 var(--f-display); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; border-bottom: 3px solid var(--ink); padding-bottom: 8px; }
 .subj span { font: 600 15px/1.3 var(--f-body); color: var(--ink-2); }
 .area { margin: 22px 0 10px; font: 700 21px/1.3 var(--f-display); color: var(--accent); }
 .crumbs { margin: 0; font-size: 14px; color: var(--ink-2); letter-spacing: .02em; }
-.unit h2 { font: 800 clamp(26px, 4.4vw, 36px)/1.15 var(--f-display); margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.unit h2 { font: 800 clamp(22px, 3.6vw, 30px)/1.15 var(--f-display); margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
 .code { font: 600 .55em var(--f-body); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 12px; }
 .std { margin: 0; font-size: 15px; color: var(--ink-2); max-width: 60em; }
 .std b { color: var(--ink); margin-right: 6px; }
@@ -285,7 +300,7 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
   </section>
 </div>
 
-<div class="sec"><h2>수업 자료</h2><p><b>체험하기</b>는 학생 화면을 혼자 넘겨 보며 그림 속 자석·코일·단추를 직접 움직여 보는 거예요.</p></div>
+<div class="sec"><h2>수업 자료</h2><p>단원을 누르면 차시가 펼쳐져요. <b>체험하기</b>는 학생 화면을 혼자 넘겨 보며 그림 속 자석·코일·단추를 직접 움직여 보는 거예요.</p><div class="allbtn"><button class="btn" type="button" id="openall">모두 펼치기</button><button class="btn" type="button" id="closeall">모두 접기</button></div></div>
 
 ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.subject ? `<h2 class="subj" id="${esc(u.subjectSlug)}">${esc(u.subject)}<span>${esc(u.textbook || '')} 기준</span></h2>` : '') + (!p || p.area.split(' › ')[0] !== u.area.split(' › ')[0] || p.subject !== u.subject ? `<h3 class="area">${esc(u.area.split(' › ')[0])}</h3>` : '') + unitHtml(u); }).join('\n')}
 
@@ -296,6 +311,17 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
 </div>
 <script>${JOIN_JS}</script>
 <script>
+// 단원 접기: 처음엔 모두 접고, 슬라이드의 집 단추(#과목-단원)로 오면 그 단원만 펼친다. 펼친 단원은 이 기기가 기억한다
+(() => {
+  const all = [...document.querySelectorAll('details.unit')], KEY = 'science-slides:open-units';
+  let keep = []; try { keep = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(all.filter((d) => d.open).map((d) => d.id))); } catch (e) {} };
+  all.forEach((d) => { if (keep.includes(d.id)) d.open = true; d.addEventListener('toggle', save); });
+  const go = () => { const id = decodeURIComponent(location.hash.slice(1)), d = id && document.getElementById(id); if (d && d.tagName === 'DETAILS') { d.open = true; d.scrollIntoView({ block: 'start' }); } };
+  go(); addEventListener('hashchange', go);
+  document.getElementById('openall').onclick = () => { all.forEach((d) => { d.open = true; }); save(); };
+  document.getElementById('closeall').onclick = () => { all.forEach((d) => { d.open = false; }); save(); };
+})();
 (() => {
   const how = document.getElementById('apphow'), inb = document.getElementById('appin'), save = document.getElementById('appsave');
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
