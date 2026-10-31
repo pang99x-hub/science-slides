@@ -2545,6 +2545,15 @@ section.evx .panel { min-height: 0; gap: 14px; }
 .quiz > .def.rx-solve p { margin: 0; }
 .eg-ans.eg-2 { grid-template-columns: 1fr 1fr; }
 
+/* 2026-10-31 이론 판서판 정렬(모든 단원 공통): 이름표 칸을 상자끼리 같은 너비(가장 긴 이름표)로 맞추고,
+   풀이 글·보충 글은 모두 둘째 칸에서 시작한다. 정리 상자(.th-sim)는 이름표를 위에 둔 채로 둔다 */
+.t-col:has(> .th-def) { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-content: start; }
+.t-col:has(> .th-def) > * { grid-column: 1 / -1; }
+.t-col:has(> .th-def) > :is(.th-def, .th-ionc):has(> .t-tag) { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; column-gap: 0; row-gap: 0; align-items: center; }
+.t-col:has(> .th-def) > :is(.th-def, .th-ionc):has(> .t-tag) > .t-tag { grid-column: 1; margin: 0 18px 0 0; justify-self: stretch; text-align: center; align-self: center; }
+.t-col:has(> .th-def) > :is(.th-def, .th-ionc):has(> .t-tag) > p:not(.bx) { grid-column: 2; }
+.t-col:has(> .th-def) > :is(.th-def, .th-ionc):has(> .t-tag) > .t-sub { margin-top: 8px; }
+
 </style>
 
 <!--pwa-->
