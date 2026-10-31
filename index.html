@@ -79,16 +79,26 @@ kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bot
 .btn:hover { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
 .btn:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 .doors { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 40px; }
-.door { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 6px 6px 0 var(--ink); padding: 20px 22px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.door { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 6px 6px 0 var(--ink); padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .door .who { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--accent); }
 .door h2 { margin: 0; font: 800 clamp(26px, 4vw, 32px)/1.15 var(--f-display); }
 .door p { margin: 0; color: var(--ink-2); }
 .door .small { font-size: 14px; color: var(--ink-3); }
-.joinf { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
-.joinf input { font: 800 30px/1 var(--f-display); letter-spacing: .18em; width: 7.4em; max-width: 100%; min-height: 56px; padding: 6px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); text-align: center; }
+.joinf { display: flex; gap: 8px; align-items: stretch; }
+.joinf input { font: 800 30px/1 var(--f-display); letter-spacing: .18em; flex: 1 1 0; width: 0; min-width: 0; min-height: 56px; padding: 6px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); text-align: center; }
 .joinf input:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
-.joinf .btn { min-height: 56px; }
-.joinmore { display: flex; flex-wrap: wrap; gap: 8px; }
+.joinf .btn { min-height: 56px; flex: none; padding: 0 22px; }
+.joinmore, .door .links { display: flex; flex-wrap: wrap; gap: 8px; }
+.joinmore .btn, .door .links .btn { flex: 1 1 0; min-width: max-content; justify-content: center; }
+.door .links .wide { flex-basis: 100%; min-height: 56px; }
+.door .links { row-gap: 12px; }
+.joinf input { box-sizing: border-box; height: 56px; min-height: 0; padding-block: 0; }
+.mine[hidden] { display: none; }
+/* 두 칸을 같은 틀로: 설명 한 줄 → 큰 단추 줄(56px) → 같은 너비 단추 두 개 → 점선 아래 한 줄 */
+.door .more { border-top: 1px dashed var(--rule); padding-top: 10px; }
+.door .more a { font-weight: 700; color: var(--ink-2); text-decoration: none; }
+.door .more a:hover { color: var(--accent); }
+.door .more a:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 .qrcam { position: fixed; inset: 0; z-index: 50; background: rgba(20, 24, 33, .94); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; }
 .qrcam .qv { position: relative; width: min(92vw, 560px); }
 .qrcam video { display: block; width: 100%; max-height: 66vh; object-fit: cover; border-radius: 12px; background: #000; }
@@ -98,7 +108,6 @@ kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bot
 .joinmsg { min-height: 1.4em; font-weight: 600; color: var(--stamp) !important; }
 .joinmsg:empty { display: none; }
 .door ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; color: var(--ink-2); }
-.door .links { display: flex; flex-wrap: wrap; gap: 8px; }
 .mine { display: grid; gap: 8px; }
 .mine .who2 { margin: 0; font-size: 15px; color: var(--ink-2); }
 .mine ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -110,7 +119,7 @@ kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bot
 .door details summary { cursor: pointer; font-weight: 700; color: var(--ink-2); }
 .door details p { font-size: 15px; margin-top: 6px; }
 button.btn { font: inherit; font-weight: 600; cursor: pointer; }
-.sec { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 0 16px; }
+.sec { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 16px; }
 .sec h2 { margin: 0; font: 800 clamp(24px, 4vw, 30px)/1.2 var(--f-display); }
 .sec p { margin: 0; color: var(--ink-2); font-size: 15px; }
 .upd { text-align: right; font-size: 12px; color: var(--ink-3); margin: 10px 0 0; }
@@ -146,7 +155,7 @@ footer a { color: var(--accent); }
 
 <section class="app" id="app" aria-label="앱으로 설치하기">
   <img src="icons/icon-192.png" alt="">
-  <div class="txt"><b>앱으로 설치하기</b><span id="apphow">휴대폰·태블릿·컴퓨터에 앱처럼 설치하면 바탕화면 아이콘으로 바로 열려요.</span></div>
+  <div class="txt"><b>앱으로 설치하기</b><span id="apphow">설치하면 바탕화면 아이콘으로 바로 열려요.</span></div>
   <div class="row"><button class="btn main" type="button" id="appin" hidden>설치</button><button class="btn" type="button" id="appsave">모든 차시 미리 받아 두기</button></div>
 </section>
 
@@ -154,27 +163,19 @@ footer a { color: var(--accent); }
   <section class="door" id="student">
     <p class="who">학생</p>
     <h2>수업 참여하기</h2>
-    <p>클래스룸에 올라온 <b>과목 링크</b>를 누르면 바로 들어가요. 선생님이 화면에 참여 코드를 띄웠다면 여기에 넣어요.</p>
+    <p>선생님 화면의 참여 코드를 넣어요.</p>
     <form class="joinf" id="joinf" data-api="https://science-room.pang99x.workers.dev"><input name="code" inputmode="numeric" maxlength="400" autocomplete="off" placeholder="000000" aria-label="참여 코드 또는 수업 링크"><button class="btn main" type="submit">들어가기</button></form>
-    <div class="joinmore"><button class="btn" type="button" id="qrgo">QR 찍어서 들어가기</button><button class="btn" type="button" id="pastego" hidden>링크 붙여넣기</button></div>
-    <p class="small">선생님 화면의 QR을 찍거나 받은 수업 링크를 붙여 넣어도 돼요. 한 번 들어가면 이 기기(앱)가 기억해요.</p>
+    <div class="joinmore"><button class="btn" type="button" id="qrgo">QR로 들어가기</button><button class="btn" type="button" id="pastego" hidden>링크 붙여넣기</button></div>
     <p class="joinmsg" id="joinmsg" aria-live="polite"></p>
     <div id="smine" class="mine" hidden></div>
-    <div class="links"><a class="btn" href="guide.html">참여 방법 미리 해 보기 →</a></div>
-    <p class="small">로그인은 필요 없어요. 휴대폰은 가로로 돌리면 크게 보여요.</p>
+    <p class="more"><a href="guide.html">참여 방법 미리 해 보기 →</a></p>
   </section>
   <section class="door" id="teacher">
     <p class="who">선생님</p>
     <h2>수업 개설하기</h2>
-    <div id="tguest">
-      <ol>
-        <li>구글로 로그인하고 가입 승인을 받아요.</li>
-        <li>과목 수업방을 만들고 가르치는 반을 적어요.</li>
-        <li>과목 링크를 반 클래스룸에 한 번 올려 둬요. 수업 때는 반과 차시만 고르면 돼요.</li>
-      </ol>
-    </div>
+    <div id="tguest"><p>구글로 로그인해 과목 수업방을 만들어요.</p></div>
     <div id="tmine" class="mine" hidden></div>
-    <div class="links"><a class="btn main" href="teach.html" id="tgo">구글로 로그인하고 시작하기</a><a class="btn" href="guide.html">학생 쪽 화면 보기</a><a class="btn" href="board.html">선생님 게시판</a></div>
+    <div class="links"><a class="btn main wide" href="teach.html" id="tgo">구글로 로그인하고 시작하기</a><a class="btn" href="guide.html">학생 쪽 화면 보기</a><a class="btn" href="board.html">선생님 게시판</a></div>
     <details><summary>수업방 없이 화면만 띄울 때</summary>
       <p>자료 카드의 <b>선생님 화면</b>에는 장마다 발표자 메모(발문·예시 답·지도 유의점)가 있어요.</p>
       <p><kbd>S</kbd> 발표자 화면 · <kbd>→</kbd> 다음 단계 · <kbd>F</kbd> 전체 화면 · <kbd>C</kbd> 판서 · <kbd>B</kbd> 칠판 · <kbd>Esc</kbd> 한눈에 보기</p>
@@ -183,7 +184,7 @@ footer a { color: var(--accent); }
   </section>
 </div>
 
-<div class="sec"><h2>수업 자료</h2><p>단원을 누르면 차시가 펼쳐져요. <b>체험하기</b>는 학생 화면을 혼자 넘겨 보며 그림 속 자석·코일·단추를 직접 움직여 보는 거예요.</p><div class="allbtn"><button class="btn" type="button" id="openall">모두 펼치기</button><button class="btn" type="button" id="closeall">모두 접기</button></div></div>
+<div class="sec"><h2>수업 자료</h2><div class="allbtn"><button class="btn" type="button" id="openall">모두 펼치기</button><button class="btn" type="button" id="closeall">모두 접기</button></div></div>
 
 <h2 class="subj" id="tongsci2">통합과학2<span>미래엔 통합과학2 기준</span></h2><h3 class="area">Ⅰ. 변화와 다양성</h3>
   <details class="unit" id="tongsci2-1-1-1">
