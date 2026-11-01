@@ -363,6 +363,11 @@ div.boardhandle i.fa-chevron-down::before { content: "▼"; color: var(--paper-2
   .reveal .controls { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
   .reveal .slide-number { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); right: 110px; }
   .toolbar a.home::after { left: auto; right: -5px; top: 8px; bottom: 8px; width: 1.5px; height: auto; }
+  .toolbar { max-width: calc(100vw - 16px); overflow-x: auto; }
+  .toolbar .tb-names { display: none; }
+  .toolbar.labeled button, .toolbar.labeled a.home { width: 40px; padding: 0; justify-content: center; }
+  .toolbar.labeled .tb-label { display: none; }
+  .toolbar .tb-sep { width: 1.5px; height: auto; margin: 8px 1px; }
   body::after { content: "가로로 돌리면 크게 보여요"; position: fixed; left: 50%; top: max(10px, env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 45; background: var(--ink); color: var(--paper-2); font: 600 15px var(--f-body); padding: 6px 14px; border-radius: 999px; white-space: nowrap; pointer-events: none; animation: rotate-hint 6s ease forwards; }
   @keyframes rotate-hint { 0%, 80% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 }
@@ -824,7 +829,7 @@ table.dirt td.done { color: var(--ink); }
 /* 슬라이드 판(1920×1080) 밖, 화면에 그대로 붙는다. 프로젝터에서 뒤에서도 읽히게 크게 */
 .room-badge {
   position: fixed; z-index: 60; top: max(12px, env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
-  display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 96px);
+  display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 96px); box-sizing: border-box;
   font: 500 15px/1.3 var(--f-body); color: var(--ink); background: var(--paper-2); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 6px 4px 14px;
   box-shadow: 3px 3px 0 var(--ink);
 }
@@ -838,6 +843,45 @@ table.dirt td.done { color: var(--ink); }
 .room-badge .rb-leave { border: 0; background: var(--paper); border-radius: 999px; min-width: 30px; height: 30px; padding: 0 8px; font-weight: 700; }
 .room-badge .rb-leave[data-armed] { background: var(--stamp); color: var(--paper-2); }
 .room-badge .rb-lost { color: var(--stamp); }
+/* 한 줄로: 글이 넘치면 끝을 줄이고, 단추·반 번호는 꺾지 않는다. 휴대폰은 판서 도구가 아래에 있어 위쪽을 넓게 쓰고 글을 줄인다 */
+.room-badge .rb-text, .room-badge .rb-open { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-badge .rb-toggle, .room-badge .rb-me, .room-badge .rb-leave { flex: none; white-space: nowrap; }
+@media (max-width: 640px) { .room-badge .rb-w { display: none; } }
+@media (max-width: 600px) and (orientation: portrait) { .room-badge { max-width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); } }
+/* 왼쪽 도구 막대: 묶음 구분선, 수업 중 선생님 수업 도구(같은 모양 단추). 키가 작은 화면에서는 단추를 줄이고, 넘치면 막대 안에서 넘긴다 */
+.toolbar button, .toolbar a.home { position: relative; flex: none; }
+.toolbar .tb-label { display: none; }
+/* 이름 보기: 그림 옆에 이름 */
+.toolbar.labeled { border-radius: 20px; align-items: stretch; background: var(--paper-2); opacity: 1; }
+.toolbar .tb-names[aria-pressed="true"] { background: transparent; color: var(--ink-2); }
+.toolbar.labeled button, .toolbar.labeled a.home { width: auto; display: flex; justify-content: flex-start; gap: 10px; padding: 0 14px 0 9px; border-radius: 999px; }
+.toolbar.labeled .tb-label { display: inline; font: 600 15px/1 var(--f-body); white-space: nowrap; }
+.toolbar.labeled a.home::after { left: 12px; right: 12px; }
+/* 이름을 숨겼을 때: 마우스를 올리면 바로 옆에 이름 */
+@media (hover: hover) {
+  .toolbar:not(.labeled) button:hover .tb-label, .toolbar:not(.labeled) a.home:hover .tb-label {
+    display: block; position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%); pointer-events: none;
+    font: 600 14px/1 var(--f-body); white-space: nowrap; color: var(--paper-2); background: var(--ink); border-radius: 8px; padding: 7px 10px;
+  }
+}
+.toolbar .tb-sep { flex: none; display: block; height: 1.5px; margin: 1px 8px; background: var(--rule); }
+.toolbar .tool-cls { display: contents; }
+.toolbar .tool-cls[hidden], .toolbar .tool-cls button[hidden] { display: none; }
+.toolbar .tool-cls button[data-t="attention"][aria-pressed="true"] { background: var(--stamp); }
+.room-card .rc-tip { margin: 0; color: var(--ink-2); font-size: 15px; }
+@media (max-height: 760px) { .toolbar { gap: 2px; } .toolbar button, .toolbar a.home { width: 36px; height: 36px; } .toolbar svg { width: 20px; height: 20px; } }
+@media print { .room-away { display: none !important; } }
+
+/* 선생님 수업 화면: 다른 화면으로 간 학생(왼쪽 위, 판서 도구 오른쪽) */
+.room-away {
+  position: fixed; z-index: 60; top: max(12px, env(safe-area-inset-top, 0px)); left: max(96px, calc(env(safe-area-inset-left, 0px) + 84px));
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; max-width: min(46vw, 640px);
+  font: 500 15px/1.3 var(--f-body); color: var(--ink); background: var(--paper-2); border: 2px solid var(--stamp); border-radius: 14px; padding: 6px 12px;
+  box-shadow: 3px 3px 0 var(--stamp);
+}
+.room-away b { color: var(--stamp); font-weight: 800; }
+.room-away .ra-who { background: var(--paper); border-radius: 999px; padding: 2px 10px; font-weight: 700; }
+.room-away .ra-who i { font-style: normal; font-weight: 600; color: var(--ink-2); }
 .room-overlay { position: fixed; inset: 0; z-index: 70; background: rgba(29, 36, 51, .55); display: grid; place-items: center; padding: 16px; }
 .room-card {
   width: min(980px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--paper-2); color: var(--ink);
@@ -4590,6 +4634,34 @@ const initChalkboard = function ( Reveal ) {
     document.querySelectorAll('.toolbar [data-tool]').forEach((b) => b.addEventListener('click', () => {
       const f = act[b.dataset.tool]; if (f) f(); b.blur();
     }));
+    // 단추 이름(2026-11-02 «그 바가 뭘하는건지 모르겠다»): 맨 위 «이름 보기»를 누르면 그림 옆에 이름이 펼쳐진다(기억).
+    // 마우스를 올려도 바로 이름이 뜬다. 나중에 붙는 단추(수업방)는 data-label로 이름을 준다
+    const bar = document.querySelector('.toolbar');
+    if (bar) {
+      const NAME = { home: '처음 화면', pen: '판서', board: '칠판', clear: '판서 지우기', overview: '한눈에 보기', speaker: '발표자 화면', full: '전체 화면' };
+      const label = (b) => {
+        if (b.querySelector(':scope > .tb-label')) return;
+        const t = b.dataset.label || NAME[b.dataset.tool] || (b.classList.contains('home') ? NAME.home : b.getAttribute('aria-label') || '');
+        if (t) b.insertAdjacentHTML('beforeend', `<span class="tb-label">${t}</span>`);
+      };
+      const KEY = 'deck:toolbar-labels';
+      const tg = document.createElement('button');
+      tg.type = 'button'; tg.className = 'tb-names';
+      tg.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h12"/></svg>';
+      const set = (on) => {
+        bar.classList.toggle('labeled', on); tg.setAttribute('aria-pressed', String(on));
+        tg.dataset.label = on ? '이름 숨기기' : '이름 보기'; tg.setAttribute('aria-label', tg.dataset.label);
+        const l = tg.querySelector('.tb-label'); if (l) l.textContent = tg.dataset.label;
+        try { localStorage.setItem(KEY, on ? '1' : '0'); } catch { /* 저장이 막혀도 이번에는 된다 */ }
+      };
+      let on0 = false; try { on0 = localStorage.getItem(KEY) === '1'; } catch { /* 처음 */ }
+      set(on0);
+      tg.addEventListener('click', () => { set(!bar.classList.contains('labeled')); tg.blur(); });
+      const home = bar.querySelector('a.home');
+      bar.insertBefore(tg, home ? home.nextSibling : bar.firstChild);
+      bar.querySelectorAll('button, a.home').forEach(label);
+      new MutationObserver(() => bar.querySelectorAll('button, a.home').forEach(label)).observe(bar, { childList: true, subtree: true });
+    }
     // 마지막 장 «다음 차시 열기»: 수업방 주소(방·반·시험 주소)를 그대로 들고 간다
     document.querySelectorAll('a.next-go').forEach((a) => a.addEventListener('click', (e) => {
       const now = new URLSearchParams(location.search), keep = new URLSearchParams();
@@ -4671,7 +4743,7 @@ const initChalkboard = function ( Reveal ) {
     });
   }
   // 칸 높이 맞춤: 글꼴이 넓어 줄이 늘어 칸이 장 아래(꼬리말)로 내려가면 그 칸 전체를 줄인다
-  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
+  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .u-toast, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
   function fitCols(sec, s) {
     sec.querySelectorAll('[data-colfit]').forEach((c) => { c.style.zoom = ''; });
     const sr = sec.getBoundingClientRect(), ft = sec.querySelector(':scope > .footer, .footer');
@@ -9133,6 +9205,8 @@ if (!window.clearImmediate) {
     _refresh: () => draw(),
     _panel: () => UI.section(),
     _wire: (box) => UI.wire(box),
+    _has: () => quizzes.size > 0,                                   // 수업 도구 막대: 이 차시에 퀴즈가 있나
+    _go: () => { const Q = cur() || [...quizzes.values()][0]; if (Q) goTo(Q); },
   };
 })();
 
@@ -9150,6 +9224,10 @@ if (!window.clearImmediate) {
    반 고정 방: 선생님 페이지(teach.html)에서 만든 반 방(6자리)은 이 브라우저에 진행 열쇠가 저장돼 있어,
    교사용을 ?room=으로 열면 저절로 그 반 방에 붙고 «지금 차시»를 알린다. 학생은 클래스룸의 고정 링크(join.html)로
    들어와 선생님이 연 차시로 옮겨 가고, 선생님이 차시를 바꾸면 함께 옮겨 간다.
+   수업 도구(선생님, 수업 중): 왼쪽 도구 막대에 모두 이리로·주목·한 낱말·모둠·퀴즈 단추를 같은 모양으로 끼워 넣고,
+   배지(또는 막대의 수업방 단추)로 여는 패널에는 참여 코드·현황·따라오기·학생 표시·잠금 같은 방 설정만 둔다.
+   다른 화면: 학생 화면이 가려지거나(다른 앱·화면 잠금) 창이 초점을 잃으면(노트북에서 다른 창) 바로 방에 알리고,
+   선생님 수업 화면에는 AWAY_S초 넘게 떠나 있는 학생(번호·이름, 익명 반이면 수만)이 몇 초째인지 뜬다.
    학생 현황: 학생 화면은 지금 보는 차시·장을 알리고, 선생님 화면은 묶은 수(같은 장·다른 장·다른 차시·목록)를 본다.
    «모두 이리로»는 다른 곳을 보던 학생까지 지금 장으로 데려오고, «주목»은 학생 화면을 «선생님을 보세요»로 가린다.
    학생 표시 방식(반마다): 익명 / 번호만 / 번호와 이름. 번호를 받는 반이면 학생이 처음 한 번 번호(와 이름)를 넣고,
@@ -9234,7 +9312,7 @@ if (!window.clearImmediate) {
     ws.onopen = () => {
       retry = 0; pongAt = Date.now(); ui.status('ok');
       if (ROLE === 'teacher') { if (!room.persist) sendPos(); }       // 반 방은 방 상태(state)를 받고 정한다
-      else { asks.sendAll(); sendWhere(); }
+      else { asks.sendAll(); sendWhere(); awayOn = null; sendAway(); }
     };
     ws.onmessage = (e) => {
       if (ws !== sock) return;
@@ -9331,6 +9409,22 @@ if (!window.clearImmediate) {
   function pos() { const i = Reveal.getIndices(); return { h: i.h, f: Number.isInteger(i.f) ? i.f : -1 }; }
   function sendPos() { if (ROLE === 'teacher' && room) send({ t: 'pos', ...pos() }); }
   function sendWhere() { if (ROLE === 'student' && room) send({ t: 'where', path: LESSON, h: Reveal.getIndices().h }); }
+  // 다른 화면으로 갔나: 바뀔 때만 알린다(다시 붙으면 awayOn = null로 처음부터)
+  const AWAY_S = 5;
+  let awayOn = null;
+  function sendAway() {
+    if (ROLE !== 'student' || !room || !ws || ws.readyState !== 1) return;
+    const on = document.visibilityState === 'hidden' || !document.hasFocus();
+    if (on !== awayOn) { awayOn = on; send({ t: 'away', on }); }
+  }
+  if (ROLE === 'student') {
+    document.addEventListener('visibilitychange', sendAway);
+    window.addEventListener('blur', () => setTimeout(sendAway, 0));
+    window.addEventListener('focus', sendAway);
+    window.addEventListener('pagehide', sendAway);
+  }
+  // 선생님: 떠난 학생 목록 { num, name, cls, since }(since는 이 기기 시계)
+  function setAway(list) { const now = Date.now(); state.away = (list || []).map((x) => ({ ...x, since: now - (x.ms || 0) })); ui.away(); }
   function apply(p) {
     const now = pos();
     if (now.h === p.h && now.f === p.f) return;
@@ -9387,6 +9481,7 @@ if (!window.clearImmediate) {
     }
     if (m.t === 'where') { state.where = m.list; ui.badge(); if (ui.panelOpen) ui.panelCounts(); return; }
     if (m.t === 'roster') { state.roster = m.list; if (ui.panelOpen) ui.panelCounts(); return; }
+    if (m.t === 'away') { if (ROLE === 'teacher') setAway(m.list); return; }
     if (m.t === 'idmode') {
       state.idMode = m.mode; state.size = m.size;
       if (ROLE === 'student' && needId(state, room.code)) ui.idBox(reconnect);
@@ -9417,6 +9512,7 @@ if (!window.clearImmediate) {
         asks.clear(); words.clear();
         for (const [q, t] of Object.entries(m.tallies || {})) { if (q.startsWith('w-')) words.set(q, t); else asks.show(q, t); }
         if (room.persist) teacherSync(m);
+        setAway(m.away);
         if (ui.panelOpen && !ui.cloudOpen && !ui.groupOpen) ui.panel();
       }
       ui.askChanged();
@@ -9644,6 +9740,50 @@ if (!window.clearImmediate) {
       if (a) a.hidden = !on;
       if (ROLE === 'student') Reveal.configure({ keyboard: !on && !(room && state.follow && !waiting()) });
     },
+    // 선생님 수업 화면 왼쪽 위: AWAY_S초 넘게 다른 화면에 있는 학생. 1초마다 초를 센다
+    away() {
+      let box = document.querySelector('.room-away');
+      const show = ROLE === 'teacher' && room && (!room.persist || state.lesson);
+      const now = Date.now(), list = show ? (state.away || []).filter((x) => inClass(x) && now - x.since >= AWAY_S * 1000) : [];
+      clearTimeout(this.awayT);
+      if (show && (state.away || []).some(inClass)) this.awayT = setTimeout(() => this.away(), 1000);
+      if (!list.length) { if (box) box.hidden = true; return; }
+      if (!box) { box = el('div', 'room-away'); box.setAttribute('role', 'status'); document.body.appendChild(box); }
+      const secs = (x) => { const t = Math.floor((now - x.since) / 1000); return t < 60 ? `${t}초` : `${Math.floor(t / 60)}분`; };
+      const named = list.filter((x) => x.num).sort((a, b) => a.since - b.since), anon = list.filter((x) => !x.num);
+      box.innerHTML = `<b>다른 화면 ${list.length}명</b>` + named.map((x) => `<span class="ra-who">${x.num}번${x.name ? ' ' + esc(x.name) : ''} <i>${secs(x)}</i></span>`).join('')
+        + (anon.length ? `<span class="ra-who">${named.length ? '그 밖에 ' : ''}이름 없는 학생 ${anon.length}명</span>` : '');
+      box.hidden = false;
+    },
+    // 수업 도구(왼쪽 도구 막대 안, 선생님·수업 중). 단추 상태(주목·질문 중)는 badge()가 부를 때마다 맞춘다
+    tools() {
+      const bar = document.querySelector('.toolbar'), room0 = bar && bar.querySelector('.tool-room');
+      if (!room0) return;
+      let box = bar.querySelector('.tool-cls');
+      const show = ROLE === 'teacher' && room && (!room.persist || state.lesson);
+      if (!show) { if (box) box.hidden = true; return; }
+      const I = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+      if (!box) {
+        box = el('div', 'tool-cls'); box.setAttribute('role', 'group'); box.setAttribute('aria-label', '수업 도구');
+        box.innerHTML = `<button type="button" data-t="summon" data-label="모두 이리로" title="모두 이리로: 다른 곳을 보던 학생까지 지금 장으로">${I('<path d="M12 3v11"/><path d="M7 9l5 5 5-5"/><path d="M5 20h14"/>')}</button>
+          <button type="button" data-t="attention" data-label="주목" title="주목: 학생 화면을 «선생님을 보세요»로 가리기">${I('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>')}</button>
+          <button type="button" data-t="word" data-label="한 낱말" title="한 낱말 묻기">${I('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8"/><path d="M8 12h5"/>')}</button>
+          <button type="button" data-t="groups" data-label="모둠" title="모둠 짜기·모둠 판">${I('<circle cx="8.5" cy="8" r="2.6"/><circle cx="15.5" cy="8" r="2.6"/><path d="M3.5 19c0-2.8 2.2-4.6 5-4.6s5 1.8 5 4.6"/><path d="M13.6 14.6c.6-.2 1.2-.2 1.9-.2 2.8 0 5 1.8 5 4.6"/>')}</button>
+          <button type="button" data-t="quiz" data-label="빠른 퀴즈" title="빠른 퀴즈 장으로">${I('<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>')}</button><i class="tb-sep"></i>`;
+        const on = (t, f) => { box.querySelector(`[data-t="${t}"]`).onclick = (e) => { e.currentTarget.blur(); f(e); }; };
+        on('summon', () => { send({ t: 'summon' }); state.follow = true; this.badge(); this.flash('모두 불렀어요'); });
+        on('attention', () => { state.attention = !state.attention; send({ t: 'attention', on: state.attention }); this.badge(); if (this.panelOpen) this.panelCounts(); });
+        on('word', () => (state.ask ? this.cloud() : this.askForm()));
+        on('groups', () => { if (G()) G().panel(); });
+        on('quiz', () => { if (Qz()) { this.closePanel(); Qz()._go(); } });
+        bar.insertBefore(box, room0);
+      }
+      box.hidden = false;
+      const at = box.querySelector('[data-t="attention"]'); at.setAttribute('aria-pressed', String(!!state.attention)); at.title = state.attention ? '주목 풀기' : '주목: 학생 화면을 «선생님을 보세요»로 가리기';
+      const wd = box.querySelector('[data-t="word"]'); wd.setAttribute('aria-pressed', String(!!(state.ask && state.ask.open))); wd.title = state.ask ? '낱말 구름 보기' : '한 낱말 묻기';
+      box.querySelector('[data-t="groups"]').hidden = !G();
+      box.querySelector('[data-t="quiz"]').hidden = !(Qz() && Qz()._has && Qz()._has());
+    },
     panelOpen: false, box: null, badgeEl: null,
     status(s) { this.conn = s; this.badge(); },
     flash(text) {
@@ -9654,6 +9794,7 @@ if (!window.clearImmediate) {
       this.flashT = setTimeout(() => f.remove(), 1600);
     },
     badge(msg) {
+      if (ROLE === 'teacher') { this.away(); this.tools(); }
       if (!this.badgeEl) { this.badgeEl = el('div', 'room-badge'); document.body.appendChild(this.badgeEl); }
       const b = this.badgeEl;
       if (!room) {
@@ -9680,11 +9821,11 @@ if (!window.clearImmediate) {
         b.querySelector('.rb-open').onclick = () => this.panel();
         const c = b.querySelector('[data-a="cloud"]'); if (c) c.onclick = () => this.cloud();
       } else if (waiting()) {
-        b.innerHTML = `<span class="rb-text"><b>${title}</b> · 복습 중 · ${list.length ? '우리 반 ' : ''}수업이 시작되면 저절로 넘어가요${lost}</span>`;
+        b.innerHTML = `<span class="rb-text"><b>${title}</b> · 복습 중<span class="rb-w"> · ${list.length ? '우리 반 ' : ''}수업이 시작되면 저절로 넘어가요</span>${lost}</span>`;
       } else if (state.follow) {
-        b.innerHTML = `<span class="rb-text"><b>${title}</b> · 선생님 화면을 따라가는 중${lost}</span>`;
+        b.innerHTML = `<span class="rb-text"><b>${title}</b> · <span class="rb-w">선생님 화면을 </span>따라가는 중${lost}</span>`;
       } else {
-        b.innerHTML = `<span class="rb-text"><b>${title}</b> · ${solo ? '혼자 보는 중' : '선생님 화면을 따라가는 중'}${lost}</span>`
+        b.innerHTML = `<span class="rb-text"><b>${title}</b> · ${solo ? '혼자 보는 중' : '<span class="rb-w">선생님 화면을 </span>따라가는 중'}${lost}</span>`
           + `<button type="button" class="rb-toggle">${solo ? '다시 따라가기' : '혼자 보기'}</button>`;
         b.querySelector('.rb-toggle').onclick = () => { solo = !solo; if (!solo) apply(state.pos); this.badge(); };
       }
@@ -10011,25 +10152,18 @@ if (!window.clearImmediate) {
         <div class="rc-roster" hidden></div>
         <div class="rc-tools">
           <section class="rc-group" aria-label="학생 화면"><h3>학생 화면</h3>
-            <div class="rc-line"><button type="button" class="rc-btn" data-a="summon">모두 이리로</button><button type="button" class="rc-btn" data-a="attention"></button></div>
             <div class="rc-line"><div class="rc-seg" role="group" aria-label="넘기기"><button type="button" data-f="1">모두 따라오기</button><button type="button" data-f="0">자유롭게</button></div></div>
           </section>
-          <section class="rc-group" aria-label="묻고 모으기"><h3>묻고 모으기</h3>
-            <div class="rc-line"><button type="button" class="rc-btn" data-a="word">한 낱말 묻기</button></div>
-            <div class="rc-line"><button type="button" class="rc-btn quiet" data-a="reset">응답 모두 지우기</button></div>
-          </section>
-          ${G() ? `<section class="rc-group" aria-label="모둠 활동"><h3>모둠 활동</h3>
-            <div class="rc-line"><button type="button" class="rc-btn" data-a="groups">모둠 짜기·모둠 판</button></div>
-          </section>` : ''}
-          ${Qz() ? Qz()._panel() : ''}
-          <section class="rc-group rc-idm" aria-label="수업방"><h3>수업방</h3>
+          <section class="rc-group rc-idm" aria-label="수업방"><h3>수업방 설정</h3>
             <div class="rc-line"><div class="rc-seg" role="group" aria-label="학생 표시"><button type="button" data-m="anon">익명</button><button type="button" data-m="num">번호만</button><button type="button" data-m="numname">번호와 이름</button></div></div>
             <div class="rc-line"><label class="rc-size" hidden>인원 <input type="number" inputmode="numeric" min="1" max="60" placeholder="안 정함" aria-label="반 인원(비우면 들어온 번호만)"></label><button type="button" class="rc-btn" data-a="lock"></button></div>
             <span class="rc-idmsg" aria-live="polite"></span>
+            <div class="rc-line"><button type="button" class="rc-btn quiet" data-a="reset">응답 모두 지우기</button></div>
           </section>
+          ${Qz() ? Qz()._panel() : ''}
         </div>
+        <p class="rc-tip">주목·한 낱말·모둠·퀴즈는 왼쪽 도구 막대에 있어요(수업 중).</p>
         <div class="rc-foot"><span class="rc-count"></span><button type="button" class="rc-btn main" data-a="hide">화면에서 숨기기</button></div>`);
-      o.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { state.follow = b.dataset.f === '1'; send({ t: 'follow', on: state.follow }); this.panelCounts(); this.badge(); });
       o.querySelectorAll('.rc-idm [data-m]').forEach((b) => b.onclick = () => {
         const say = (t) => { o.querySelector('.rc-idmsg').textContent = t; };
         if (b.dataset.m === (state.idMode || 'anon')) return;
@@ -10043,11 +10177,8 @@ if (!window.clearImmediate) {
       };
       o.querySelector('[data-a="lock"]').onclick = () => { state.locked = !state.locked; send({ t: 'lock', on: state.locked }); this.panelCounts(); this.badge(); };
       o.querySelector('[data-a="hide"]').onclick = () => this.closePanel();
-      o.querySelector('[data-a="word"]').onclick = () => (state.ask ? this.cloud() : this.askForm());
-      const gb = o.querySelector('[data-a="groups"]'); if (gb) gb.onclick = () => G().panel();
+      o.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { state.follow = b.dataset.f === '1'; send({ t: 'follow', on: state.follow }); this.panelCounts(); this.badge(); });
       if (Qz()) Qz()._wire(o);
-      o.querySelector('[data-a="summon"]').onclick = (e) => { send({ t: 'summon' }); state.follow = true; this.panelCounts(); const b = e.currentTarget; b.textContent = '불렀어요'; setTimeout(() => { if (b.isConnected) b.textContent = '모두 이리로'; }, 1500); };
-      o.querySelector('[data-a="attention"]').onclick = () => { state.attention = !state.attention; send({ t: 'attention', on: state.attention }); this.panelCounts(); this.badge(); };
       o.querySelector('[data-a="reset"]').onclick = (e) => {
         const b = e.currentTarget;
         if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = '한 번 더 누르면 지워져요'; setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = '응답 모두 지우기'; } }, 3000); return; }
@@ -10131,16 +10262,20 @@ if (!window.clearImmediate) {
   function start() {
     const bar = document.querySelector('.toolbar');
     if (bar) {
+      // 묶음 사이 구분선: 판서 | 보기 | 수업방
+      const ov = bar.querySelector('[data-tool="overview"]'); if (ov) bar.insertBefore(el('i', 'tb-sep'), ov);
+      bar.appendChild(el('i', 'tb-sep'));
       const btn = el('button', 'tool-room', ICON);
       btn.type = 'button';
       btn.title = ROLE === 'teacher' ? '수업방 열기' : '수업방 들어가기';
+      btn.dataset.label = ROLE === 'teacher' ? '수업방 설정' : '수업방';
       btn.setAttribute('aria-label', btn.title);
       btn.onclick = () => { btn.blur(); if (ROLE === 'teacher') ui.panel(); else if (!room) ui.joinBox(); };
       bar.appendChild(btn);
       // 선생님 화면: 지금 차시·장을 붙여 선생님 게시판(오류 신고·요청·의견)으로
       if (ROLE === 'teacher') {
-        const fb = el('button', 'tool-board', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>');
-        fb.type = 'button'; fb.title = '이 장에 의견·오류 남기기(선생님 게시판)'; fb.setAttribute('aria-label', fb.title);
+        const fb = el('button', 'tool-board', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>');
+        fb.type = 'button'; fb.dataset.label = '의견·오류 남기기'; fb.title = '이 장에 의견·오류 남기기(선생님 게시판)'; fb.setAttribute('aria-label', fb.title);
         fb.onclick = () => { fb.blur(); window.open(`${BASE}/board.html?lesson=${encodeURIComponent(LESSON)}&slide=${Reveal.getIndices().h + 1}${passApi}`, '_blank', 'noopener'); };
         bar.appendChild(fb);
       }
