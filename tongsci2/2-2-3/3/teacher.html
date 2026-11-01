@@ -1375,15 +1375,12 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .dv-cam { position: absolute; left: 0; top: 0; width: 212px; z-index: 6; cursor: grab; touch-action: none; user-select: none; }
 .dv-cam.drag { cursor: grabbing; }
 .dv-cam { transform-origin: 106px 106px; transition: transform .25s; }
-.dv-cam.drag, .dv-cam:not(.parked) { transition: none; }
-.dv-cam.parked .dv-cam-ring { background: rgba(14, 18, 48, .85); }
-.dv-cam.parked .dv-cam-grip { visibility: hidden; }
+.dv-cam.drag { transition: none; }
 .dv-cam:focus-visible { outline: none; }
 .dv-cam:focus-visible .dv-cam-ring { box-shadow: 0 0 0 6px var(--hl), 0 0 0 9999px rgba(0, 0, 0, 0); }
 .dv-cam-ring { display: block; margin: 0 auto; width: 184px; height: 184px; border-radius: 50%; border: 14px solid #2b3242; box-shadow: 0 0 0 3px var(--ink), inset 0 0 0 3px #6c78b0, 0 10px 18px rgba(29, 36, 51, .35); box-sizing: border-box; }
 .dv-cam-grip { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: -4px auto 0; width: 190px; padding: 8px 10px; background: #2b3242; color: #eef2f1; border: 3px solid var(--ink); border-radius: 0 0 14px 14px; font: 700 18px var(--f-body); }
 .dv-cam-grip .dv-scale { color: #cfd6f2; font-size: 14px; }
-.dv-dock { display: block; width: 66px; height: 64px; }
 .hb { opacity: 0; transition: opacity 3.2s ease-out; }
 .dv-card.on .hb { opacity: var(--o); transition: opacity 2.6s ease-in; }
 .dv-defs { position: absolute; width: 0; height: 0; }
@@ -1521,7 +1518,7 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .ph-bub.on .ph-tag text { fill: var(--paper-2); }
 .ph-say { font: 600 22px var(--f-body); text-anchor: middle; fill: var(--ink-3); }
 .ph-bub.on .ph-say { fill: var(--ink); }
-.ph-ui { position: absolute; left: 716px; top: 156px; width: 220px; height: 456px; display: flex; flex-direction: column; gap: 8px; padding: 6px 12px 10px; color: var(--ink); font-family: var(--f-body); transition: color .3s; }
+.ph-ui { position: absolute; left: 716px; top: 156px; width: 220px; height: 456px; box-sizing: border-box; transform-origin: 0 0; display: flex; flex-direction: column; gap: 8px; padding: 6px 12px 10px; color: var(--ink); font-family: var(--f-body); transition: color .3s; }
 .ph-ui.dim { color: #d7dde8; }
 .ph-ui.vib { animation: ph-vib .07s linear infinite alternate; }
 .ph-ui.off .ph-app { visibility: hidden; }
@@ -2285,7 +2282,7 @@ a.rc-btn { display: inline-flex; align-items: center; text-decoration: none; }
 #check4 .def .blank { font-size: 38px; }
 #check4 .def.soft { font-size: 23px; }
 /* 1차시 · 휴대 전화 에너지 장부 */
-.ph-ledger { position: absolute; left: 20px; top: 18px; width: 330px; display: flex; flex-direction: column; gap: 6px; background: rgba(251, 252, 249, .96); border: 2px solid var(--ink); border-radius: 12px; padding: 12px 14px; transition: border-color .3s, box-shadow .3s; }
+.ph-ledger { position: absolute; left: 20px; top: 18px; width: 366px; display: flex; flex-direction: column; gap: 6px; background: rgba(251, 252, 249, .96); border: 2px solid var(--ink); border-radius: 12px; padding: 12px 14px; transition: border-color .3s, box-shadow .3s; }
 .ph-ledger .tag { font-size: 18px; letter-spacing: .12em; font-weight: 700; color: var(--accent); }
 .lg-in, .lg-row, .lg-sum { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 600 20px var(--f-body); }
 .lg-in { border-bottom: 2px solid var(--rule); padding-bottom: 6px; }
@@ -2396,10 +2393,13 @@ svg [tabindex]:focus:not(:focus-visible) { outline: none; }
 .u-dock .u-steps { display: flex; gap: 6px; }
 .u-dock .u-steps li { padding: 3px 12px; line-height: 1.4; white-space: nowrap; background: rgba(255, 255, 255, .85); border-color: var(--rule); }
 .u-dock .u-steps li.now { background: color-mix(in srgb, var(--hl) 55%, #fff); border-color: var(--ink); }
-/* 기존 체험 장의 «알게 된 것»: 끝나면 꼬리말 위에 떠오른다(✕로 접기) */
-.u-toast { position: absolute; right: 120px; bottom: 104px; z-index: 30; max-width: 820px; display: none; box-shadow: 6px 6px 0 rgba(29, 36, 51, .16); padding-right: 52px; }
-.u-done .u-toast:not(.closed) { display: block; animation: u-pop .5s ease both; }
-.u-toast .u-x { position: absolute; right: 10px; top: 8px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--good); background: #fff; color: var(--good); font: 800 20px/30px var(--f-body); cursor: pointer; padding: 0; }
+/* 기존 체험 장의 «알게 된 것»: 끝나면 꼬리말 자리에 한 줄로 뜬다(✕로 접기). 단추 줄을 덮지 않게 꼬리말을 잠시 가린다 */
+.u-toast { position: absolute; left: 120px; right: 280px; bottom: 22px; z-index: 30; display: none; box-shadow: 4px 4px 0 rgba(29, 36, 51, .16); padding: 7px 56px 7px 16px; align-items: baseline; gap: 14px; }
+.u-toast > b { flex: none; font-size: 20px; }
+.u-toast p { margin: 0; font-size: 19px; line-height: 1.4; }
+.u-done .u-toast:not(.closed) { display: flex; animation: u-pop .5s ease both; }
+.u-done:has(> .u-toast:not(.closed)) > .footer { visibility: hidden; }
+.u-toast .u-x { position: absolute; right: 8px; top: 50%; margin-top: -16px; width: 32px; height: 32px; font-size: 18px !important; line-height: 26px !important; border-radius: 50%; border: 2px solid var(--good); background: #fff; color: var(--good); font: 800 20px/30px var(--f-body); cursor: pointer; padding: 0; }
 
 /* 이론 장(section.l1t): 왼쪽 «용어 — 쉬운 정의» 상자, 오른쪽 사진·Manim */
 section.l1t .frame { gap: 22px; }
@@ -5426,7 +5426,7 @@ const initChalkboard = function ( Reveal ) {
     });
   }
   // 칸 높이 맞춤: 글꼴이 넓어 줄이 늘어 칸이 장 아래(꼬리말)로 내려가면 그 칸 전체를 줄인다
-  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
+  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .u-toast, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
   function fitCols(sec, s) {
     sec.querySelectorAll('[data-colfit]').forEach((c) => { c.style.zoom = ''; });
     const sr = sec.getBoundingClientRect(), ft = sec.querySelector(':scope > .footer, .footer');
@@ -12327,7 +12327,7 @@ window.THREE={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnim
 <script>/* 2-2-3 기존 체험 장에 «해 볼 일 ①②③ + 알게 된 것»을 덧붙인다(2026-10-31 보완: 기존 조작·그림은 그대로 두고 더하기만).
    UDock.mount(root, { steps: ['…','…','…'], learn: 'html', on: [조건, 조건, 조건] })
      조건: 선택자 문자열 = 그 요소(안쪽 포함)를 누르거나 끌거나 막대를 움직이면 끝 · 함수(root) = 참이 되면 끝(장에 있는 동안 0.4초마다 살핀다)
-   해 볼 일은 눈썹 글 줄 오른쪽(.u-dock, 머리 칸 안에 두어 엔진 칸 맞춤이 줄이지 않게), 셋을 다 하면 «알게 된 것»이 꼬리말 위에 떠오른다(.u-toast, ✕로 접기).
+   해 볼 일은 눈썹 글 줄 오른쪽(.u-dock, 머리 칸 안에 두어 엔진 칸 맞춤이 줄이지 않게), 셋을 다 하면 «알게 된 것»이 꼬리말 자리에 한 줄로 뜬다(.u-toast, ✕로 접기).
    시험용: root._dock.mark(i) · root._dock.state() */
 (function () {
   'use strict';
@@ -12338,7 +12338,7 @@ window.THREE={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnim
     dock.innerHTML = '<span>해 볼 일</span><ol class="u-steps">' + cfg.steps.map((s, i) => `<li data-s="${i + 1}"><b>${DIG[i]}</b> ${s}</li>`).join('') + '</ol>';
     const toast = document.createElement('div'); toast.className = 'u-learn u-toast'; toast.setAttribute('aria-live', 'polite');
     toast.innerHTML = `<b>알게 된 것</b><p>${cfg.learn}</p><button type="button" class="u-x" aria-label="알게 된 것 접기">✕</button>`;
-    (root.querySelector('.head') || frame).appendChild(dock); frame.appendChild(toast);
+    (root.querySelector('.head') || frame).appendChild(dock); root.appendChild(toast);   // 꼬리말 자리에 띄우려고 장(section)에 단다
     toast.querySelector('.u-x').addEventListener('click', (e) => { e.stopPropagation(); toast.classList.add('closed'); });
     const ok = cfg.steps.map(() => false);
     const paint = () => {

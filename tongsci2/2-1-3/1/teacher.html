@@ -2748,7 +2748,7 @@ svg [tabindex]:focus:not(:focus-visible) { outline: none; }
 /* ---------- 1. 표지: 3D 북극 바다 ---------- */
 .ic-card { padding: 52px 20px 18px; display: flex; flex-direction: column; gap: 12px; }
 .ic-stage { height: 420px; border-radius: 8px; background: #cfe3ee; }
-.ic-stage canvas { cursor: pointer; }
+.ic-stage canvas { cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .ic-stage.ic-hot { box-shadow: 0 0 0 5px #f29a5a; }
 .ic-lab { font-size: 17px; padding: 2px 10px; border-width: 1.5px; }
 .ic-warm { position: absolute; left: 16px; bottom: 14px; z-index: 3; display: flex; align-items: center; gap: 10px; font: 700 16px var(--f-body); color: var(--ink); background: rgba(255,255,255,.85); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 12px; pointer-events: none; }
@@ -5833,7 +5833,7 @@ window.THREE={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnim
     });
   }
   // 칸 높이 맞춤: 글꼴이 넓어 줄이 늘어 칸이 장 아래(꼬리말)로 내려가면 그 칸 전체를 줄인다
-  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
+  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .u-toast, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
   function fitCols(sec, s) {
     sec.querySelectorAll('[data-colfit]').forEach((c) => { c.style.zoom = ''; });
     const sr = sec.getBoundingClientRect(), ft = sec.querySelector(':scope > .footer, .footer');
@@ -12519,10 +12519,18 @@ if (!window.clearImmediate) {
     s.label(labs.seal, () => new T.Vector3(seal.position.x, seal.position.y + 1.5, seal.position.z));
 
     // 누르고 있기: 그림 어디를 눌러도 잡힌다(둘러보기 대신)
-    s.grab(() => true, () => { holding = true; stage.classList.add('ic-hot'); return { move() {}, up() { holding = false; stage.classList.remove('ic-hot'); } }; });
-    canvas.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); holding = true; stage.classList.add('ic-hot'); } });
-    canvas.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') { holding = false; stage.classList.remove('ic-hot'); } });
-    canvas.addEventListener('blur', () => { holding = false; stage.classList.remove('ic-hot'); });
+    // 움직임 줄이기 설정이면 장면의 그리기 반복이 멈춰 있으므로, 누르는 동안만 따로 돌린다
+    let own = 0, ownT = 0;
+    function ownTick(t) { own = 0; if (!holding) return; frame(clamp((t - ownT) / 1000, 0, 0.05)); ownT = t; s.render(); own = requestAnimationFrame(ownTick); }
+    function hold(on) {
+      holding = on; stage.classList.toggle('ic-hot', on);
+      if (on && !s.active && !own) { ownT = performance.now(); own = requestAnimationFrame(ownTick); }
+    }
+    s.grab(() => true, () => { hold(true); return { move() {}, up() { hold(false); } }; });
+    canvas.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) hold(true); } });
+    canvas.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') hold(false); });
+    canvas.addEventListener('blur', () => hold(false));
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     root.querySelector('.ic-reset').addEventListener('click', () => { w = 0; paint(); if (!s.active) s.render(); });
 
     function paint() {
@@ -12557,7 +12565,7 @@ if (!window.clearImmediate) {
       paint();
     }
     paint();
-    root._ice = { set(v) { w = clamp(v, 0, 1); paint(); s.render(); }, get w() { return w; }, hold(on) { holding = on; } };
+    root._ice = { set(v) { w = clamp(v, 0, 1); paint(); s.render(); }, get w() { return w; }, hold }; 
     return { setActive: s.setActive, fit: s.fit };
   }
   window.SeaIce = { mount };

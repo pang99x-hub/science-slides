@@ -2748,7 +2748,7 @@ svg [tabindex]:focus:not(:focus-visible) { outline: none; }
 /* ---------- 1. 표지: 3D 북극 바다 ---------- */
 .ic-card { padding: 52px 20px 18px; display: flex; flex-direction: column; gap: 12px; }
 .ic-stage { height: 420px; border-radius: 8px; background: #cfe3ee; }
-.ic-stage canvas { cursor: pointer; }
+.ic-stage canvas { cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .ic-stage.ic-hot { box-shadow: 0 0 0 5px #f29a5a; }
 .ic-lab { font-size: 17px; padding: 2px 10px; border-width: 1.5px; }
 .ic-warm { position: absolute; left: 16px; bottom: 14px; z-index: 3; display: flex; align-items: center; gap: 10px; font: 700 16px var(--f-body); color: var(--ink); background: rgba(255,255,255,.85); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 12px; pointer-events: none; }
@@ -5830,7 +5830,7 @@ window.THREE={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnim
     });
   }
   // 칸 높이 맞춤: 글꼴이 넓어 줄이 늘어 칸이 장 아래(꼬리말)로 내려가면 그 칸 전체를 줄인다
-  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
+  const SKIP = '.footer, .ph-det, .pk, .notes, .slide-number, .fx-bit, .ea-bit, .u-toast, .qz-board, .qz-cover, [hidden]';   // 빠른 퀴즈 판·덮개는 제 크기로 그린다
   function fitCols(sec, s) {
     sec.querySelectorAll('[data-colfit]').forEach((c) => { c.style.zoom = ''; });
     const sr = sec.getBoundingClientRect(), ft = sec.querySelector(':scope > .footer, .footer');
