@@ -850,6 +850,12 @@ table.dirt td.done { color: var(--ink); }
 @media (max-width: 600px) and (orientation: portrait) { .room-badge { max-width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); } }
 /* 왼쪽 도구 막대: 묶음 구분선, 수업 중 선생님 수업 도구(같은 모양 단추). 키가 작은 화면에서는 단추를 줄이고, 넘치면 막대 안에서 넘긴다 */
 .toolbar button, .toolbar a.home { position: relative; flex: none; }
+/* 화면 높이보다 길면 막대 안에서 넘긴다(패드 2026-11-02 «밑으로 스크롤이 안된다») */
+.toolbar { max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: none; }
+.toolbar::-webkit-scrollbar { display: none; }
+@media (max-width: 600px) and (orientation: portrait) { .toolbar { max-height: none; overflow-y: hidden; overflow-x: auto; touch-action: pan-x; } }
+/* 마우스를 올렸을 때 이름표: 막대 밖에 하나 띄운다(core.js) */
+.tb-tip { position: fixed; z-index: 80; pointer-events: none; transform: translateY(-50%); font: 600 14px/1 var(--f-body); white-space: nowrap; color: var(--paper-2); background: var(--ink); border-radius: 8px; padding: 7px 10px; }
 .toolbar .tb-label { display: none; }
 /* 이름 보기: 그림 옆에 이름 */
 .toolbar.labeled { border-radius: 20px; align-items: stretch; background: var(--paper-2); opacity: 1; }
@@ -857,19 +863,13 @@ table.dirt td.done { color: var(--ink); }
 .toolbar.labeled button, .toolbar.labeled a.home { width: auto; display: flex; justify-content: flex-start; gap: 10px; padding: 0 14px 0 9px; border-radius: 999px; }
 .toolbar.labeled .tb-label { display: inline; font: 600 15px/1 var(--f-body); white-space: nowrap; }
 .toolbar.labeled a.home::after { left: 12px; right: 12px; }
-/* 이름을 숨겼을 때: 마우스를 올리면 바로 옆에 이름 */
-@media (hover: hover) {
-  .toolbar:not(.labeled) button:hover .tb-label, .toolbar:not(.labeled) a.home:hover .tb-label {
-    display: block; position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%); pointer-events: none;
-    font: 600 14px/1 var(--f-body); white-space: nowrap; color: var(--paper-2); background: var(--ink); border-radius: 8px; padding: 7px 10px;
-  }
-}
 .toolbar .tb-sep { flex: none; display: block; height: 1.5px; margin: 1px 8px; background: var(--rule); }
 .toolbar .tool-cls { display: contents; }
 .toolbar .tool-cls[hidden], .toolbar .tool-cls button[hidden] { display: none; }
 .toolbar .tool-cls button[data-t="attention"][aria-pressed="true"] { background: var(--stamp); }
 .room-card .rc-tip { margin: 0; color: var(--ink-2); font-size: 15px; }
-@media (max-height: 760px) { .toolbar { gap: 2px; } .toolbar button, .toolbar a.home { width: 36px; height: 36px; } .toolbar svg { width: 20px; height: 20px; } }
+@media (max-height: 900px) { .toolbar { gap: 2px; } .toolbar button, .toolbar a.home { width: 36px; height: 36px; } .toolbar svg { width: 20px; height: 20px; } }
+@media (max-height: 680px) { .toolbar { gap: 0; padding: 4px; } .toolbar button, .toolbar a.home { width: 32px; height: 32px; } .toolbar svg { width: 18px; height: 18px; } }
 @media print { .room-away { display: none !important; } }
 
 /* 선생님 수업 화면: 다른 화면으로 간 학생(왼쪽 위, 판서 도구 오른쪽) */
@@ -4372,6 +4372,18 @@ const initChalkboard = function ( Reveal ) {
       bar.insertBefore(tg, home ? home.nextSibling : bar.firstChild);
       bar.querySelectorAll('button, a.home').forEach(label);
       new MutationObserver(() => bar.querySelectorAll('button, a.home').forEach(label)).observe(bar, { childList: true, subtree: true });
+      // 이름을 숨겼을 때 마우스를 올리면 막대 오른쪽에 이름표(막대는 넘길 수 있어 안에 두면 잘린다)
+      let tip = null;
+      bar.addEventListener('pointerover', (e) => {
+        const b = e.target.closest('button, a.home');
+        if (e.pointerType !== 'mouse' || !b || bar.classList.contains('labeled')) return;
+        const t = b.querySelector('.tb-label'); if (!t) return;
+        if (!tip) { tip = document.createElement('div'); tip.className = 'tb-tip'; document.body.appendChild(tip); }
+        const r = b.getBoundingClientRect(), br = bar.getBoundingClientRect();
+        tip.textContent = t.textContent; tip.style.left = br.right + 10 + 'px'; tip.style.top = r.top + r.height / 2 + 'px'; tip.hidden = false;
+      });
+      bar.addEventListener('pointerout', (e) => { if (tip && !bar.contains(e.relatedTarget)) tip.hidden = true; });
+      bar.addEventListener('scroll', () => { if (tip) tip.hidden = true; }, { passive: true });
     }
     // 마지막 장 «다음 차시 열기»: 수업방 주소(방·반·시험 주소)를 그대로 들고 간다
     document.querySelectorAll('a.next-go').forEach((a) => a.addEventListener('click', (e) => {
