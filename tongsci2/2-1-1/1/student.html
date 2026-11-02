@@ -872,16 +872,26 @@ table.dirt td.done { color: var(--ink); }
 @media (max-height: 680px) { .toolbar { gap: 0; padding: 4px; } .toolbar button, .toolbar a.home { width: 32px; height: 32px; } .toolbar svg { width: 18px; height: 18px; } }
 @media print { .room-away { display: none !important; } }
 
-/* 선생님 수업 화면: 다른 화면으로 간 학생(왼쪽 위, 판서 도구 오른쪽) */
+/* 선생님 수업 화면: 다른 화면으로 간 학생(배지 아래 작은 한 줄, 수업 내용보다 튀지 않게) */
 .room-away {
-  position: fixed; z-index: 60; top: max(12px, env(safe-area-inset-top, 0px)); left: max(96px, calc(env(safe-area-inset-left, 0px) + 84px));
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; max-width: min(46vw, 640px);
-  font: 500 15px/1.3 var(--f-body); color: var(--ink); background: var(--paper-2); border: 2px solid var(--stamp); border-radius: 14px; padding: 6px 12px;
-  box-shadow: 3px 3px 0 var(--stamp);
+  position: fixed; box-sizing: border-box; z-index: 60; top: calc(max(12px, env(safe-area-inset-top, 0px)) + 50px); right: max(14px, env(safe-area-inset-right, 0px));
+  max-width: min(46vw, 560px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font: 500 13px/1.3 var(--f-body); color: var(--ink-2); background: var(--paper-2); border: 1.5px solid var(--rule); border-left: 4px solid var(--stamp);
+  border-radius: 8px; padding: 4px 10px;
 }
-.room-away b { color: var(--stamp); font-weight: 800; }
-.room-away .ra-who { background: var(--paper); border-radius: 999px; padding: 2px 10px; font-weight: 700; }
-.room-away .ra-who i { font-style: normal; font-weight: 600; color: var(--ink-2); }
+.room-away b { color: var(--stamp); font-weight: 700; margin-right: 2px; }
+.room-away i { font-style: normal; color: var(--ink-2); opacity: .75; }
+.room-away { cursor: pointer; text-align: left; }
+.room-away:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+/* 누르면 크게: 학생마다 한 줄 */
+.room-away.big {
+  display: flex; flex-direction: column; gap: 6px; white-space: normal; max-width: min(420px, 90vw); min-width: 240px; max-height: 70vh; overflow-y: auto;
+  font-size: 20px; padding: 12px 16px; border-width: 2px; border-left-width: 6px; border-radius: 12px; box-shadow: 4px 4px 0 var(--ink);
+}
+.room-away.big b { font-size: 22px; }
+.room-away .ra-x { position: absolute; top: 12px; right: 14px; font-size: 14px; color: var(--ink-2); }
+.room-away .ra-row { display: flex; justify-content: space-between; gap: 18px; font-weight: 700; color: var(--ink); border-top: 1px solid var(--rule); padding-top: 6px; }
+.room-away .ra-row i { font-weight: 600; }
 .room-overlay { position: fixed; inset: 0; z-index: 70; background: rgba(29, 36, 51, .55); display: grid; place-items: center; padding: 16px; }
 .room-card {
   width: min(980px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--paper-2); color: var(--ink);
@@ -2757,7 +2767,7 @@ section.evx .panel { gap: 14px; }
   <div class="frame">
     <div class="col-text">
       <div class="masthead">
-        <span class="brand">HANMIN ACADEMY</span>
+        <span class="brand">움직이는 과학 수업</span>
         <span class="crumbs">통합과학2 · Ⅱ. 환경과 에너지 › 중단원 1 생태계와 환경 › <b>소단원 1 생물과 환경</b></span>
       </div>
       <h1>생태계<br>구성요소</h1>
@@ -3120,7 +3130,7 @@ section.evx .panel { gap: 14px; }
           <defs><path id="stamp-ring-211-1" d="M100,100 m-72,0 a72,72 0 1,1 144,0 a72,72 0 1,1 -144,0"/></defs>
           <circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="8"/>
           <circle cx="100" cy="100" r="58" fill="none" stroke="currentColor" stroke-width="4"/>
-          <text font-family="IBM Plex Sans KR, Apple SD Gothic Neo, sans-serif" font-size="19" font-weight="700" letter-spacing="3" fill="currentColor"><textPath href="#stamp-ring-211-1">HANMIN ACADEMY · 2-1-1 · 1차시 ·</textPath></text>
+          <text font-family="IBM Plex Sans KR, Apple SD Gothic Neo, sans-serif" font-size="19" font-weight="700" letter-spacing="3" fill="currentColor"><textPath href="#stamp-ring-211-1">움직이는 과학 수업 · 2-1-1 · 1차시 ·</textPath></text>
           <text x="100" y="116" text-anchor="middle" font-family="Hahmlet, Apple SD Gothic Neo, serif" font-size="50" font-weight="800" fill="currentColor">완료</text>
         </svg>
       </div>
@@ -10078,19 +10088,38 @@ if (!window.clearImmediate) {
   function pos() { const i = Reveal.getIndices(); return { h: i.h, f: Number.isInteger(i.f) ? i.f : -1 }; }
   function sendPos() { if (ROLE === 'teacher' && room) send({ t: 'pos', ...pos() }); }
   function sendWhere() { if (ROLE === 'student' && room) send({ t: 'where', path: LESSON, h: Reveal.getIndices().h }); }
-  // 다른 화면으로 갔나: 바뀔 때만 알린다(다시 붙으면 awayOn = null로 처음부터)
+  // 슬라이드 머리의 학교 이름(2026-11-02 «한민고 사람들 말고는 그 학교 이름»): 빌드는 BRAND0으로 두고,
+  // 로그인한 선생님은 자기 학교, 학생은 들어온 수업방을 만든 선생님 학교로 바꾼다. 한민고는 움직이는 과학 수업
+  const BRAND0 = '움직이는 과학 수업', SCHOOL_KEY = 'science-room:school';
+  const brandOf = (school) => !school ? BRAND0 : /한민/.test(school) ? ['HANMIN', 'ACADEMY'].join(' ') : school;   // 빌드가 슬라이드의 그 글자를 BRAND0으로 바꾸므로 나눠 쓴다
+  function setBrand(school) {
+    if (school) try { localStorage.setItem(SCHOOL_KEY, school); } catch { /* 이번 화면에만 */ }
+    const b = brandOf(school);
+    document.querySelectorAll('.brand').forEach((e) => { if (e.textContent !== b) e.textContent = b; });
+    document.querySelectorAll('svg.stamp textPath').forEach((t) => {   // 완료 도장 고리: «학교 · 단원 · N차시 ·»
+      if (t.dataset.rest == null) { const x = t.textContent; if (!x.startsWith(BRAND0)) return; t.dataset.rest = x.slice(BRAND0.length); }
+      t.textContent = b + t.dataset.rest;
+      const tx = t.parentNode; tx.style.fontSize = '';
+      try { const len = tx.getComputedTextLength(), max = 440; if (len > max) tx.style.fontSize = Math.max(12, 19 * max / len).toFixed(1) + 'px'; } catch { /* 안 보이는 장 */ }
+    });
+  }
+  // 다른 화면으로 갔나: 바뀔 때만 알린다(다시 붙으면 awayOn = null로 처음부터).
+  // 페이지를 떠나는 중(차시 이동·새로 고침)에 화면이 가려지는 것은 다른 화면이 아니다 — 알리지 않는다(11/2 «로딩시간에도 뜨던데»).
+  // 초점은 실제로 다른 창으로 옮겼을 때(blur)만 센다. 휴대폰은 처음 열릴 때 초점이 없다고 나오기도 한다
   const AWAY_S = 5;
-  let awayOn = null;
+  let awayOn = null, blurred = false, unloading = false;
   function sendAway() {
-    if (ROLE !== 'student' || !room || !ws || ws.readyState !== 1) return;
-    const on = document.visibilityState === 'hidden' || !document.hasFocus();
+    if (ROLE !== 'student' || !room || unloading || !ws || ws.readyState !== 1) return;
+    const on = document.visibilityState === 'hidden' || blurred;
     if (on !== awayOn) { awayOn = on; send({ t: 'away', on }); }
   }
   if (ROLE === 'student') {
-    document.addEventListener('visibilitychange', sendAway);
-    window.addEventListener('blur', () => setTimeout(sendAway, 0));
-    window.addEventListener('focus', sendAway);
-    window.addEventListener('pagehide', sendAway);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') blurred = false; sendAway(); });
+    window.addEventListener('blur', () => setTimeout(() => { blurred = !document.hasFocus(); sendAway(); }, 0));
+    window.addEventListener('focus', () => { blurred = false; sendAway(); });
+    window.addEventListener('beforeunload', () => { unloading = true; });
+    window.addEventListener('pagehide', () => { unloading = true; });
+    window.addEventListener('pageshow', (e) => { if (e.persisted) { unloading = false; awayOn = null; sendAway(); } });   // 뒤로 가기로 되살아난 페이지
   }
   // 선생님: 떠난 학생 목록 { num, name, cls, since }(since는 이 기기 시계)
   function setAway(list) { const now = Date.now(); state.away = (list || []).map((x) => ({ ...x, since: now - (x.ms || 0) })); ui.away(); }
@@ -10171,6 +10200,7 @@ if (!window.clearImmediate) {
     }
     if (m.t === 'state') {
       state = { ...state, ...m, ask: m.ask || null };
+      if (m.school) setBrand(m.school);
       if (ROLE === 'student' && !forMe(m.lesson)) Object.assign(state, { lesson: null, ask: null, attention: false });   // 다른 반 수업
       if (m.persist) room.persist = true;
       if (m.name) room.name = m.name;
@@ -10409,7 +10439,7 @@ if (!window.clearImmediate) {
       if (a) a.hidden = !on;
       if (ROLE === 'student') Reveal.configure({ keyboard: !on && !(room && state.follow && !waiting()) });
     },
-    // 선생님 수업 화면 왼쪽 위: AWAY_S초 넘게 다른 화면에 있는 학생. 1초마다 초를 센다
+    // 선생님 수업 화면 오른쪽 위 배지 아래 작은 한 줄: AWAY_S초 넘게 다른 화면에 있는 학생. 1초마다 초를 센다
     away() {
       let box = document.querySelector('.room-away');
       const show = ROLE === 'teacher' && room && (!room.persist || state.lesson);
@@ -10417,11 +10447,25 @@ if (!window.clearImmediate) {
       clearTimeout(this.awayT);
       if (show && (state.away || []).some(inClass)) this.awayT = setTimeout(() => this.away(), 1000);
       if (!list.length) { if (box) box.hidden = true; return; }
-      if (!box) { box = el('div', 'room-away'); box.setAttribute('role', 'status'); document.body.appendChild(box); }
+      if (!box) {
+        box = el('button', 'room-away'); box.type = 'button'; box.setAttribute('aria-live', 'polite');
+        box.onclick = () => { this.awayBig = !this.awayBig; box.blur(); this.away(); };   // 누르면 크게(학생마다 한 줄), 다시 누르면 작게
+        document.body.appendChild(box);
+      }
       const secs = (x) => { const t = Math.floor((now - x.since) / 1000); return t < 60 ? `${t}초` : `${Math.floor(t / 60)}분`; };
       const named = list.filter((x) => x.num).sort((a, b) => a.since - b.since), anon = list.filter((x) => !x.num);
-      box.innerHTML = `<b>다른 화면 ${list.length}명</b>` + named.map((x) => `<span class="ra-who">${x.num}번${x.name ? ' ' + esc(x.name) : ''} <i>${secs(x)}</i></span>`).join('')
-        + (anon.length ? `<span class="ra-who">${named.length ? '그 밖에 ' : ''}이름 없는 학생 ${anon.length}명</span>` : '');
+      box.classList.toggle('big', !!this.awayBig);
+      box.setAttribute('aria-expanded', String(!!this.awayBig));
+      if (this.awayBig) {
+        box.innerHTML = `<b>다른 화면 ${list.length}명</b><span class="ra-x" aria-hidden="true">작게</span>`
+          + named.map((x) => `<span class="ra-row"><span>${x.num}번${x.name ? ' ' + esc(x.name) : ''}</span><i>${secs(x)}</i></span>`).join('')
+          + (anon.length ? `<span class="ra-row"><span>이름 없는 학생 ${anon.length}명</span></span>` : '');
+        box.hidden = false; return;
+      }
+      const shown = named.slice(0, 4), more = named.length - shown.length + anon.length;
+      box.innerHTML = `<b>다른 화면 ${list.length}</b>` + shown.map((x) => ` ${x.num}${x.name ? ' ' + esc(x.name) : '번'} <i>${secs(x)}</i>`).join(' ·')
+        + (more ? `${shown.length ? ' ·' : ''} ${shown.length ? '외 ' : ''}${more}명` : '');
+      box.title = list.map((x) => x.num ? `${x.num}번${x.name ? ' ' + x.name : ''} ${secs(x)}` : '이름 없는 학생').join('\n');
       box.hidden = false;
     },
     // 수업 도구(왼쪽 도구 막대 안, 선생님·수업 중). 단추 상태(주목·질문 중)는 badge()가 부를 때마다 맞춘다
@@ -10929,6 +10973,7 @@ if (!window.clearImmediate) {
 
   // ---------- 시작 ----------
   function start() {
+    { let sc = ''; try { sc = ROLE === 'teacher' ? ((signedIn() || {}).school || localStorage.getItem(SCHOOL_KEY) || '') : (localStorage.getItem(SCHOOL_KEY) || ''); } catch { /* 처음 */ } setBrand(sc); }
     const bar = document.querySelector('.toolbar');
     if (bar) {
       // 묶음 사이 구분선: 판서 | 보기 | 수업방

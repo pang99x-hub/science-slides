@@ -193,7 +193,7 @@ textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px sol
   var SESS = 'science-room:session', ROOMS = 'science-room:classes';
   function stored(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
   function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
-  function sess() { var s = stored(SESS); return s && s.token ? s : null; }          // { token, email, name, status, admin, pending }
+  function sess() { var s = stored(SESS); return s && s.token ? s : null; }          // { token, email, name, status, admin, pending, school }
   function devId() {
     var d = null; try { d = localStorage.getItem('science-room:dev'); } catch (e) {}
     if (!/^d-[0-9a-f]{20}$/.test(d || '')) { d = 'd-' + Array.from(crypto.getRandomValues(new Uint8Array(10)), function (b) { return b.toString(16).padStart(2, '0'); }).join(''); try { localStorage.setItem('science-room:dev', d); } catch (e) {} }
@@ -208,7 +208,7 @@ textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px sol
   // 로그인·맞추기 결과를 이 기기에 둔다(승인된 선생님이면 내 수업방과 이 기기용 진행 열쇠까지)
   function keep(j, token) {
     var s = sess() || {};
-    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0 });
+    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0, school: j.school || s.school || '' });
     if (j.rooms) store(ROOMS, j.rooms.map(function (r) { return { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; }));
     return sess();
   }
