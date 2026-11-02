@@ -84,7 +84,8 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 .namebox { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-width: 0; flex: 1 1 auto; }
 .namebox form { flex: 1 1 100%; }
 /* 선생님 페이지 */
-.topnav { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.topnav { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.topnav .brand { margin-left: auto; }   /* 단추는 왼쪽에 모으고 이름만 오른쪽 */
 .pagehead { display: grid; gap: 8px; }
 .stack { display: grid; gap: 16px; }
 .h2 { font: 700 22px/1.3 var(--f-display); }
@@ -647,8 +648,22 @@ ${AUTH_JS}
     var out = '<button class="btn small" type="button" id="logout">로그아웃</button>';
     document.getElementById('mehead').hidden = s.status === 'approved';
     if (s.status === 'approved') {
-      box.innerHTML = '<div class="acct"><span class="muted">' + who + (s.admin ? '<span class="tag">관리자</span>' : '') + '</span>' + out + '</div>'
+      box.innerHTML = '<div class="acct"><span class="muted">' + who + (s.admin ? '<span class="tag">관리자</span>' : '') + '<br><span class="small">학교: ' + esc(s.school || '아직 없음') + '</span></span><span class="row"><button class="btn small" type="button" id="editme">내 정보 고치기</button>' + out + '</span></div>'
+        + '<form class="form" id="profile" hidden><label class="grow">이름<input type="text" id="pf-name" maxlength="20" autocomplete="name" value="' + esc(s.name || '') + '"></label>'
+        + '<label class="grow">학교<input type="text" id="pf-school" maxlength="40" placeholder="예: 한민고등학교" autocomplete="organization" value="' + esc(s.school || '') + '"></label>'
+        + '<p class="small grow">학교 이름은 내 수업방으로 연 슬라이드 위쪽에 나와요(학생 화면도). 한민고는 HANMIN ACADEMY로 나와요.</p>'
+        + '<button class="btn main" type="submit">저장</button><button class="btn" type="button" id="pf-cancel">닫기</button></form>'
         + (s.admin && s.pending ? '<p><a class="tag next" href="#admin">가입 신청 ' + s.pending + '건이 승인을 기다려요 ↓</a></p>' : '');
+      var pf = document.getElementById('profile');
+      document.getElementById('editme').onclick = function () { pf.hidden = !pf.hidden; if (!pf.hidden) document.getElementById('pf-school').focus(); };
+      document.getElementById('pf-cancel').onclick = function () { pf.hidden = true; meMsg(''); };
+      pf.onsubmit = function (e) {
+        e.preventDefault();
+        var b = { session: s.token, dev: devId(), have: have(), name: document.getElementById('pf-name').value, school: document.getElementById('pf-school').value };
+        if (!b.name.trim() || !b.school.trim()) { meMsg('이름과 학교를 넣어 주세요.'); return; }
+        meMsg('저장하는 중…');
+        api('/profile', b).then(function (j) { if (j.login) { signedOut(); renderAll(); return; } if (j.error) { meMsg(j.error); return; } keep(j); renderAll(); meMsg('저장했어요. 다음에 여는 슬라이드부터 바뀐 학교 이름이 나와요.'); }, function () { meMsg('저장하지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+      };
     } else if (s.status === 'pending') {
       box.innerHTML = '<p class="muted">' + who + ' · <b class="tag next">승인 기다림</b></p><p class="muted">가입 신청을 보냈어요. 관리하는 선생님이 승인하면 이 페이지가 저절로 바뀌어요(30초마다 확인해요).</p><div class="row"><button class="btn main" type="button" id="recheck">승인됐는지 다시 보기</button>' + out + '</div>';
       document.getElementById('recheck').onclick = function () { meMsg('확인하는 중…'); syncMe().then(function () { meMsg(sess() && sess().status === 'approved' ? '승인됐어요!' : '아직 승인 전이에요.'); renderAll(); }); };
