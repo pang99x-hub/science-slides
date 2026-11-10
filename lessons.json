@@ -1,6 +1,313 @@
 {
   "units": [
     {
+      "subject": "통합과학1",
+      "subjectSlug": "tongsci1",
+      "unit": "1-1",
+      "unitTitle": "과학의 기본량",
+      "area": "Ⅰ. 과학의 기초",
+      "standard": "[10통과1-01-01] [10통과1-01-02]",
+      "standardText": "자연을 시간과 공간에서 기술할 수 있음을 알고, 길이와 시간 측정의 현대적 방법과 다양한 규모의 측정 사례를 조사할 수 있다. 과학 탐구에서 중요한 기본량의 의미를 알고, 자연 현상을 기본량으로 표현할 수 있다.",
+      "textbook": "미래엔 통합과학1",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "시간과 공간",
+          "question": "자연 현상을 설명하려면 왜 시간과 공간을 정확히 재야 할까?",
+          "pages": "14~17",
+          "slides": 11,
+          "teacher": "tongsci1/1-1/1/teacher.html",
+          "student": "tongsci1/1-1/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "기본량과 단위",
+          "question": "우리 주변의 현상을 어떤 양과 단위로 나타낼까?",
+          "pages": "18~25",
+          "slides": 11,
+          "teacher": "tongsci1/1-1/2/teacher.html",
+          "student": "tongsci1/1-1/2/student.html"
+        }
+      ],
+      "updated": "2026-11-06"
+    },
+    {
+      "subject": "통합과학1",
+      "subjectSlug": "tongsci1",
+      "unit": "1-2",
+      "unitTitle": "측정 표준과 정보",
+      "area": "Ⅰ. 과학의 기초",
+      "standard": "[10통과1-01-03] [10통과1-01-04]",
+      "standardText": "과학 탐구에서 측정과 어림의 의미를 알고, 일상생활의 여러 가지 상황에서 측정 표준의 유용성과 필요성을 논증할 수 있다. 자연에서 일어나는 다양한 변화를 측정·분석하여 정보를 산출함을 알고, 이러한 정보를 디지털로 변환하는 기술을 정보 통신에 활용하여 현대 문명에 미친 영향을 인식한다.",
+      "textbook": "미래엔 통합과학1",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "측정과 측정 표준",
+          "question": "측정할 때 손뼘·걸음 대신 무엇을 기준으로 삼을까?",
+          "pages": "28~31·36",
+          "slides": 10,
+          "teacher": "tongsci1/1-2/1/teacher.html",
+          "student": "tongsci1/1-2/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "신호와 정보",
+          "question": "자연의 변화를 측정해 어떻게 정보로 바꿀까?",
+          "pages": "32~39",
+          "slides": 11,
+          "teacher": "tongsci1/1-2/2/teacher.html",
+          "student": "tongsci1/1-2/2/student.html"
+        }
+      ],
+      "updated": "2026-11-06"
+    },
+    {
+      "subject": "통합과학1",
+      "subjectSlug": "tongsci1",
+      "unit": "2-1",
+      "unitTitle": "원소의 생성과 규칙성",
+      "area": "Ⅱ. 물질과 규칙성",
+      "standard": "[10통과1-02-01] [10통과1-02-02] [10통과1-02-03]",
+      "standardText": "천체에서 방출되는 빛을 관측하여 우주 초기에 형성된 원소와 별의 진화 과정에서 생성된 원소를 추론할 수 있다. 세상을 구성하는 원소들의 성질이 주기성을 나타내는 현상을 통해 자연의 규칙성을 도출하고, 지구와 생명체를 구성하는 주요 원소들이 결합을 형성하는 이유를 해석할 수 있다. 인류의 생존에 필수적인 산소, 물, 소금 등이 만들어지는 결합의 차이를 이해하고, 이온 결합과 공유 결합의 성질을 비교할 수 있다.",
+      "textbook": "미래엔 통합과학1",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "우주 초기에 생성된 원소",
+          "question": "가 본 적 없는 별이 무엇으로 되어 있는지 어떻게 알까?",
+          "pages": "48~53",
+          "slides": 14,
+          "teacher": "tongsci1/2-1/1/teacher.html",
+          "student": "tongsci1/2-1/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "별의 진화와 원소의 생성",
+          "question": "내 몸의 탄소와 반지의 금은 어디에서 왔을까?",
+          "pages": "54~59",
+          "slides": 15,
+          "teacher": "tongsci1/2-1/2/teacher.html",
+          "student": "tongsci1/2-1/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "원소의 주기성과 결합",
+          "question": "118가지 원소에도 달력 같은 규칙이 있을까?",
+          "pages": "60~67",
+          "slides": 14,
+          "teacher": "tongsci1/2-1/3/teacher.html",
+          "student": "tongsci1/2-1/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "이온 결합과 공유 결합",
+          "question": "소금과 설탕은 둘 다 흰 가루인데 왜 다를까?",
+          "pages": "68~77",
+          "slides": 13,
+          "teacher": "tongsci1/2-1/4/teacher.html",
+          "student": "tongsci1/2-1/4/student.html"
+        }
+      ],
+      "updated": "2026-11-10"
+    },
+    {
+      "subject": "통합과학1",
+      "subjectSlug": "tongsci1",
+      "unit": "2-2",
+      "unitTitle": "자연의 구성 물질",
+      "area": "Ⅱ. 물질과 규칙성",
+      "standard": "[10통과1-02-04] [10통과1-02-05]",
+      "standardText": "지각과 생명체를 구성하는 물질들이 기본적인 단위체의 결합으로 형성된다는 것을 규산염 광물, 단백질과 핵산의 예를 통해 설명할 수 있다. 물질의 전기적 성질을 설명하고, 일상생활과 첨단 기술에서 활용되는 사례를 조사할 수 있다.",
+      "textbook": "미래엔 통합과학1",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "규산염 광물",
+          "question": "모래와 운모와 감람석은 왜 생김새가 다를까?",
+          "pages": "78~81",
+          "slides": 12,
+          "teacher": "tongsci1/2-2/1/teacher.html",
+          "student": "tongsci1/2-2/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "단백질",
+          "question": "아미노산은 20가지뿐인데 단백질은 왜 수만 가지일까?",
+          "pages": "82~83",
+          "slides": 12,
+          "teacher": "tongsci1/2-2/2/teacher.html",
+          "student": "tongsci1/2-2/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "핵산",
+          "question": "네 글자로 어떻게 생명의 설계도를 쓸까?",
+          "pages": "84~87",
+          "slides": 12,
+          "teacher": "tongsci1/2-2/3/teacher.html",
+          "student": "tongsci1/2-2/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "물질의 전기적 성질",
+          "question": "스마트폰 속 물질은 모두 전기가 잘 통할까?",
+          "pages": "88~99",
+          "slides": 14,
+          "teacher": "tongsci1/2-2/4/teacher.html",
+          "student": "tongsci1/2-2/4/student.html"
+        }
+      ],
+      "updated": "2026-11-10"
+    },
+    {
+      "subject": "통합과학1",
+      "subjectSlug": "tongsci1",
+      "unit": "3-1",
+      "unitTitle": "지구시스템",
+      "area": "Ⅲ. 시스템과 상호작용",
+      "standard": "[10통과1-03-01] [10통과1-03-02]",
+      "standardText": "지구시스템은 태양계라는 시스템의 구성 요소임을 알고, 지구시스템을 구성하는 각 권역들의 성층 구조를 설명하고, 권역들 간의 물질 순환과 에너지 흐름의 결과로 나타나는 현상을 설명할 수 있다. 판 구조론을 이용하여 지권의 변화를 설명하고, 지권의 변화가 지구시스템에 미치는 영향을 추론할 수 있다.",
+      "textbook": "미래엔 통합과학1",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "지구시스템의 구성",
+          "question": "지구를 이루는 공기·물·땅·생물은 어떤 층으로 되어 있을까?",
+          "pages": "102~107",
+          "slides": 13,
+          "teacher": "tongsci1/3-1/1/teacher.html",
+          "student": "tongsci1/3-1/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "에너지 흐름과 물질 순환",
+          "question": "빗방울 하나와 탄소 하나는 지구를 어떻게 여행할까?",
+          "pages": "108~111",
+          "slides": 13,
+          "teacher": "tongsci1/3-1/2/teacher.html",
+          "student": "tongsci1/3-1/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "판 구조론",
+          "question": "지진과 화산은 왜 띠를 이루며 일어날까?",
+          "pages": "112~116",
+          "slides": 12,
+          "teacher": "tongsci1/3-1/3/teacher.html",
+          "student": "tongsci1/3-1/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "지권의 변화와 지구시스템",
+          "question": "화산 하나가 터지면 지구 전체에 무슨 일이 생길까?",
+          "pages": "116~121",
+          "slides": 13,
+          "teacher": "tongsci1/3-1/4/teacher.html",
+          "student": "tongsci1/3-1/4/student.html"
+        }
+      ],
+      "updated": "2026-11-10"
+    },
+    {
+      "subject": "통합과학1",
+      "subjectSlug": "tongsci1",
+      "unit": "3-2",
+      "unitTitle": "역학 시스템",
+      "area": "Ⅲ. 시스템과 상호작용",
+      "standard": "[10통과1-03-03] [10통과1-03-04]",
+      "standardText": "중력을 받는 물체의 운동을 설명하고, 지구 주위의 다양한 운동을 중력의 작용으로 설명할 수 있다. 상호작용이 없을 때 물체가 운동 상태를 유지함을 설명하고, 충격량과 운동량의 관계를 충돌 관련 안전장치와 스포츠에 적용할 수 있다.",
+      "textbook": "미래엔 통합과학1",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "중력과 자유 낙하",
+          "question": "무거운 것과 가벼운 것 가운데 무엇이 먼저 떨어질까?",
+          "pages": "122~125",
+          "slides": 12,
+          "teacher": "tongsci1/3-2/1/teacher.html",
+          "student": "tongsci1/3-2/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "던진 물체와 지구 주위의 운동",
+          "question": "달은 지구에 끌리는데 왜 떨어지지 않을까?",
+          "pages": "126~131",
+          "slides": 12,
+          "teacher": "tongsci1/3-2/2/teacher.html",
+          "student": "tongsci1/3-2/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "관성과 운동량",
+          "question": "물체는 왜 하던 운동을 계속하려 할까?",
+          "pages": "132~134",
+          "slides": 13,
+          "teacher": "tongsci1/3-2/3/teacher.html",
+          "student": "tongsci1/3-2/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "충격량과 안전",
+          "question": "같은 충돌인데 왜 어떤 때는 덜 아플까?",
+          "pages": "134~141",
+          "slides": 11,
+          "teacher": "tongsci1/3-2/4/teacher.html",
+          "student": "tongsci1/3-2/4/student.html"
+        }
+      ],
+      "updated": "2026-11-10"
+    },
+    {
+      "subject": "통합과학1",
+      "subjectSlug": "tongsci1",
+      "unit": "3-3",
+      "unitTitle": "생명 시스템",
+      "area": "Ⅲ. 시스템과 상호작용",
+      "standard": "[10통과1-03-05] [10통과1-03-06]",
+      "standardText": "생명 시스템의 기본 단위인 세포의 구조와 기능을 알고, 생명 시스템 유지를 위해 일어나는 물질대사와 효소의 작용, 세포막을 통한 물질 출입, 세포 내 유전정보의 흐름을 설명할 수 있다.",
+      "textbook": "미래엔 통합과학1",
+      "lessons": [
+        {
+          "n": 1,
+          "title": "세포와 물질대사",
+          "question": "세포 하나는 어떻게 살아 있는 시스템이 될까?",
+          "pages": "142~146",
+          "slides": 12,
+          "teacher": "tongsci1/3-3/1/teacher.html",
+          "student": "tongsci1/3-3/1/student.html"
+        },
+        {
+          "n": 2,
+          "title": "효소",
+          "question": "몸속 화학 반응은 어떻게 체온에서도 빨리 일어날까?",
+          "pages": "146~149",
+          "slides": 12,
+          "teacher": "tongsci1/3-3/2/teacher.html",
+          "student": "tongsci1/3-3/2/student.html"
+        },
+        {
+          "n": 3,
+          "title": "세포막과 물질 출입",
+          "question": "세포막은 무엇을 들이고 무엇을 막을까?",
+          "pages": "150~153",
+          "slides": 13,
+          "teacher": "tongsci1/3-3/3/teacher.html",
+          "student": "tongsci1/3-3/3/student.html"
+        },
+        {
+          "n": 4,
+          "title": "세포 내 정보의 흐름",
+          "question": "DNA의 정보는 어떻게 털색이 될까?",
+          "pages": "154~165",
+          "slides": 12,
+          "teacher": "tongsci1/3-3/4/teacher.html",
+          "student": "tongsci1/3-3/4/student.html"
+        }
+      ],
+      "updated": "2026-11-10"
+    },
+    {
       "subject": "통합과학2",
       "subjectSlug": "tongsci2",
       "unit": "1-1-1",
