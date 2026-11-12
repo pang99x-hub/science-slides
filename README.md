@@ -20,4 +20,6 @@
 
 수업자료(슬라이드의 글·그림·애니메이션)는 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ko). 출처를 밝히면 비영리 목적으로 고쳐 쓰고 나눌 수 있고, 고친 것도 같은 조건으로 나눈다.
 
+**교육 목적으로만 쓸 수 있습니다. 출판사·교육 업체 등이 영리 목적으로 쓰거나 복제·가공·재배포하려면 먼저 제작자의 허락을 받아야 합니다.** 학교 수업·교사 연수 같은 비영리 교육 활동에는 허락 없이 쓸 수 있다.
+
 슬라이드 안에 함께 묶인 도구는 각자의 라이선스를 따른다: reveal.js·reveal.js-plugins(MIT), GSAP(Webflow 무료 라이선스), Three.js(MIT), Manim Community(MIT, 표지 영상 렌더), 글꼴 Hahmlet·IBM Plex Sans KR·IBM Plex Mono·Nanum Pen Script(SIL OFL, Google Fonts).

@@ -1,6 +1,6 @@
 // 움직이는 과학 수업 — 설치형 웹 앱의 오프라인 저장. 화면(HTML·목록)은 인터넷이 되면 늘 새 판을 받고, 안 되면 저장해 둔 판을 연다.
 // 그림·PDF·글꼴은 한 번 받으면 저장해 두고 쓴다. 수업방(다른 주소)은 건드리지 않는다.
-const V = 'msl-v1';
+const V = 'msl-v2';   // v2: 꿈틀 새싹 아이콘으로 바뀌어 옛 아이콘 저장분을 버린다
 const CORE = ['./', 'index.html', 'join.html', 'teach.html', 'guide.html', 'lessons.json', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

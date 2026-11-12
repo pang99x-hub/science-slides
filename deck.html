@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>수업 여는 중</title>
+<body style="font:16px/1.6 system-ui,sans-serif;padding:2em">
+<p id="msg">수업을 여는 중…</p>
+<script>
+// 재생기(공유·편집 2단계): deck.html?d=<수업 번호> — 장 묶음(장/<고유 번호>/t.json)을 받아 틀(shell)에 끼운 뒤
+// 빌드한 차시 파일과 같은 글을 만들어 이 페이지에 그대로 쓴다(그래서 엔진·수업방은 차시 파일과 똑같이 돈다).
+//   &role=student  학생용(발표자 메모 없는 묶음)      &save  그림·영상까지 넣은 한 파일로 내려받기(인터넷 없이 열림)
+//   &edit  손 편집기(edit.js)를 붙여 연다      &mine  이 브라우저에서 고친 장을 반영해 연다
+//   &box   선생님 수업함(수업방 워커 /decks)에 저장한 내 수업으로 연다. &box&edit 는 수업함 것을 이 브라우저로 가져와 고친다
+// 엔진/deck.html이 원본이다(node tools/slides.mjs가 자료실로 복사).
+(async () => {
+  const q = new URLSearchParams(location.search), d = q.get('d') || '', edit = q.has('edit'), box = q.has('box'), mine = edit || box || q.has('mine'), f = !edit && q.get('role') === 'student' ? 's' : 't', save = q.has('save');
+  const get = async (u, as) => { const r = await fetch(u); if (!r.ok) throw new Error(`${u} (${r.status})`); return r[as](); };
+  // shortcut: 수업은 자료실 차시(d = tongsci1/3-3/1 → 단원 index.json의 장 순서)만 연다, 선생님이 만든 수업은 3단계에서 워커가 주는 목록으로 넓힌다
+  const m = d.match(/^(\w+)\/([\w-]+)\/(\d+)$/);
+  if (!m) throw new Error('수업 번호(d)가 없거나 모양이 다릅니다');
+  const unit = `장/${m[1]}.${m[2]}/`, index = await get(unit + 'index.json', 'json'), lesson = index.lessons.find((l) => String(l.n) === m[3]);
+  if (!lesson) throw new Error('없는 차시입니다');
+  // 내 순서(편집기가 장을 넣고 빼고 옮긴 것): [{ id, src }] — src는 받아 올 자료실 장, 없으면 빈 장(글은 deck-edit:<id>에만 있다)
+  let order = lesson.slides.map((id) => ({ id, src: id }));
+  let boxed = null;   // 수업함에서 받은 내 수업 { order, edits }
+  if (box && f === 't') {
+    let s = null; try { s = JSON.parse(localStorage.getItem('science-room:session')); } catch (e) { /* 로그인 안 됨 */ }
+    if (!s || !s.token) throw new Error('선생님 페이지에서 로그인한 뒤 열어 주세요');
+    const api = (q.get('roomapi') || 'https://science-room.pang99x.workers.dev').replace(/\/$/, '');
+    const r = await fetch(api + '/decks/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: s.token, base: d }) }), j = await r.json();
+    if (j.error) throw new Error(j.error);
+    if (edit) {   // 고치기: 수업함 것으로 이 브라우저의 작업본을 바꾸고, 새로 고쳐도 다시 덮지 않게 주소에서 box를 뺀다
+      localStorage.setItem('deck-order:' + d, JSON.stringify(j.order));
+      for (const x of j.order) if (j.edits[x.id]) localStorage.setItem('deck-edit:' + x.id, j.edits[x.id]); else localStorage.removeItem('deck-edit:' + x.id);
+      q.delete('box'); history.replaceState(null, '', location.pathname + '?' + q.toString().replace(/=(?=&|$)/g, '').replace(/%2F/g, '/'));
+    } else boxed = j;
+  }
+  if (mine && f === 't') try {
+    const o = boxed ? boxed.order : JSON.parse(localStorage.getItem('deck-order:' + d));
+    if (Array.isArray(o) && o.length && o.every((x) => x && /^[\w.-]+$/.test(x.id) && (!x.src || /^[\w.-]+$/.test(x.src)))) order = o;
+  } catch (e) { /* 깨진 순서는 버리고 원래 차시대로 */ }
+  const deck = { title: `${index.unit.unitTitle} ${lesson.n}차시`, slides: order.map((x) => x.id) };
+  const BLANK = '<section data-state="blank" class="std"><div class="sheet"></div><div class="frame"></div></section>';
+
+  const [shell, ...slides] = await Promise.all([get(`${unit}shell.${f}.html`, 'text'),
+    ...order.map((x) => (x.src ? get(`장/${x.src}/${f}.json`, 'json') : { unit: `${m[1]}.${m[2]}`, html: BLANK, css: '', js: '', needs: [], media: {} }))]);
+  // shortcut: 고친 장은 이 브라우저(localStorage)에만 있다(선생님용 글 그대로라 학생용에는 쓰지 않는다), 3단계에서 워커 저장으로 바꾼다
+  if (mine && f === 't') slides.forEach((s, i) => { const h = boxed ? boxed.edits[deck.slides[i]] : localStorage.getItem('deck-edit:' + deck.slides[i]); if (h) s.html = h; });
+  if (edit) {   // 편집기가 화면의 요소와 원본 글의 요소를 짝지을 번호
+    let n = 0; const t = document.createElement('template');
+    for (const s of slides) { t.innerHTML = s.html; for (const el of t.content.querySelectorAll('*')) el.setAttribute('data-eid', ++n); s.html = t.innerHTML; }
+  }
+  const mods = await Promise.all([...new Set(slides.flatMap((s) => s.needs.map((n) => `장/${s.unit}/mod/${n}.js`)))].map((u) => get(u, 'text')));
+  const media = Object.assign({}, ...slides.map((s) => Object.fromEntries(Object.entries(s.media).map(([k, name]) => [k, `장/${s.unit}/media/${name}`]))));
+  if (save) await Promise.all(Object.keys(media).map(async (k) => {
+    const blob = await get(media[k], 'blob');
+    media[k] = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(blob); });
+  }));
+  const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const once = slides.filter((s, i) => order.findIndex((x) => x.src === order[i].src) === i);   // 같은 장을 복제해도 꾸밈·동작 코드는 한 번만
+  let html = shell;
+  for (const [mark, text] of [
+    ['%%SLIDES%%', slides.map((s) => s.html).join('\n\n')],
+    ['%%SLIDECSS%%', once.map((s) => s.css).join('')],
+    ['%%NEEDS%%', mods.map((js) => '<scr' + 'ipt>' + js + '</scr' + 'ipt>\n').join('')],
+    ['%%SLIDEJS%%', once.map((s) => s.js).join('\n')],
+  ]) html = html.replace(mark, () => text);
+  html = html.split('%%TITLE%%').join(esc(deck.title)).split('%%D%%').join(d).replace(/@@([A-Z0-9_]+)@@/g, (all, k) => media[k] || all);
+
+  if (edit) {
+    const data = JSON.stringify({ d, title: deck.title, media, slides: slides.map((s, i) => ({ id: deck.slides[i], src: order[i].src, html: s.html })), lessons: index.lessons.map((l) => ({ n: l.n, title: l.title, slides: l.slides })) }).replace(/</g, '\\u003c');
+    const i = html.lastIndexOf('</body>');
+    html = html.slice(0, i) + '<scr' + 'ipt type="application/json" id="ed-src">' + data + '</scr' + 'ipt><scr' + 'ipt src="edit.js"></scr' + 'ipt>' + html.slice(i);
+  }
+  if (save) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = deck.title + (f === 's' ? ' (학생용)' : '') + '.html'; a.click();
+    document.getElementById('msg').textContent = '한 파일로 내려받았습니다. 이 창은 닫아도 됩니다.';
+    return;
+  }
+  document.open(); document.write(html); document.close();
+})().catch((e) => { document.getElementById('msg').textContent = '수업을 열지 못했습니다: ' + e.message; });
+</script>
+</body>
+</html>

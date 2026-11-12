@@ -1,3 +1,6 @@
+import { existsSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 // 반 수업방 쪽: join.html(학생 고정 링크)과 teach.html(선생님 페이지). make-index.mjs가 부른다.
 //   학생: 클래스룸에 한 번 올려 둔 join.html?room=123456 → 선생님이 연 차시 학생용으로 저절로 옮겨 간다. 수업이 없으면 복습
 //   선생님: teach.html에서 수업방을 만들고(진행 열쇠는 이 브라우저에 저장), 같은 링크를 열면 선생님 화면이 된다
@@ -184,7 +187,7 @@ export function joinPage(site, units) {
   return `${head(site.name + ' · 수업방')}
 <body>
 <div class="wrap">
-  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">${esc(site.name)}</span></nav>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><img class="brand" src="brand/frame.svg" alt="${esc(site.name)}" style="height:78px;margin-block:-26px -10px"></nav>
   <h1 id="title">수업방</h1>
   <div class="card big" id="app" aria-live="polite"><p class="muted">확인하는 중…</p></div>
   <div class="card" id="lib" hidden>
@@ -269,7 +272,7 @@ ${AUTH_JS}
   }
   var gone = false;
   function show(html) { $('app').innerHTML = html; }
-  function go(path) { if (gone) return; gone = true; location.replace(path + '/student.html?room=' + code + pass); }
+  function go(path) { if (gone) return; gone = true; location.replace((path.indexOf('deck/') === 0 ? 'deck.html?d=' + path.slice(5) + '&role=student&' : path + '/student.html?') + 'room=' + code + pass); }
   function copy(text, btn) {
     var done = function () { var t = btn.textContent; btn.textContent = '복사했어요'; setTimeout(function () { btn.textContent = t; }, 1600); };
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt('복사해서 쓰세요', text); }); else prompt('복사해서 쓰세요', text);
@@ -443,14 +446,20 @@ ${AUTH_JS}
 
 export function teachPage(site, units) {
   const lessons = lessonList(units);
+  // 장 묶음이 있는(고칠 수 있는) 단원: 장/<과목>.<단원>/index.json
+  const bundles = join(dirname(fileURLToPath(import.meta.url)), '장');
+  const editable = existsSync(bundles) ? readdirSync(bundles).filter((d) => existsSync(join(bundles, d, 'index.json'))) : [];
   return `${head('선생님 페이지 · ' + site.name)}
 <body>
 <div class="wrap">
-  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><a class="btn small" href="board.html">선생님 게시판</a><span class="brand">${esc(site.name)}</span></nav>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><a class="btn small" href="board.html">선생님 게시판</a><img class="brand" src="brand/frame.svg" alt="${esc(site.name)}" style="height:78px;margin-block:-26px -10px"></nav>
   <header class="pagehead">
     <h1>선생님 페이지</h1>
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
   </header>
+  <style>.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
+  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
+  <div class="tabp" data-tab="me">
   <div class="card" id="me">
     <h2 id="mehead">선생님 로그인</h2>
     <div id="mebox"><p class="muted">확인하는 중…</p></div>
@@ -461,7 +470,18 @@ export function teachPage(site, units) {
       <div class="fold-body"><div id="adminbox"></div><p class="small" id="adminmsg" aria-live="polite"></p></div>
     </details>
   </div>
+  </div>
   <p id="msg" aria-live="polite"></p>
+  <div class="tabp" data-tab="box">
+  <div class="card" id="boxcard" hidden>
+    <h2>내 수업함</h2>
+    <p class="muted">차시를 내 수업에 맞게 고쳐 <b>수업함에 저장</b>해 두면, 어느 컴퓨터에서든 로그인해서 열 수 있어요.</p>
+    <div id="boxlist" class="stack"></div>
+    <div class="row"><select id="boxnew" aria-label="고칠 차시"></select><button class="btn" type="button" id="boxgo">이 차시 고치기</button></div>
+    <p class="small" id="boxmsg" aria-live="polite"></p>
+  </div>
+  </div>
+  <div class="tabp" data-tab="rooms">
   <div id="classes" class="stack"></div>
   <div class="card" id="makecard" hidden>
     <h2>새 수업방 만들기</h2>
@@ -484,11 +504,23 @@ export function teachPage(site, units) {
           <li>수업 때는 선생님도 같은 링크를 열고 반과 차시를 골라요. <b>그 반 학생만</b> 수업 차시로 옮겨 오고, 다른 반은 복습을 그대로 해요.</li>
           <li>다른 기기에서는 과목 링크 아래 «선생님이세요? 구글로 로그인»을 누르면 돼요. 휴대폰으로 같은 차시를 열면 리모컨처럼 함께 넘어가요.</li>
         </ol>
-        <p class="small note">여럿이 쓰는 교실 컴퓨터라면 수업 뒤 위쪽 «로그아웃»을 눌러 주세요. 그 컴퓨터에 남은 진행 열쇠도 못 쓰게 돼요.</p>
+        <p class="small note">여럿이 쓰는 교실 컴퓨터라면 수업 뒤 «내 정보»의 «로그아웃»을 눌러 주세요. 그 컴퓨터에 남은 진행 열쇠도 못 쓰게 돼요.</p>
       </div>
     </details>
   </div>
+  </div>
 </div>
+<script>
+// 탭(2026-11-12 구성 개편): 승인된 선생님(«새 수업방 만들기»가 보일 때)에게만 탭을 보이고, 그 전에는 로그인·가입 안내가 한 줄로 쌓인 채 둔다
+(function () {
+  var tabs = document.getElementById('tabs'), mk = document.getElementById('makecard'), ps = [].slice.call(document.querySelectorAll('.tabp')), bs = [].slice.call(tabs.querySelectorAll('button')), cur = 'rooms';
+  try { cur = sessionStorage.getItem('science-room:tab') || cur; } catch (e) {}
+  function show(t) { var on = !mk.hidden; cur = t; tabs.hidden = !on; ps.forEach(function (p) { p.hidden = on && p.dataset.tab !== t; }); bs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === t); }); try { sessionStorage.setItem('science-room:tab', t); } catch (e) {} }
+  bs.forEach(function (b) { b.onclick = function () { show(b.dataset.tab); }; });
+  new MutationObserver(function () { show(cur); }).observe(mk, { attributes: true, attributeFilter: ['hidden'] });
+  show(cur);
+})();
+</script>
 <script>
 (function () {
   'use strict';
@@ -673,6 +705,7 @@ ${AUTH_JS}
         + '<form class="form" id="signup"><label class="grow">이름<input type="text" id="su-name" maxlength="20" autocomplete="name" value="' + esc(s.name || '') + '"></label>'
         + '<label class="grow">학교<input type="text" id="su-school" maxlength="40" placeholder="예: 한민고등학교" autocomplete="organization"></label>'
         + '<label class="grow">가르치는 과목·한 마디(선택)<input type="text" id="su-note" maxlength="120" placeholder="예: 통합과학 2학년" autocomplete="off"></label>'
+        + '<p class="small">이 자료는 학교 수업 같은 교육 목적으로만 쓸 수 있어요. 출판사·교육 업체 등의 영리 목적 이용과 무단 복제·재배포는 안 돼요. 신청하면 이 조건에 동의한 것으로 봐요.</p>'
         + '<button class="btn main" type="submit">가입 신청</button></form><div class="row">' + out + '</div>';
       document.getElementById('signup').onsubmit = function (e) {
         e.preventDefault();
@@ -751,10 +784,42 @@ ${AUTH_JS}
     }, function () { msg('만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   };
 
+  // 내 수업함: 편집기(deck.html?…&edit)에서 저장한 내 수업 목록. 수업함이 아직 없는 워커(404)면 카드를 숨긴다
+  var EDITABLE = ${JSON.stringify(editable)}, boxHave = {};
+  function boxMsg(t) { document.getElementById('boxmsg').textContent = t; }
+  function boxUrl(base, more) { return 'deck.html?d=' + base + more + pass; }
+  function boxCard() {
+    var card = document.getElementById('boxcard'), s = sess();
+    var can = LESSONS.filter(function (l) { return EDITABLE.indexOf(l.path.split('/').slice(0, 2).join('.')) >= 0; });
+    document.getElementById('boxnew').innerHTML = can.map(function (l) { return '<option value="' + esc(l.path) + '">' + esc(l.unit + ' ' + l.unitTitle + ' · ' + l.n + '차시 ' + l.title) + '</option>'; }).join('');
+    api('/decks/list', { session: s.token }).then(function (j) {
+      if (j.http === 404) { card.hidden = true; return; }
+      card.hidden = false;
+      if (j.error) { boxMsg(j.error); return; }
+      boxHave = {};
+      document.getElementById('boxlist').innerHTML = j.decks.length ? j.decks.map(function (d) {
+        boxHave[d.base] = true;
+        var day = new Date(d.updated_at);
+        return '<div class="row" data-base="' + esc(d.base) + '"><b>' + esc(d.title) + '</b><span class="small">' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일 저장</span>'
+          + '<a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box') + '">수업하기</a>'
+          + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&edit') + '">고치기</a>'
+          + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&save') + '">내려받기</a>'
+          + '<button class="btn small" type="button" data-del>지우기</button></div>';
+      }).join('') : '<p class="small">아직 저장한 수업이 없어요. 아래에서 차시를 골라 고친 뒤 편집기 위쪽의 «수업함에 저장»을 눌러 주세요.</p>';
+    }, function () { boxMsg('수업함을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  }
+  document.getElementById('boxgo').onclick = function () { var b = document.getElementById('boxnew').value; if (b) window.open(boxUrl(b, boxHave[b] ? '&box&edit' : '&edit')); };
+  document.getElementById('boxlist').onclick = function (e) {
+    var row = e.target.closest('[data-base]');
+    if (!row || !e.target.hasAttribute('data-del') || !confirm('«' + row.querySelector('b').textContent + '»을(를) 수업함에서 지울까요? 되돌릴 수 없어요.')) return;
+    api('/decks/delete', { session: sess().token, base: row.getAttribute('data-base') }).then(function (j) { boxMsg(j.error || '지웠어요.'); boxCard(); }, function () { boxMsg('지우지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  };
+
   // 화면 전체: 로그인 상태에 따라 카드를 보이고 숨긴다
   function renderAll() {
     var s = sess(), ok = !!(s && s.status === 'approved');
     meCard(); adminCard();
+    if (ok && EDITABLE.length) boxCard(); else document.getElementById('boxcard').hidden = true;
     document.getElementById('makecard').hidden = !ok;
     document.getElementById('classes').hidden = !ok;
     if (ok) render(); else document.getElementById('classes').innerHTML = '';
@@ -922,7 +987,7 @@ textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px sol
 </style>
 <body>
 <div class="wrap">
-  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">${esc(site.name)}</span></nav>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><img class="brand" src="brand/frame.svg" alt="${esc(site.name)}" style="height:78px;margin-block:-26px -10px"></nav>
   <header class="pagehead">
     <h1>선생님 게시판</h1>
     <p class="muted">수업자료를 쓰다 찾은 오류, 바라는 점, 수업 후기를 남겨 주세요. 차시 화면의 «의견» 단추로 오면 그 차시와 장이 저절로 붙어요.</p>

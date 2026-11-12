@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>움직이는 과학 수업 · 수업방</title>
+<title>꿈틀 · 수업방</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
@@ -126,7 +126,7 @@ select { height: 48px; }
 </head>
 <body>
 <div class="wrap">
-  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><span class="brand">움직이는 과학 수업</span></nav>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><img class="brand" src="brand/frame.svg" alt="꿈틀" style="height:78px;margin-block:-26px -10px"></nav>
   <h1 id="title">수업방</h1>
   <div class="card big" id="app" aria-live="polite"><p class="muted">확인하는 중…</p></div>
   <div class="card" id="lib" hidden>
@@ -262,7 +262,7 @@ select { height: 48px; }
   }
   var gone = false;
   function show(html) { $('app').innerHTML = html; }
-  function go(path) { if (gone) return; gone = true; location.replace(path + '/student.html?room=' + code + pass); }
+  function go(path) { if (gone) return; gone = true; location.replace((path.indexOf('deck/') === 0 ? 'deck.html?d=' + path.slice(5) + '&role=student&' : path + '/student.html?') + 'room=' + code + pass); }
   function copy(text, btn) {
     var done = function () { var t = btn.textContent; btn.textContent = '복사했어요'; setTimeout(function () { btn.textContent = t; }, 1600); };
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt('복사해서 쓰세요', text); }); else prompt('복사해서 쓰세요', text);

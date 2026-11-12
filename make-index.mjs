@@ -95,7 +95,7 @@ const JOIN_JS = String.raw`
     fetch(API + '/rooms/' + code).then(function (r) { return r.json(); }).then(function (info) {
       if (!info.open) { say('열려 있는 수업방이 아니에요. 코드를 다시 확인해 주세요.'); return; }
       if (info.locked) { say('선생님이 방을 잠갔어요.'); return; }
-      var go = info.persist ? 'join.html?room=' + code : info.path ? info.path + '/student.html?room=' + code : '';
+      var go = info.persist ? 'join.html?room=' + code : info.path ? (info.path.indexOf('deck/') === 0 ? 'deck.html?d=' + info.path.slice(5) + '&role=student&' : info.path + '/student.html?') + 'room=' + code : '';
       if (!go) { say('이 코드는 선생님이 띄운 차시 화면에서 넣어요. 그 차시의 체험하기를 열고 사람 모양 단추를 눌러 주세요.'); return; }
       location.href = go + (pass ? '&' + pass : '');
     }, function () { say('연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); });
@@ -130,7 +130,7 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>${esc(site.name)}</title>
+<title>${esc(site.sub)} · ${esc(site.name)}</title>
 <meta name="description" content="${esc(site.tagline)}">
 ${site.draft ? '<meta name="robots" content="noindex">\n' : ''}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -160,6 +160,21 @@ header { padding-block: 48px 28px; display: grid; gap: 10px; }
 .brand { font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--accent); margin: 0; }
 h1 { font: 800 clamp(36px, 7vw, 64px)/1.05 var(--f-display); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
 .tag { font-size: 19px; color: var(--ink-2); margin: 0; max-width: 40em; }
+/* 상표 꿈틀(2026-11-12): 틀을 깨고 올라오는 새싹. 노란 틀은 제목 옆, 테두리 틀은 다른 쪽 화면, 글자만은 바닥글, 그림만은 아이콘 */
+header { position: relative; }
+h1 .nm { display: inline-block; margin: -1.1em 0 -.35em .12em; vertical-align: -.2em; transform: rotate(-5deg); line-height: 0; }
+h1 .nm img { height: 2em; display: block; }
+@media (max-width: 760px) { h1 .nm { margin: -.2em 0 -.2em .1em; vertical-align: -.35em; } h1 .nm img { height: 1.7em; } }
+footer { position: relative; }
+.stat { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); justify-self: start; background: var(--paper-2, #fff); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 14px; }
+.stat b { color: var(--accent); font-size: 1.15em; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tabs button { min-height: 40px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); color: var(--ink); font: 700 16px/1 var(--f-body); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }
+header .vine { height: 46px; margin-top: -18px; justify-self: start; }
+.sec h2 .grow { height: 50px; vertical-align: -6px; margin-left: 12px; }
+footer .sig { position: absolute; right: 2px; top: 6px; height: 84px; }
+footer p { padding-right: 120px; }
 .pen { font-family: var(--f-pen); font-size: 30px; color: var(--ink-2); margin: 4px 0 0; transform: rotate(-1deg); transform-origin: left; }
 .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 36px; }
 .card { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 8px; padding: 18px 20px; min-width: 0; }
@@ -264,14 +279,14 @@ footer a { color: var(--accent); }
 <body>
 ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 판입니다</div>\n' : ''}<div class="wrap">
 <header>
-  <p class="brand">INTERACTIVE SCIENCE SLIDES</p>
-  <h1>${esc(site.name)}</h1>
+  <h1>${esc(site.sub)} <span class="nm"><img src="brand/tag.svg" alt="${esc(site.name)}"></span></h1>
   <p class="tag">${esc(site.tagline)}</p>
+  <p class="stat" id="stat" hidden>지금까지 열린 수업 <b></b>회</p>
   <p class="pen">보고, 끌어 보고, 다시 생각하기</p>
+  <img class="vine" src="brand/vine.svg" alt="">
 </header>
 
-<section class="app" id="app" aria-label="앱으로 설치하기">
-  <img src="icons/icon-192.png" alt="">
+<section class="app" id="app" aria-label="앱으로 설치하기">  <img src="icons/icon-192.png" alt="">
   <div class="txt"><b>앱으로 설치하기</b><span id="apphow">설치하면 바탕화면 아이콘으로 바로 열려요.</span></div>
   <div class="row"><button class="btn main" type="button" id="appin" hidden>설치</button><button class="btn" type="button" id="appsave">모든 차시 미리 받아 두기</button></div>
 </section>
@@ -301,16 +316,25 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
   </section>
 </div>
 
-<div class="sec"><h2>수업 자료</h2><div class="allbtn"><button class="btn" type="button" id="openall">모두 펼치기</button><button class="btn" type="button" id="closeall">모두 접기</button></div></div>
+<div class="sec"><h2>수업 자료<img class="grow" src="brand/grow.svg" alt=""></h2><div class="tabs" id="subjtabs" role="tablist" aria-label="과목">${[...new Map(units.map((u) => [u.subjectSlug, u.subject]))].map(([k, v]) => `<button type="button" role="tab" data-s="${esc(k)}">${esc(v)}</button>`).join('')}</div><div class="allbtn"><button class="btn" type="button" id="openall">모두 펼치기</button><button class="btn" type="button" id="closeall">모두 접기</button></div></div>
 
-${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.subject ? `<h2 class="subj" id="${esc(u.subjectSlug)}">${esc(u.subject)}<span>${esc(u.textbook || '')} 기준</span></h2>` : '') + (!p || p.area.split(' › ')[0] !== u.area.split(' › ')[0] || p.subject !== u.subject ? `<h3 class="area">${esc(u.area.split(' › ')[0])}</h3>` : '') + unitHtml(u); }).join('\n')}
+${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.subject ? `${p ? '</section>' : ''}<section class="subjsec" data-s="${esc(u.subjectSlug)}"><h2 class="subj" id="${esc(u.subjectSlug)}">${esc(u.subject)}<span>${esc(u.textbook || '')} 기준</span></h2>` : '') + (!p || p.area.split(' › ')[0] !== u.area.split(' › ')[0] || p.subject !== u.subject ? `<h3 class="area">${esc(u.area.split(' › ')[0])}</h3>` : '') + unitHtml(u); }).join('\n')}${units.length ? '</section>' : ''}
 
 <footer>
+  <img class="sig" src="brand/word.svg" alt="">
   <p>${site.author ? `만든 곳: ${esc(site.author)} · ` : ''}수업자료는 <a href="${esc(site.licenseUrl)}" target="_blank" rel="noopener">${esc(site.license)}</a> — 출처를 밝히면 비영리로 고쳐 쓰고 나눌 수 있습니다.${site.contact ? ` 문의·고칠 점: ${esc(site.contact)}` : ''}</p>
+  <p><b>교육 목적으로만 쓸 수 있습니다. 출판사·교육 업체 등이 영리 목적으로 쓰거나 복제·가공·재배포하려면 먼저 제작자의 허락을 받아야 합니다.</b></p>
   <p>교과서 쪽수는 미래엔 통합과학2 기준이며, 다른 교과서는 성취기준으로 찾아 쓰면 됩니다. 통계는 장마다 출처를 적었습니다.</p>
 </footer>
 </div>
 <script>${JOIN_JS}</script>
+<script>
+// 열린 수업 횟수: 워커가 주는 숫자 하나. 못 받거나 0이면 줄을 숨긴 채 둔다
+(() => {
+  const api = (new URLSearchParams(location.search).get('roomapi') || ${JSON.stringify(site.roomApi || '')}).replace(/\\/$/, ''), el = document.getElementById('stat');
+  if (api) fetch(api + '/count').then((r) => r.json()).then((j) => { if (j.total > 0) { el.querySelector('b').textContent = j.total.toLocaleString('ko-KR'); el.hidden = false; } }).catch(() => {});
+})();
+</script>
 <script>
 // 단원 접기: 처음엔 모두 접고, 슬라이드의 집 단추(#과목-단원)로 오면 그 단원만 펼친다. 펼친 단원은 이 기기가 기억한다
 (() => {
@@ -318,7 +342,13 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
   let keep = []; try { keep = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(all.filter((d) => d.open).map((d) => d.id))); } catch (e) {} };
   all.forEach((d) => { if (keep.includes(d.id)) d.open = true; d.addEventListener('toggle', save); });
-  const go = () => { const id = decodeURIComponent(location.hash.slice(1)), d = id && document.getElementById(id); if (d && d.tagName === 'DETAILS') { d.open = true; d.scrollIntoView({ block: 'start' }); } };
+  // 과목 탭(2026-11-12 구성 개편): 한 과목만 보이고, 고른 과목은 이 기기가 기억한다. 주소의 #과목·#과목-단원으로 오면 그 과목 탭을 연다
+  const secs = [...document.querySelectorAll('.subjsec')], tabs = [...document.querySelectorAll('#subjtabs button')], TKEY = 'science-slides:subject';
+  const show = (s) => { if (!secs.some((x) => x.dataset.s === s)) s = secs[0] && secs[0].dataset.s; secs.forEach((x) => { x.hidden = x.dataset.s !== s; }); tabs.forEach((b) => b.setAttribute('aria-selected', b.dataset.s === s)); try { localStorage.setItem(TKEY, s); } catch (e) {} };
+  tabs.forEach((b) => { b.onclick = () => show(b.dataset.s); });
+  let first = null; try { first = localStorage.getItem(TKEY); } catch (e) {}
+  show(first);
+  const go = () => { const id = decodeURIComponent(location.hash.slice(1)), d = id && document.getElementById(id); const sec = d && d.closest('.subjsec'); if (sec) show(sec.dataset.s); if (d && d.tagName === 'DETAILS') { d.open = true; d.scrollIntoView({ block: 'start' }); } };
   go(); addEventListener('hashchange', go);
   document.getElementById('openall').onclick = () => { all.forEach((d) => { d.open = true; }); save(); };
   document.getElementById('closeall').onclick = () => { all.forEach((d) => { d.open = false; }); save(); };
