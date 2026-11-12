@@ -156,7 +156,7 @@ body {
 }
 .wrap { max-width: 1120px; margin: 0 auto; padding-block: 0 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .draft { background: var(--hl); color: var(--ink); text-align: center; font-weight: 600; padding: 8px 16px; }
-header { padding-block: 48px 28px; display: grid; gap: 10px; }
+header { padding-block: 48px 28px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .brand { font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--accent); margin: 0; }
 h1 { font: 800 clamp(36px, 7vw, 64px)/1.05 var(--f-display); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
 .tag { font-size: 19px; color: var(--ink-2); margin: 0; max-width: 40em; }
@@ -168,9 +168,14 @@ h1 .nm img { height: 2em; display: block; }
 footer { position: relative; }
 .stat { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); justify-self: start; background: var(--paper-2, #fff); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 14px; }
 .stat b { color: var(--accent); font-size: 1.15em; }
+.stat .since { font-size: 13px; font-weight: 500; color: var(--ink-3, #6b7587); margin-left: 4px; }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .tabs button { min-height: 40px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); color: var(--ink); font: 700 16px/1 var(--f-body); cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }
+#subjtabs { align-items: baseline; gap: 4px 20px; margin: 20px 0 4px; border-bottom: 3px solid var(--ink); padding-bottom: 6px; }
+#subjtabs button { min-height: 48px; padding: 0; border: 0; background: none; font: 800 clamp(26px, 5vw, 40px)/1.15 var(--f-display); color: var(--ink-2); opacity: .45; }
+#subjtabs button[aria-selected="true"] { background: none; color: var(--ink); opacity: 1; }
+#subjnote { font: 600 15px/1.3 var(--f-body); color: var(--ink-2); }
 header .vine { height: 46px; margin-top: -18px; justify-self: start; }
 .sec h2 .grow { height: 50px; vertical-align: -6px; margin-left: 12px; }
 footer .sig { position: absolute; right: 2px; top: 6px; height: 84px; }
@@ -281,7 +286,7 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
 <header>
   <h1>${esc(site.sub)} <span class="nm"><img src="brand/tag.svg" alt="${esc(site.name)}"></span></h1>
   <p class="tag">${esc(site.tagline)}</p>
-  <p class="stat" id="stat" hidden>지금까지 열린 수업 <b></b>회</p>
+  <p class="stat" id="stat" hidden>열린 수업 <b></b>회 <span class="since">2026년 11월 12일부터</span></p>
   <p class="pen">보고, 끌어 보고, 다시 생각하기</p>
   <img class="vine" src="brand/vine.svg" alt="">
 </header>
@@ -316,9 +321,10 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
   </section>
 </div>
 
-<div class="sec"><h2>수업 자료<img class="grow" src="brand/grow.svg" alt=""></h2><div class="tabs" id="subjtabs" role="tablist" aria-label="과목">${[...new Map(units.map((u) => [u.subjectSlug, u.subject]))].map(([k, v]) => `<button type="button" role="tab" data-s="${esc(k)}">${esc(v)}</button>`).join('')}</div><div class="allbtn"><button class="btn" type="button" id="openall">모두 펼치기</button><button class="btn" type="button" id="closeall">모두 접기</button></div></div>
+<div class="sec"><h2>수업 자료<img class="grow" src="brand/grow.svg" alt=""></h2><div class="allbtn"><button class="btn" type="button" id="openall">모두 펼치기</button><button class="btn" type="button" id="closeall">모두 접기</button></div></div>
+<div class="tabs" id="subjtabs" role="tablist" aria-label="과목">${[...new Map(units.map((u) => [u.subjectSlug, u.subject]))].map(([k, v]) => `<button type="button" role="tab" data-s="${esc(k)}">${esc(v)}</button>`).join('')}<span id="subjnote"></span></div>
 
-${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.subject ? `${p ? '</section>' : ''}<section class="subjsec" data-s="${esc(u.subjectSlug)}"><h2 class="subj" id="${esc(u.subjectSlug)}">${esc(u.subject)}<span>${esc(u.textbook || '')} 기준</span></h2>` : '') + (!p || p.area.split(' › ')[0] !== u.area.split(' › ')[0] || p.subject !== u.subject ? `<h3 class="area">${esc(u.area.split(' › ')[0])}</h3>` : '') + unitHtml(u); }).join('\n')}${units.length ? '</section>' : ''}
+${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.subject ? `${p ? '</section>' : ''}<section class="subjsec" id="${esc(u.subjectSlug)}" data-s="${esc(u.subjectSlug)}" data-t="${esc(u.textbook ? u.textbook + ' 기준' : '')}">` : '') + (!p || p.area.split(' › ')[0] !== u.area.split(' › ')[0] || p.subject !== u.subject ? `<h3 class="area">${esc(u.area.split(' › ')[0])}</h3>` : '') + unitHtml(u); }).join('\n')}${units.length ? '</section>' : ''}
 
 <footer>
   <img class="sig" src="brand/word.svg" alt="">
@@ -344,7 +350,7 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
   all.forEach((d) => { if (keep.includes(d.id)) d.open = true; d.addEventListener('toggle', save); });
   // 과목 탭(2026-11-12 구성 개편): 한 과목만 보이고, 고른 과목은 이 기기가 기억한다. 주소의 #과목·#과목-단원으로 오면 그 과목 탭을 연다
   const secs = [...document.querySelectorAll('.subjsec')], tabs = [...document.querySelectorAll('#subjtabs button')], TKEY = 'science-slides:subject';
-  const show = (s) => { if (!secs.some((x) => x.dataset.s === s)) s = secs[0] && secs[0].dataset.s; secs.forEach((x) => { x.hidden = x.dataset.s !== s; }); tabs.forEach((b) => b.setAttribute('aria-selected', b.dataset.s === s)); try { localStorage.setItem(TKEY, s); } catch (e) {} };
+  const show = (s) => { if (!secs.some((x) => x.dataset.s === s)) s = secs[0] && secs[0].dataset.s; secs.forEach((x) => { x.hidden = x.dataset.s !== s; }); document.getElementById('subjnote').textContent = (secs.find((x) => x.dataset.s === s) || { dataset: {} }).dataset.t || ''; tabs.forEach((b) => b.setAttribute('aria-selected', b.dataset.s === s)); try { localStorage.setItem(TKEY, s); } catch (e) {} };
   tabs.forEach((b) => { b.onclick = () => show(b.dataset.s); });
   let first = null; try { first = localStorage.getItem(TKEY); } catch (e) {}
   show(first);

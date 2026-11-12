@@ -15,13 +15,13 @@
 [hidden] { display: none !important; }
 body { margin: 0; color: var(--ink); font: 400 17px/1.6 var(--f-body); word-break: keep-all; overflow-wrap: break-word; background-color: var(--paper);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 32px 32px; }
-.wrap { max-width: 880px; margin: 0 auto; padding-block: 36px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+.wrap { max-width: 880px; margin: 0 auto; padding-block: 36px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 .brand { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--accent); }
 .brand a { color: inherit; text-decoration: none; }
 a { color: var(--accent); }
 h1 { margin: 0; font: 800 clamp(30px, 6vw, 46px)/1.1 var(--f-display); text-wrap: balance; }
 h2 { margin: 0; font: 700 22px/1.3 var(--f-display); text-wrap: balance; }
-.card { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.card { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
 .card.big { box-shadow: 6px 6px 0 var(--ink); }
 .muted { color: var(--ink-2); margin: 0; }
 .small { font-size: 14px; color: var(--ink-3); margin: 0; }
@@ -81,7 +81,7 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 .topnav { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
 .topnav .brand { margin-left: auto; }   /* 단추는 왼쪽에 모으고 이름만 오른쪽 */
 .pagehead { display: grid; gap: 8px; }
-.stack { display: grid; gap: 16px; }
+.stack { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }   /* 안의 긴 글·표·고르기 칸이 화면 밖으로 밀지 않게 */
 .h2 { font: 700 22px/1.3 var(--f-display); }
 .acct { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .acct .tag { margin-left: 4px; }
@@ -106,7 +106,8 @@ input[type=text], input[type=email], select { min-height: 48px; }
 .steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: var(--ink-2); }
 #msg:empty, .card p.small:empty { display: none; }
 .makeform .btn { min-height: 48px; }
-select { height: 48px; }
+select { height: 48px; max-width: 100%; min-width: 0; }
+.row > select { flex: 1 1 0; }   /* 긴 차시 이름이 폰 화면 밖으로 밀지 않게 */
 #msg { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 @media (max-width: 720px) {
   .makeform { grid-template-columns: 1fr 1fr; }
@@ -120,7 +121,7 @@ select { height: 48px; }
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="과학 수업">
+<meta name="apple-mobile-web-app-title" content="꿈틀">
 <script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 <!--/pwa-->
 </head>

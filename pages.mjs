@@ -24,13 +24,13 @@ const head = (title) => `<!doctype html>
 [hidden] { display: none !important; }
 body { margin: 0; color: var(--ink); font: 400 17px/1.6 var(--f-body); word-break: keep-all; overflow-wrap: break-word; background-color: var(--paper);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 32px 32px; }
-.wrap { max-width: 880px; margin: 0 auto; padding-block: 36px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+.wrap { max-width: 880px; margin: 0 auto; padding-block: 36px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 .brand { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--accent); }
 .brand a { color: inherit; text-decoration: none; }
 a { color: var(--accent); }
 h1 { margin: 0; font: 800 clamp(30px, 6vw, 46px)/1.1 var(--f-display); text-wrap: balance; }
 h2 { margin: 0; font: 700 22px/1.3 var(--f-display); text-wrap: balance; }
-.card { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.card { background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
 .card.big { box-shadow: 6px 6px 0 var(--ink); }
 .muted { color: var(--ink-2); margin: 0; }
 .small { font-size: 14px; color: var(--ink-3); margin: 0; }
@@ -90,7 +90,7 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 .topnav { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
 .topnav .brand { margin-left: auto; }   /* 단추는 왼쪽에 모으고 이름만 오른쪽 */
 .pagehead { display: grid; gap: 8px; }
-.stack { display: grid; gap: 16px; }
+.stack { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }   /* 안의 긴 글·표·고르기 칸이 화면 밖으로 밀지 않게 */
 .h2 { font: 700 22px/1.3 var(--f-display); }
 .acct { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .acct .tag { margin-left: 4px; }
@@ -115,7 +115,8 @@ input[type=text], input[type=email], select { min-height: 48px; }
 .steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: var(--ink-2); }
 #msg:empty, .card p.small:empty { display: none; }
 .makeform .btn { min-height: 48px; }
-select { height: 48px; }
+select { height: 48px; max-width: 100%; min-width: 0; }
+.row > select { flex: 1 1 0; }   /* 긴 차시 이름이 폰 화면 밖으로 밀지 않게 */
 #msg { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 @media (max-width: 720px) {
   .makeform { grid-template-columns: 1fr 1fr; }
@@ -458,7 +459,7 @@ export function teachPage(site, units) {
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
   </header>
   <style>.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
-  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
+  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
   <div class="tabp" data-tab="me">
   <div class="card" id="me">
     <h2 id="mehead">선생님 로그인</h2>
@@ -477,8 +478,17 @@ export function teachPage(site, units) {
     <h2>내 수업함</h2>
     <p class="muted">차시를 내 수업에 맞게 고쳐 <b>수업함에 저장</b>해 두면, 어느 컴퓨터에서든 로그인해서 열 수 있어요.</p>
     <div id="boxlist" class="stack"></div>
+    <p class="small" style="margin:0"><b>새로 고칠 차시 고르기</b> · 지금 고칠 수 있는 차시만 나와요.</p>
     <div class="row"><select id="boxnew" aria-label="고칠 차시"></select><button class="btn" type="button" id="boxgo">이 차시 고치기</button></div>
     <p class="small" id="boxmsg" aria-live="polite"></p>
+  </div>
+  </div>
+  <div class="tabp" data-tab="browse">
+  <div class="card" id="browsecard" hidden>
+    <h2>자료 둘러보기</h2>
+    <p class="muted">다른 선생님이 공유한 수업이에요. 미리 보고, 마음에 들면 <b>내 수업함에 담아</b> 내 수업에 맞게 고쳐 쓰세요. <b>미리 보기</b> 화면에서는 필요한 장만 골라 내 수업(어느 차시든) 뒤에 붙일 수도 있어요. 궁금한 점이나 써 본 이야기는 <b>이야기</b>를 눌러 댓글로 나눠요.</p>
+    <div id="browselist" class="stack"></div>
+    <p class="small" id="browsemsg" aria-live="polite"></p>
   </div>
   </div>
   <div class="tabp" data-tab="rooms">
@@ -728,8 +738,9 @@ ${AUTH_JS}
     card.hidden = !(s && s.admin);
     if (card.hidden) return;
     if (!users) { api('/admin/list', { session: s.token }).then(function (j) { if (j.users) adminCard(j.users, j.admins); else adminMsg(j.error || '명단을 불러오지 못했어요.'); }, function () { adminMsg('명단을 불러오지 못했어요.'); }); return; }
+    var day = function (t) { return new Date(t).toLocaleDateString('ko-KR'); };
     var row = function (u, acts) {
-      return '<li><span><b>' + esc(u.name || u.email) + '</b>' + (u.school ? ' · ' + esc(u.school) : '') + '<br><span class="small">' + esc(u.email) + (u.note ? ' · ' + esc(u.note) : '') + '</span></span><span class="row">'
+      return '<li><span><b>' + esc(u.name || u.email) + '</b>' + (u.school ? ' · ' + esc(u.school) : '') + '<br><span class="small">' + esc(u.email) + (u.note ? ' · ' + esc(u.note) : '') + (u.at ? '<br>신청 ' + day(u.at) : '') + (u.decided ? ' · ' + ({ approved: '승인', denied: '거절', revoked: '해제' }[u.status] || '처리') + ' ' + day(u.decided) : '') + '</span></span><span class="row">'
         + acts.map(function (a) { return '<button class="btn' + (a[0] === 'approve' ? ' main' : a[0] === 'deny' || a[0] === 'revoke' ? ' warn' : '') + '" type="button" data-e="' + esc(u.email) + '" data-act="' + a[0] + '">' + a[1] + '</button>'; }).join('') + '</span></li>';
     };
     var by = function (st) { return users.filter(function (u) { return u.status === st; }); };
@@ -741,7 +752,7 @@ ${AUTH_JS}
     document.getElementById('adminbox').innerHTML =
       '<p class="muted">' + (pend.length ? '새 가입 신청 <b>' + pend.length + '</b>건' : '새 가입 신청이 없어요.') + '</p>'
       + (pend.length ? '<ul class="lessons">' + pend.map(function (u) { return row(u, [['approve', '승인'], ['deny', '거절']]); }).join('') + '</ul>' : '')
-      + '<details' + (ok.length ? '' : ' open') + '><summary>승인된 선생님 ' + ok.length + '명</summary><ul class="lessons">' + ok.map(function (u) { return row(u, [['revoke', '승인 해제']]); }).join('') + '</ul>'
+      + '<details open><summary>가입한 선생님 ' + ok.length + '명</summary><ul class="lessons">' + ok.map(function (u) { return row(u, [['revoke', '승인 해제']]); }).join('') + '</ul>'
       + '<p class="small">관리자: ' + esc((admins || []).join(', ')) + ' (늘 승인돼 있어요)</p></details>'
       + (rest.length ? '<details><summary>거절·해제 ' + rest.length + '명</summary><ul class="lessons">' + rest.map(function (u) { return row(u, [['approve', '승인']]); }).join('') + '</ul></details>' : '')
       + '<form class="form" id="addt"><label class="grow">신청 없이 바로 더하기(구글 계정 이메일)<input type="email" id="addt-email" maxlength="200" autocomplete="off" placeholder="teacher@example.com"></label><button class="btn" type="submit">승인해 더하기</button></form>';
@@ -800,10 +811,11 @@ ${AUTH_JS}
       document.getElementById('boxlist').innerHTML = j.decks.length ? j.decks.map(function (d) {
         boxHave[d.base] = true;
         var day = new Date(d.updated_at);
-        return '<div class="row" data-base="' + esc(d.base) + '"><b>' + esc(d.title) + '</b><span class="small">' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일 저장</span>'
+        return '<div class="row" data-base="' + esc(d.base) + '"><b>' + esc(d.title) + '</b><span class="small">' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일 저장' + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + (d.shared ? ' · <b>공유 중</b>' : '') + '</span>' + (d.shared && d.post ? '<a class="btn small" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
           + '<a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box') + '">수업하기</a>'
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&edit') + '">고치기</a>'
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&save') + '">내려받기</a>'
+          + '<button class="btn small" type="button" data-share="' + (d.shared ? 0 : 1) + '">' + (d.shared ? '공유 끄기' : '공유하기') + '</button>'
           + '<button class="btn small" type="button" data-del>지우기</button></div>';
       }).join('') : '<p class="small">아직 저장한 수업이 없어요. 아래에서 차시를 골라 고친 뒤 편집기 위쪽의 «수업함에 저장»을 눌러 주세요.</p>';
     }, function () { boxMsg('수업함을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
@@ -811,15 +823,50 @@ ${AUTH_JS}
   document.getElementById('boxgo').onclick = function () { var b = document.getElementById('boxnew').value; if (b) window.open(boxUrl(b, boxHave[b] ? '&box&edit' : '&edit')); };
   document.getElementById('boxlist').onclick = function (e) {
     var row = e.target.closest('[data-base]');
+    if (row && e.target.hasAttribute('data-share')) {   // 공유: 승인된 선생님 모두가 «자료 둘러보기»에서 보고 담아 간다
+      var on = e.target.getAttribute('data-share') === '1';
+      var note = on ? prompt('«' + row.querySelector('b').textContent + '»을(를) 승인된 선생님 모두에게 공유해요. 내 이름과 학교가 함께 보여요.\\n어떤 수업인지 한마디 남겨 주세요. 게시판 «자료 나눔»에 올라가 댓글로 이야기할 수 있어요(비워도 돼요).', '') : '';
+      if (note === null) return;
+      api('/decks/share', { session: sess().token, base: row.getAttribute('data-base'), on: on, note: note }).then(function (j) { boxMsg(j.error || (on ? '공유했어요. 다른 선생님의 «자료 둘러보기»에 보여요.' : '공유를 껐어요.')); boxCard(); browseCard(); }, function () { boxMsg('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+      return;
+    }
     if (!row || !e.target.hasAttribute('data-del') || !confirm('«' + row.querySelector('b').textContent + '»을(를) 수업함에서 지울까요? 되돌릴 수 없어요.')) return;
     api('/decks/delete', { session: sess().token, base: row.getAttribute('data-base') }).then(function (j) { boxMsg(j.error || '지웠어요.'); boxCard(); }, function () { boxMsg('지우지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  };
+
+  // 자료 둘러보기: 다른 선생님이 공유한 수업(워커가 걸러서 준다). 미리 보기 · 내 수업함에 담기
+  function browseMsg(t) { document.getElementById('browsemsg').textContent = t; }
+  function browseCard() {
+    var card = document.getElementById('browsecard');
+    api('/decks/browse', { session: sess().token }).then(function (j) {
+      if (j.http === 404) { card.hidden = true; return; }
+      card.hidden = false;
+      if (j.error) { browseMsg(j.error); return; }
+      document.getElementById('browselist').innerHTML = j.decks.length ? j.decks.map(function (d) {
+        var day = new Date(d.updated_at);
+        return '<div class="row" data-id="' + d.id + '"><b>' + esc(d.title) + '</b><span class="small">' + esc(d.by || '선생님') + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + ' · ' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일</span>'
+          + '<a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&share=' + d.id) + '">미리 보기</a>'
+          + (d.post ? '<a class="btn small" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
+          + (d.mine ? '<span class="small">내가 공유한 수업</span>' : '<button class="btn small" type="button" data-copy>내 수업함에 담기</button>') + '</div>';
+      }).join('') : '<p class="small">아직 공유된 수업이 없어요. «내 수업함»에서 «공유하기»를 누르면 여기에 보여요.</p>';
+    }, function () { browseMsg('불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  }
+  document.getElementById('browselist').onclick = function (e) {
+    var row = e.target.closest('[data-id]'); if (!row || !e.target.hasAttribute('data-copy')) return;
+    var go = function (over) {
+      api('/decks/copy', { session: sess().token, id: Number(row.getAttribute('data-id')), over: over }).then(function (j) {
+        if (j.exists && !over) { if (confirm('이 차시의 내 수업이 이미 수업함에 있어요. 담아 온 수업으로 바꿀까요? 지금 내 수업은 사라져요.')) go(true); return; }
+        browseMsg(j.error || '내 수업함에 담았어요. «내 수업함»에서 고치거나 수업할 수 있어요.'); if (!j.error) boxCard();
+      }, function () { browseMsg('담지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+    };
+    go(false);
   };
 
   // 화면 전체: 로그인 상태에 따라 카드를 보이고 숨긴다
   function renderAll() {
     var s = sess(), ok = !!(s && s.status === 'approved');
     meCard(); adminCard();
-    if (ok && EDITABLE.length) boxCard(); else document.getElementById('boxcard').hidden = true;
+    if (ok && EDITABLE.length) { boxCard(); browseCard(); } else { document.getElementById('boxcard').hidden = true; document.getElementById('browsecard').hidden = true; }
     document.getElementById('makecard').hidden = !ok;
     document.getElementById('classes').hidden = !ok;
     if (ok) render(); else document.getElementById('classes').innerHTML = '';
@@ -844,7 +891,7 @@ ${AUTH_JS}
 //   board.html?lesson=tongsci2/2-2-2/1&slide=3 → 그 차시·장이 붙은 새 글 쓰기 · board.html#p12 → 12번 글
 //   글은 마크다운. 화면에 띄울 때 marked(MIT)로 바꾸고 DOMPurify(Apache-2.0/MPL)로 위험한 태그를 걸러 낸다
 const BOARD_JS = String.raw`
-  var KIND = { bug: '오류 신고', ask: '요청', idea: '의견', review: '수업 후기' };
+  var KIND = { bug: '오류 신고', ask: '요청', idea: '의견', review: '수업 후기', share: '자료 나눔' };
   var STAT = { open: '접수', planned: '계획', started: '고치는 중', completed: '반영됨', declined: '보류' };
   var S = { kind: '', status: '', sort: 'new', q: '', page: 0, lesson: qs.get('lesson') || '' };
   function $(id) { return document.getElementById(id); }
@@ -855,6 +902,8 @@ const BOARD_JS = String.raw`
   function lessonLink(p, slide) { var l = LESSONS.filter(function (x) { return x.path === p; })[0]; return l ? '<a href="' + esc(l.teacher) + (slide ? '#/' + (slide - 1) : '') + '" target="_blank" rel="noopener">' + esc(lessonName(p)) + (slide ? ' · ' + slide + '장' : '') + '</a>' : esc(p || ''); }
   function call(op, body) { var s = sess(); body = body || {}; body.session = s && s.token; return api('/board/' + op, body).then(function (j) { if (j.login) { signedOut(); gate(); throw new Error(j.error); } if (j.error) throw new Error(j.error); return j; }); }
   function say(t) { $('bmsg').textContent = t || ''; }
+  // 마크다운 도구는 목록을 막지 않게 늦게 받는다(defer). 글을 열 때만 다 받았는지 기다린다
+  var mdReady = new Promise(function (ok) { if (document.readyState !== 'loading') ok(); else addEventListener('DOMContentLoaded', ok); });
 
   // ---- 들어오기: 로그인 → 승인 확인 ----
   function gate() {
@@ -887,7 +936,7 @@ const BOARD_JS = String.raw`
       $('lessonf').hidden = !S.lesson; $('lessonf').innerHTML = S.lesson ? esc(lessonName(S.lesson)) + ' 글만 보는 중 · <a href="#" id="alll">모두 보기</a>' : '';
       if (S.lesson) $('alll').onclick = function (e) { e.preventDefault(); S.lesson = ''; list(); };
       var html = j.posts.map(function (p) {
-        return '<li class="bp' + (p.hidden ? ' hid' : '') + '"><a href="#p' + p.id + '"><span class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span><span class="st st-' + p.status + '">' + STAT[p.status] + '</span>' + (p.replied ? '<span class="tagr">답 있음</span>' : '') + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</span>'
+        return '<li class="bp' + (p.hidden ? ' hid' : '') + '"><a href="#p' + p.id + '"><span class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span>' + (p.kind === 'share' ? '' : '<span class="st st-' + p.status + '">' + STAT[p.status] + '</span>') + (p.replied ? '<span class="tagr">답 있음</span>' : '') + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</span>'
           + '<b class="bt">' + esc(p.title) + '</b><span class="pv">' + esc(p.preview) + '</span>'
           + '<span class="meta">' + (p.lesson ? esc(lessonName(p.lesson)) + (p.slide ? ' · ' + p.slide + '장' : '') + ' · ' : '') + esc(p.author_name) + ' · ' + when(p.created_at) + ' · ❤️ ' + p.likes + ' · 💬 ' + p.comments + '</span></a></li>';
       }).join('');
@@ -928,11 +977,12 @@ const BOARD_JS = String.raw`
   // ---- 글 보기 ----
   function openPost(id) {
     $('listv').hidden = true; $('write').hidden = true;
-    call('get', { id: id }).then(function (j) {
+    call('get', { id: id }).then(function (j) { return mdReady.then(function () { return j; }); }).then(function (j) {
       var p = j.post, d = $('detail'); d.hidden = false;
-      var h = '<p><a href="#" id="back">← 목록</a></p><div class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span><span class="st st-' + p.status + '">' + STAT[p.status] + '</span>' + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</div>'
+      var h = '<p><a href="#" id="back">← 목록</a></p><div class="row"><span class="kd kd-' + p.kind + '">' + KIND[p.kind] + '</span>' + (p.kind === 'share' ? '' : '<span class="st st-' + p.status + '">' + STAT[p.status] + '</span>') + (p.hidden ? '<span class="tagr">숨김</span>' : '') + '</div>'
         + '<h2>' + esc(p.title) + '</h2><p class="meta">' + (p.lesson ? lessonLink(p.lesson, p.slide) + ' · ' : '') + esc(p.author_name) + ' · ' + when(p.created_at) + '</p>'
         + '<div class="mdb">' + md(p.body) + '</div>'
+        + (j.deck ? '<p class="row"><a class="btn main" target="_blank" rel="noopener" href="deck.html?d=' + esc(p.lesson) + '&share=' + j.deck + (qs.get('roomapi') ? '&roomapi=' + encodeURIComponent(qs.get('roomapi')) : '') + '">수업 미리 보기</a><a class="btn" href="teach.html' + (qs.get('roomapi') ? '?roomapi=' + encodeURIComponent(qs.get('roomapi')) : '') + '">내 수업함에 담으러 가기</a></p>' : p.kind === 'share' ? '<p class="small">지금은 공유를 그만둔 수업이에요.</p>' : '')
         + '<div class="row"><button class="btn" type="button" id="like" aria-pressed="' + j.liked + '">❤️ 공감 ' + p.likes + '</button>'
         + (p.mine || j.admin ? '<button class="btn" type="button" id="edit">고치기</button><button class="btn warn" type="button" id="del">' + (p.hidden && j.admin ? '다시 보이기' : '지우기') + '</button>' : '') + '</div>';
       if (p.reply) h += '<div class="reply"><b>관리자 답</b>' + md(p.reply) + '</div>';
@@ -956,7 +1006,11 @@ const BOARD_JS = String.raw`
   filters();
   $('new').onclick = function () { writer(); };
   $('out').onclick = function (e) { e.preventDefault(); logout().then(gate); };
-  syncMe().then(function () { gate(); if (qs.get('lesson') && sess() && sess().status === 'approved' && !location.hash) writer(); });
+  // 저장된 로그인으로 먼저 그린다(로그인 확인을 기다리면 목록이 왕복 한 번만큼 늦게 뜬다). 확인 결과가 다르면 다시 그린다
+  var mark = function () { var s = sess(); return s ? s.token + s.status + !!s.admin : ''; }, was = mark();
+  var start = function () { gate(); if (qs.get('lesson') && sess() && sess().status === 'approved' && !location.hash) writer(); };
+  if (was) start();
+  syncMe().then(function () { if (!was || mark() !== was) start(); });
 `;
 
 export function boardPage(site, units) {
@@ -977,7 +1031,8 @@ ul.plist, ul.cl { list-style: none; margin: 0; padding: 0; display: grid; gap: 1
 .bt { font: 700 18px/1.35 var(--f-body); } .pv { color: var(--ink-2); font-size: 15px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .meta { font-size: 13px; color: var(--ink-3); margin: 0; }
 .empty { color: var(--ink-3); padding: 12px; }
-.mdb { line-height: 1.7; overflow-wrap: anywhere; } .mdb img { max-width: 100%; }
+.mdb { line-height: 1.7; overflow-wrap: anywhere; min-width: 0; } .mdb img { max-width: 100%; } .mdb pre, .mdb table { display: block; max-width: 100%; overflow-x: auto; }
+#detail { grid-template-columns: minmax(0, 1fr); }
 .reply { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 6px; }
 .admin { border: 2px dashed var(--ink-3); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; }
 textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
@@ -997,7 +1052,7 @@ textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px sol
     <div class="row between"><span class="small"><b id="who"></b> · <a href="#" id="out">로그아웃</a></span><button class="btn main" type="button" id="new">새 글 쓰기</button></div>
     <p class="small" id="bmsg" aria-live="polite"></p>
     <div id="listv" class="stack">
-      <div class="kinds" role="group" aria-label="종류"><button class="btn small" type="button" data-k="">전체</button><button class="btn small" type="button" data-k="bug">오류 신고</button><button class="btn small" type="button" data-k="ask">요청</button><button class="btn small" type="button" data-k="idea">의견</button><button class="btn small" type="button" data-k="review">수업 후기</button></div>
+      <div class="kinds" role="group" aria-label="종류"><button class="btn small" type="button" data-k="">전체</button><button class="btn small" type="button" data-k="bug">오류 신고</button><button class="btn small" type="button" data-k="ask">요청</button><button class="btn small" type="button" data-k="idea">의견</button><button class="btn small" type="button" data-k="review">수업 후기</button><button class="btn small" type="button" data-k="share">자료 나눔</button></div>
       <div class="bfil"><select id="fstat" aria-label="처리 상태"><option value="">모든 상태</option><option value="open">접수</option><option value="planned">계획</option><option value="started">고치는 중</option><option value="completed">반영됨</option><option value="declined">보류</option></select>
         <select id="fsort" aria-label="정렬"><option value="new">최신순</option><option value="top">공감순</option></select><input type="text" id="fq" placeholder="찾기(엔터)" aria-label="찾기"></div>
       <div class="counts" id="counts"></div>
@@ -1019,8 +1074,8 @@ textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px sol
     <div class="card" id="detail" hidden></div>
   </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <script>
 (function () {
   'use strict';

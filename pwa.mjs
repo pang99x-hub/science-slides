@@ -10,7 +10,7 @@ const block = (rel) => `<!--pwa-->
 <link rel="apple-touch-icon" href="${rel}icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="과학 수업">
+<meta name="apple-mobile-web-app-title" content="꿈틀">
 <script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('${rel}sw.js').catch(() => {}));</script>
 <!--/pwa-->
 `;
