@@ -445,6 +445,148 @@ ${AUTH_JS}
 `;
 }
 
+// 우리 반 수업 통계 탭(2026-11-13, 수업방/src/stats.mjs의 POST /stats/list). teachPage 스크립트 안에 들어간다(sess·api·esc·find·label을 쓴다)
+// 이 안에는 달러+중괄호를 쓰지 않는다
+const STATS_JS = String.raw`
+  var ST = null, STIX = {};
+  function stMsg(t) { document.getElementById('stmsg').textContent = t; }
+  function pc(x) { return x == null ? '—' : Math.round(x * 100) + '%'; }
+  function avg(a) { a = a.filter(function (x) { return x != null; }); return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : null; }
+  function stKey(r) { return r.room.length === 4 ? 'once' : r.room + '|' + (r.cls || ''); }
+  function stName(r) { return r.room.length === 4 ? '한 번 쓰는 방' : (r.room_name || '반 방 ' + r.room) + (r.cls ? ' · ' + r.cls : ''); }
+  function two(n) { return String(n).padStart(2, '0'); }
+  function hm(t) { var d = new Date(t); return two(d.getHours()) + ':' + two(d.getMinutes()); }
+  function md(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function day(t) { var d = new Date(t); return md(t) + '(' + '일월화수목금토'[d.getDay()] + ') ' + hm(t); }
+  function lname(r) { var l = find(r.path); return l ? label(l) : (r.title || r.path); }
+  function lshort(r) { var l = find(r.path); return l ? l.unit + ' ' + l.n + '차시' : r.path; }
+  // 응답률: 문항마다 답한 기기 / 들어온 기기의 평균 · 퀴즈 정답률: 판마다 정답률을 참여 인원으로 가중 평균
+  function resp(r) { return r.asks.length && r.devices ? avg(r.asks.map(function (a) { return Math.min(1, a[2] / r.devices); })) : null; }
+  function qsum(r) { var n = 0, d = 0, w = 0, acc = 0; r.quiz.forEach(function (q) { n += q.n; d += q.done; if (q.acc != null) { w += q.n; acc += q.acc * q.n; } }); return { n: n, d: d, acc: w ? acc / w / 100 : null }; }
+  // 장 번호: 장/<과목>.<단원>/index.json의 장 순서(없으면 장 id 그대로)
+  function stIx(path) {
+    var m = String(path).split('/'), k = m[0] + '.' + m[1];
+    if (!STIX[k]) STIX[k] = fetch('장/' + k + '/index.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    return STIX[k];
+  }
+  function slideOf(ix, path, sec) {
+    var m = String(path).split('/'), l = ix && (ix.lessons || []).filter(function (x) { return String(x.n) === m[2]; })[0];
+    var i = l ? l.slides.indexOf(m[0] + '.' + m[1] + '.' + m[2] + '.' + sec) : -1;
+    return i >= 0 ? (i + 1) + '장' : sec ? '«' + sec + '» 장' : '';
+  }
+  // 퀴즈가 있던 장: 시작할 때 선생님이 보던 장 차례(h)
+  function qAt(r, z) { return z.h != null ? (z.h + 1) + '장' : '<span data-sl="' + esc(r.path + '|' + z.id) + '"></span>'; }
+  function qname(q) {
+    if (/^w-/.test(q)) return '한 낱말 답';
+    var m = q.match(/-(q(\d+)|pred(\w*)|flap|share|factors)$/); if (!m) return q;
+    return m[2] ? '○× ' + m[2] + '번' : m[1].indexOf('pred') === 0 ? '예측' + (m[3] ? ' ' + m[3] : '') : { flap: '고르기', share: '생각 나누기', factors: '여럿 고르기' }[m[1]];
+  }
+  // 한 줄: 이름 · 막대 · 47% (7/15). kind: 'acc' 정답률(초록) | 'resp' 응답률(주황)
+  function bar(name, p, n, of, kind, sub) {
+    return '<li class="' + kind + '"><span class="st-lb">' + name + (sub ? '<span class="st-sub">' + sub + '</span>' : '') + '</span><span class="st-meter"><i style="width:' + Math.round((p || 0) * 100) + '%"></i></span><span class="st-v"><b>' + pc(p) + '</b> (' + n + '/' + of + ')</span></li>';
+  }
+  function statsCard() {
+    var card = document.getElementById('statscard'), days = Number(document.getElementById('stdays').value);
+    api('/stats/list', { session: sess().token, from: days ? Date.now() - days * 864e5 : 0 }).then(function (j) {
+      if (j.http === 404) { card.hidden = true; return; }
+      card.hidden = false;
+      if (j.error) { stMsg(j.error); return; }
+      ST = j; stMsg(''); stPick(); stDraw();
+    }, function () { stMsg('통계를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  }
+  function stPick() {
+    var sel = document.getElementById('stcls'), was = sel.value, seen = {};
+    var opts = ['<option value="">모든 반</option>'];
+    ST.rows.forEach(function (r) { var k = stKey(r); if (!seen[k]) { seen[k] = 1; opts.push('<option value="' + esc(k) + '">' + esc(stName(r)) + '</option>'); } });
+    sel.innerHTML = opts.join(''); if (seen[was]) sel.value = was;
+  }
+  function stDraw() {
+    var k = document.getElementById('stcls').value, rows = ST.rows.filter(function (r) { return !k || stKey(r) === k; }), box = document.getElementById('stbox');
+    var others = ST.others ? '<p class="small">관리자: 다른 선생님 수업 ' + ST.others + '번이 쌓여 있어요(내용은 그 선생님만 봐요).</p>' : '';
+    if (!rows.length) { box.innerHTML = '<p class="small">이 기간에 쌓인 수업이 없어요. 수업방에서 수업하고 «수업 끝내기»를 누르면 여기에 보여요.</p>' + others; return; }
+    var ra = avg(rows.map(resp)), qa = avg(rows.map(function (r) { return qsum(r).acc; })), aw = rows.reduce(function (s, r) { return s + r.away; }, 0);
+    var kpi = function (v, t, cls) { return '<div class="st-k ' + (cls || '') + '"><b>' + v + '</b><span>' + t + '</span></div>'; };
+    box.innerHTML = '<div class="st-kpi">' + kpi(rows.length, '수업') + kpi(pc(ra), '평균 응답률', 'resp') + kpi(pc(qa), '평균 퀴즈 정답률', 'acc') + kpi(aw + '번', '딴짓 알림') + '</div>'
+      + '<section class="st-sec"><h3 class="st-h">차시를 거치며</h3>' + stLine(rows.slice().sort(function (a, b) { return a.started - b.started; })) + '</section>'
+      + '<section class="st-sec"><h3 class="st-h">약한 문제 상위 5 <small>빠른 퀴즈 카드, 정답률 낮은 차례</small></h3>' + stWeak(rows) + '</section>'
+      + '<section class="st-sec"><h3 class="st-h">성취기준별 퀴즈 정답률</h3><ul class="st-bars">' + stStd(rows) + '</ul></section>'
+      + '<section class="st-sec"><h3 class="st-h">수업마다 <small>줄을 누르면 문항별로 펼쳐요</small></h3><div class="st-table"><div class="st-tr st-th" aria-hidden="true"><span>날짜</span><span>차시</span><span>반</span><span>학생</span><span>응답률</span><span>퀴즈 정답률</span><span>딴짓</span></div>' + rows.map(stRow).join('') + '</div></section>' + others;
+    // 장 번호는 단원 장 목록을 받은 뒤에 채운다
+    [].forEach.call(box.querySelectorAll('[data-sl]'), function (el) { var a = el.getAttribute('data-sl').split('|'); stIx(a[0]).then(function (ix) { el.textContent = slideOf(ix, a[0], a[1]); }); });
+  }
+  // 약한 문제: 같은 퀴즈 카드끼리 묶어 머리를 한 번만
+  function stWeak(rows) {
+    var by = {};
+    rows.forEach(function (r) { r.quiz.forEach(function (q) { q.items.forEach(function (it) {
+      var g = r.path + '|' + q.id, key = g + '|' + (it[3] || it[0]), x = by[key] || (by[key] = { label: it[0], t: 0, ok: 0, g: g, r: r, q: q });
+      x.t += it[1]; x.ok += it[2];
+    }); }); });
+    var list = Object.keys(by).map(function (k) { return by[k]; }).filter(function (x) { return x.t && x.ok < x.t; });
+    list.sort(function (a, b) { return (a.t < 2) - (b.t < 2) || a.ok / a.t - b.ok / b.t || b.t - a.t; });   // 한 명만 푼 카드는 뒤로
+    if (!list.length) return '<p class="small">빠른 퀴즈를 하면 많이 틀린 카드가 여기에 보여요.</p>';
+    var groups = [];
+    list.slice(0, 5).forEach(function (x) { var g = groups.filter(function (y) { return y.g === x.g; })[0]; if (!g) groups.push(g = { g: x.g, r: x.r, q: x.q, xs: [] }); g.xs.push(x); });
+    return groups.map(function (g) {
+      return '<p class="st-grp">' + (g.q.title ? '«' + esc(g.q.title) + '» · ' : '빠른 퀴즈 · ') + esc(lshort(g.r)) + ' · ' + qAt(g.r, g.q) + '</p><ul class="st-bars">'
+        + g.xs.map(function (x) { return bar(esc(x.label), x.ok / x.t, x.ok, x.t, 'acc'); }).join('') + '</ul>';
+    }).join('');
+  }
+  function stStd(rows) {
+    var by = {};
+    rows.forEach(function (r) { var k = r.std || '', x = by[k] || (by[k] = { t: 0, ok: 0, units: {} }); var l = find(r.path); if (l) x.units[l.unit + ' ' + l.unitTitle] = 1; r.quiz.forEach(function (q) { q.items.forEach(function (it) { x.t += it[1]; x.ok += it[2]; }); }); });
+    var list = Object.keys(by).filter(function (k) { return by[k].t; }).sort(function (a, b) { return by[a].ok / by[a].t - by[b].ok / by[b].t; });
+    if (!list.length) return '<li class="small">빠른 퀴즈를 하면 성취기준마다 정답률이 모여요.</li>';
+    return list.map(function (k) {
+      var x = by[k], t = STDTXT[k] || '', short = t.length > 30 ? t.slice(0, 30) + '…' : t;
+      return bar(esc(short || k || '성취기준 없음'), x.ok / x.t, x.ok, x.t, 'acc', esc([k, Object.keys(x.units).join(', ')].filter(Boolean).join(' · ')));
+    }).join('');
+  }
+  function stRow(r) {
+    var q = qsum(r), re = resp(r);
+    var cell = function (cls, lab, v) { return '<span class="' + cls + '">' + (lab ? '<i>' + lab + ' </i>' : '') + v + '</span>'; };
+    var head = '<summary class="st-tr">' + cell('c-d', '', day(r.started)) + cell('c-l', '', esc(lname(r))) + cell('c-c', '', esc(stName(r)))
+      + cell('c-n', '학생', r.devices + '명') + cell('c-r', '응답', pc(re)) + cell('c-a', '정답', r.quiz.length ? pc(q.acc) : '—') + cell('c-w', '딴짓', r.away + '번') + '</summary>';
+    var asks = r.asks.slice().sort(function (a, b) { return a[2] - b[2]; }).map(function (a) {
+      return bar(esc(qname(a[0])) + (a[1] ? ' <span class="st-at" data-sl="' + esc(r.path + '|' + a[1]) + '"></span>' : ''), r.devices ? Math.min(1, a[2] / r.devices) : null, a[2], r.devices, 'resp');
+    }).join('');
+    var quiz = r.quiz.map(function (z) {
+      var tried = z.items.filter(function (it) { return it[1]; }), skip = z.items.length - tried.length;
+      return '<p class="st-grp">빠른 퀴즈' + (z.title ? ' «' + esc(z.title) + '»' : '') + ' · ' + qAt(r, z) + ' · ' + z.n + '명 참여 · ' + z.done + '명 완료 · 정답률 ' + (z.acc == null ? '—' : z.acc + '%') + '</p>'
+        + '<ul class="st-bars">' + tried.sort(function (a, b) { return a[2] / a[1] - b[2] / b[1]; }).map(function (it) { return bar(esc(it[0]), it[2] / it[1], it[2], it[1], 'acc'); }).join('') + '</ul>'
+        + (skip ? '<p class="small">아무도 풀지 않은 카드 ' + skip + '장은 뺐어요.</p>' : '');
+    }).join('');
+    return '<details class="st-row">' + head + '<div class="st-body">'
+      + '<p class="small">' + day(r.started) + ' ~ ' + hm(r.ended) + ' · 최대 동시 ' + r.peak + '명 · 들어온 기기 ' + r.devices + '대 · 딴짓 알림 ' + r.away + '번(' + r.away_n + '명)' + (r.std ? ' · ' + esc(r.std) : '') + '</p>'
+      + (asks ? '<p class="st-grp">문항별 응답률 · 답한 학생 / 들어온 학생</p><ul class="st-bars">' + asks + '</ul>' : '<p class="small">이 수업에는 학생이 답한 문항이 없어요.</p>')
+      + quiz + '</div></details>';
+  }
+  // 꺾은선: 수업 차례대로 퀴즈 정답률·응답률. 점마다 차시와 날짜(같은 날이면 시각), 값은 점 옆에. 6개가 넘으면 옆으로 넘긴다
+  function stLine(rows) {
+    if (rows.length < 2) return '<p class="small">수업이 두 번 넘게 쌓이면 꺾은선으로 보여요.</p>';
+    rows = rows.slice(-30);
+    var n = rows.length, GAP = 108, L = 52, R = 56, T = 28, B = 58, H = 250, W = Math.max(600, L + R + GAP * (n - 1));
+    var x = function (i) { return n > 5 ? L + GAP * i : L + (W - L - R) * i / (n - 1); }, y = function (v) { return T + (H - T - B) * (1 - v); };
+    var g = [0, .5, 1].map(function (v) { return '<line x1="' + L + '" x2="' + (W - R + 24) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="st-grid"/><text x="' + (L - 10) + '" y="' + y(v) + '" text-anchor="end" dominant-baseline="middle">' + v * 100 + '%</text>'; }).join('');
+    var xl = rows.map(function (r, i) {
+      var sameDay = (i > 0 && md(rows[i - 1].started) === md(r.started)) || (i < n - 1 && md(rows[i + 1].started) === md(r.started));
+      var when = i > 0 && md(rows[i - 1].started) === md(r.started) ? hm(r.started) : md(r.started) + (sameDay ? ' ' + hm(r.started) : '');
+      return '<text x="' + x(i) + '" y="' + (H - 32) + '" text-anchor="middle" class="st-xl">' + esc(lshort(r)) + '</text><text x="' + x(i) + '" y="' + (H - 12) + '" text-anchor="middle">' + when + '</text>';
+    }).join('');
+    var RV = rows.map(resp), AV = rows.map(function (r) { return qsum(r).acc; });
+    var line = function (vals, cls, name, other) {
+      var pts = vals.map(function (v, i) { return v == null ? null : [x(i), y(v), v, i]; }).filter(Boolean); if (!pts.length) return '';
+      var dyOf = function (p) { var o = other[p[3]]; return o == null || p[2] > o || (p[2] === o && cls === 'acc') ? -12 : 22; };   // 높은 쪽 값은 점 위, 낮은 쪽은 점 아래
+      return '<polyline class="' + cls + '" points="' + pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>'
+        + pts.map(function (p) { return '<circle class="' + cls + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5"><title>' + esc(lname(rows[p[3]])) + ' · ' + name + ' ' + pc(p[2]) + '</title></circle><text class="st-pv ' + cls + '" x="' + p[0].toFixed(1) + '" y="' + (p[1] + dyOf(p)).toFixed(1) + '" text-anchor="middle">' + pc(p[2]) + '</text>'; }).join('');
+    };
+    return '<div class="st-legend"><span class="acc">퀴즈 정답률</span><span class="resp">응답률</span>' + (n > 6 ? '<span class="st-hint">옆으로 넘겨 지난 수업 보기</span>' : '') + '</div>'
+      + '<div class="st-wrap">' + (n > 6 ? '<div class="st-yax" style="height:' + H + 'px">' + [0, .5, 1].map(function (v) { return '<span style="top:' + y(v) + 'px">' + v * 100 + '%</span>'; }).join('') + '</div>' : '') + '<div class="st-scroll"><svg class="st-chart" viewBox="0 0 ' + W + ' ' + H + '" style="' + (n > 6 ? 'width:' + W + 'px' : 'min-width:520px') + '" role="img" aria-label="수업마다 퀴즈 정답률과 응답률">' + g + xl
+      + line(RV, 'resp', '응답률', AV) + line(AV, 'acc', '퀴즈 정답률', RV) + '</svg></div></div>';
+  }
+  document.getElementById('stcls').onchange = function () { if (ST) stDraw(); };
+  document.getElementById('stdays').onchange = function () { statsCard(); };
+`;
+
 export function teachPage(site, units) {
   const lessons = lessonList(units);
   // 장 묶음이 있는(고칠 수 있는) 단원: 장/<과목>.<단원>/index.json
@@ -459,7 +601,7 @@ export function teachPage(site, units) {
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
   </header>
   <style>.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
-  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
+  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
   <div class="tabp" data-tab="me">
   <div class="card" id="me">
     <h2 id="mehead">선생님 로그인</h2>
@@ -473,6 +615,58 @@ export function teachPage(site, units) {
   </div>
   </div>
   <p id="msg" aria-live="polite"></p>
+  <div class="tabp" data-tab="stats">
+  <div class="card" id="statscard" hidden>
+    <h2>우리 반 수업 통계</h2>
+    <style>
+      #stbox { gap: 28px; }
+      .st-kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+      .st-k { border: 1.5px solid var(--rule); border-radius: 8px; background: var(--paper); padding: 12px 14px; display: grid; gap: 2px; }
+      .st-k b { font: 700 32px/1.1 var(--f-display); color: var(--ink); } .st-k span { font-size: 14px; color: var(--ink-3); }
+      .st-k.acc b { color: var(--accent); } .st-k.resp b { color: var(--current); }
+      .st-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+      .st-h { margin: 0; font: 700 18px/1.3 var(--f-display); } .st-h small { font: 400 13px/1.4 var(--f-body); color: var(--ink-3); margin-left: 6px; }
+      .st-grp { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
+      .st-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+      .st-bars li { display: grid; grid-template-columns: minmax(0, 1fr) 140px 92px; gap: 12px; align-items: center; font-size: 15px; }
+      .st-lb { min-width: 0; } .st-sub { display: block; font-size: 12px; color: var(--ink-3); } .st-at { font-size: 12px; color: var(--ink-3); }
+      .st-v { font-size: 13px; color: var(--ink-3); white-space: nowrap; text-align: right; } .st-v b { font-size: 15px; font-weight: 600; color: var(--ink); }
+      .st-meter { height: 8px; border-radius: 99px; background: var(--grid); overflow: hidden; } .st-meter i { display: block; height: 100%; background: var(--ink-3); }
+      .st-bars li.acc .st-meter i { background: var(--accent); } .st-bars li.resp .st-meter i { background: var(--current); }
+      .st-table { display: grid; gap: 0; border-top: 1.5px solid var(--rule); }
+      .st-tr { display: grid; grid-template-columns: 112px minmax(0, 1fr) 120px 52px 60px 84px 48px; gap: 10px; align-items: center; padding: 10px 8px; font-size: 14px; }
+      .st-tr > span { min-width: 0; } .st-tr i { display: none; font-style: normal; color: var(--ink-3); }
+      .st-th { font-size: 13px; color: var(--ink-3); border-bottom: 1.5px solid var(--rule); padding-block: 6px; }
+      .st-row { border-bottom: 1px solid var(--rule); }
+      .st-row > summary { cursor: pointer; list-style: none; } .st-row > summary::-webkit-details-marker { display: none; }
+      .st-row > summary:hover, .st-row[open] > summary { background: var(--accent-soft); }
+      .st-row .c-d { color: var(--ink-3); font-size: 13px; } .st-row .c-l { color: var(--ink); font-weight: 600; } .st-row .c-c { color: var(--ink-2); }
+      .st-row .c-r { color: var(--current); } .st-row .c-a { color: var(--accent); }
+      .st-body { padding: 10px 8px 16px; display: grid; gap: 8px; }
+      .st-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--ink-2); } .st-legend .st-hint { margin-left: auto; color: var(--ink-3); font-size: 13px; }
+      .st-legend .acc::before, .st-legend .resp::before { content: ''; display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+      .st-legend .acc::before { background: var(--accent); } .st-legend .resp::before { background: var(--current); }
+      .st-wrap { position: relative; min-width: 0; } .st-yax { position: absolute; left: 0; top: 0; width: 50px; z-index: 1; pointer-events: none; background: linear-gradient(to right, var(--paper-2) 75%, transparent); }   /* 옆으로 넘겨도 눈금은 그대로 */
+      .st-yax span { position: absolute; right: 10px; transform: translateY(-50%); font-size: 14px; color: var(--ink-3); }
+      .st-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; direction: rtl; } .st-scroll > svg { direction: ltr; }   /* 처음부터 최근 수업(오른쪽 끝)이 보이게 */
+      .st-chart { width: 100%; height: auto; display: block; } .st-chart text { font: 400 14px var(--f-body); fill: var(--ink-3); } .st-chart .st-xl { fill: var(--ink-2); }
+      .st-chart .st-grid { stroke: var(--grid); stroke-width: 1; } .st-chart polyline { fill: none; stroke-width: 2.5; } .st-chart circle { stroke: var(--paper-2); stroke-width: 2; }
+      .st-chart .st-pv { font-size: 13px; font-weight: 600; } .st-chart .st-pv.acc { fill: var(--accent); } .st-chart .st-pv.resp { fill: var(--current); }
+      .st-chart polyline.acc { stroke: var(--accent); } .st-chart circle.acc { fill: var(--accent); } .st-chart polyline.resp { stroke: var(--current); } .st-chart circle.resp { fill: var(--current); }
+      @media (max-width: 720px) {
+        .st-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } .st-k b { font-size: 28px; }
+        .st-bars li { grid-template-columns: minmax(0, 1fr) 56px 82px; gap: 8px; }
+        .st-tr.st-th { display: none; }
+        .st-tr { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 10px 6px; } .st-tr i { display: inline; }
+        .st-tr .c-l { flex: 1 1 100%; order: -1; } .st-tr .c-d { order: -2; flex: 1 1 100%; } .st-tr .c-c { flex: 1 1 100%; }
+      }
+    </style>
+    <p class="muted">수업방에서 수업을 끝내면(차시를 바꾸거나 «수업 끝내기», 한 번 쓰는 방은 닫을 때) 그 수업의 숫자가 여기에 쌓여요. 학생 이름·번호는 남기지 않고, 나만 볼 수 있어요.</p>
+    <div class="form"><label class="grow">반<select id="stcls"></select></label><label>기간<select id="stdays"><option value="7">최근 1주</option><option value="30" selected>최근 한 달</option><option value="120">최근 넉 달</option><option value="0">전체</option></select></label></div>
+    <div id="stbox" class="stack"></div>
+    <p class="small" id="stmsg" aria-live="polite"></p>
+  </div>
+  </div>
   <div class="tabp" data-tab="box">
   <div class="card" id="boxcard" hidden>
     <h2>내 수업함</h2>
@@ -539,6 +733,7 @@ export function teachPage(site, units) {
   var pass = qs.get('roomapi') ? '&roomapi=' + encodeURIComponent(qs.get('roomapi')) : '';
   var BASE = location.href.split(/[?#]/)[0].replace(/[^/]*$/, '');
   var LESSONS = ${lessonData(lessons)};
+  var STDTXT = ${JSON.stringify(Object.fromEntries(units.filter((u) => u.standard).map((u) => [u.standard, u.standardText || ''])))};   // 성취기준 코드 → 설명(수업 통계)
   var GID = qs.get('gid') || ${JSON.stringify(site.googleClientId || '')};
   var KEY = 'science-room:classes';
   var MODES = { anon: '익명', num: '번호만', numname: '번호와 이름' };
@@ -908,11 +1103,12 @@ ${AUTH_JS}
     go(false);
   };
 
+${STATS_JS}
   // 화면 전체: 로그인 상태에 따라 카드를 보이고 숨긴다
   function renderAll() {
     var s = sess(), ok = !!(s && s.status === 'approved');
     meCard(); adminCard();
-    if (ok) { boxCard(); browseCard(); } else { document.getElementById('boxcard').hidden = true; document.getElementById('browsecard').hidden = true; }
+    if (ok) { boxCard(); browseCard(); statsCard(); } else { document.getElementById('boxcard').hidden = true; document.getElementById('browsecard').hidden = true; document.getElementById('statscard').hidden = true; }
     document.getElementById('makecard').hidden = !ok;
     document.getElementById('classes').hidden = !ok;
     if (ok) render(); else document.getElementById('classes').innerHTML = '';

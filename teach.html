@@ -133,7 +133,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
   </header>
   <style>.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
-  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
+  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
   <div class="tabp" data-tab="me">
   <div class="card" id="me">
     <h2 id="mehead">선생님 로그인</h2>
@@ -147,6 +147,58 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   </div>
   </div>
   <p id="msg" aria-live="polite"></p>
+  <div class="tabp" data-tab="stats">
+  <div class="card" id="statscard" hidden>
+    <h2>우리 반 수업 통계</h2>
+    <style>
+      #stbox { gap: 28px; }
+      .st-kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+      .st-k { border: 1.5px solid var(--rule); border-radius: 8px; background: var(--paper); padding: 12px 14px; display: grid; gap: 2px; }
+      .st-k b { font: 700 32px/1.1 var(--f-display); color: var(--ink); } .st-k span { font-size: 14px; color: var(--ink-3); }
+      .st-k.acc b { color: var(--accent); } .st-k.resp b { color: var(--current); }
+      .st-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+      .st-h { margin: 0; font: 700 18px/1.3 var(--f-display); } .st-h small { font: 400 13px/1.4 var(--f-body); color: var(--ink-3); margin-left: 6px; }
+      .st-grp { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
+      .st-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+      .st-bars li { display: grid; grid-template-columns: minmax(0, 1fr) 140px 92px; gap: 12px; align-items: center; font-size: 15px; }
+      .st-lb { min-width: 0; } .st-sub { display: block; font-size: 12px; color: var(--ink-3); } .st-at { font-size: 12px; color: var(--ink-3); }
+      .st-v { font-size: 13px; color: var(--ink-3); white-space: nowrap; text-align: right; } .st-v b { font-size: 15px; font-weight: 600; color: var(--ink); }
+      .st-meter { height: 8px; border-radius: 99px; background: var(--grid); overflow: hidden; } .st-meter i { display: block; height: 100%; background: var(--ink-3); }
+      .st-bars li.acc .st-meter i { background: var(--accent); } .st-bars li.resp .st-meter i { background: var(--current); }
+      .st-table { display: grid; gap: 0; border-top: 1.5px solid var(--rule); }
+      .st-tr { display: grid; grid-template-columns: 112px minmax(0, 1fr) 120px 52px 60px 84px 48px; gap: 10px; align-items: center; padding: 10px 8px; font-size: 14px; }
+      .st-tr > span { min-width: 0; } .st-tr i { display: none; font-style: normal; color: var(--ink-3); }
+      .st-th { font-size: 13px; color: var(--ink-3); border-bottom: 1.5px solid var(--rule); padding-block: 6px; }
+      .st-row { border-bottom: 1px solid var(--rule); }
+      .st-row > summary { cursor: pointer; list-style: none; } .st-row > summary::-webkit-details-marker { display: none; }
+      .st-row > summary:hover, .st-row[open] > summary { background: var(--accent-soft); }
+      .st-row .c-d { color: var(--ink-3); font-size: 13px; } .st-row .c-l { color: var(--ink); font-weight: 600; } .st-row .c-c { color: var(--ink-2); }
+      .st-row .c-r { color: var(--current); } .st-row .c-a { color: var(--accent); }
+      .st-body { padding: 10px 8px 16px; display: grid; gap: 8px; }
+      .st-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--ink-2); } .st-legend .st-hint { margin-left: auto; color: var(--ink-3); font-size: 13px; }
+      .st-legend .acc::before, .st-legend .resp::before { content: ''; display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+      .st-legend .acc::before { background: var(--accent); } .st-legend .resp::before { background: var(--current); }
+      .st-wrap { position: relative; min-width: 0; } .st-yax { position: absolute; left: 0; top: 0; width: 50px; z-index: 1; pointer-events: none; background: linear-gradient(to right, var(--paper-2) 75%, transparent); }   /* 옆으로 넘겨도 눈금은 그대로 */
+      .st-yax span { position: absolute; right: 10px; transform: translateY(-50%); font-size: 14px; color: var(--ink-3); }
+      .st-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; direction: rtl; } .st-scroll > svg { direction: ltr; }   /* 처음부터 최근 수업(오른쪽 끝)이 보이게 */
+      .st-chart { width: 100%; height: auto; display: block; } .st-chart text { font: 400 14px var(--f-body); fill: var(--ink-3); } .st-chart .st-xl { fill: var(--ink-2); }
+      .st-chart .st-grid { stroke: var(--grid); stroke-width: 1; } .st-chart polyline { fill: none; stroke-width: 2.5; } .st-chart circle { stroke: var(--paper-2); stroke-width: 2; }
+      .st-chart .st-pv { font-size: 13px; font-weight: 600; } .st-chart .st-pv.acc { fill: var(--accent); } .st-chart .st-pv.resp { fill: var(--current); }
+      .st-chart polyline.acc { stroke: var(--accent); } .st-chart circle.acc { fill: var(--accent); } .st-chart polyline.resp { stroke: var(--current); } .st-chart circle.resp { fill: var(--current); }
+      @media (max-width: 720px) {
+        .st-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } .st-k b { font-size: 28px; }
+        .st-bars li { grid-template-columns: minmax(0, 1fr) 56px 82px; gap: 8px; }
+        .st-tr.st-th { display: none; }
+        .st-tr { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 10px 6px; } .st-tr i { display: inline; }
+        .st-tr .c-l { flex: 1 1 100%; order: -1; } .st-tr .c-d { order: -2; flex: 1 1 100%; } .st-tr .c-c { flex: 1 1 100%; }
+      }
+    </style>
+    <p class="muted">수업방에서 수업을 끝내면(차시를 바꾸거나 «수업 끝내기», 한 번 쓰는 방은 닫을 때) 그 수업의 숫자가 여기에 쌓여요. 학생 이름·번호는 남기지 않고, 나만 볼 수 있어요.</p>
+    <div class="form"><label class="grow">반<select id="stcls"></select></label><label>기간<select id="stdays"><option value="7">최근 1주</option><option value="30" selected>최근 한 달</option><option value="120">최근 넉 달</option><option value="0">전체</option></select></label></div>
+    <div id="stbox" class="stack"></div>
+    <p class="small" id="stmsg" aria-live="polite"></p>
+  </div>
+  </div>
   <div class="tabp" data-tab="box">
   <div class="card" id="boxcard" hidden>
     <h2>내 수업함</h2>
@@ -213,6 +265,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   var pass = qs.get('roomapi') ? '&roomapi=' + encodeURIComponent(qs.get('roomapi')) : '';
   var BASE = location.href.split(/[?#]/)[0].replace(/[^/]*$/, '');
   var LESSONS = [{"subject":"통합과학1","unit":"1-1-1","unitTitle":"시간과 공간","n":1,"title":"시간과 공간의 규모","path":"tongsci1/1-1-1/1","student":"tongsci1/1-1-1/1/student.html","teacher":"tongsci1/1-1-1/1/teacher.html"},{"subject":"통합과학1","unit":"1-1-1","unitTitle":"시간과 공간","n":2,"title":"시간과 길이 측정의 발전","path":"tongsci1/1-1-1/2","student":"tongsci1/1-1-1/2/student.html","teacher":"tongsci1/1-1-1/2/teacher.html"},{"subject":"통합과학1","unit":"1-1-2","unitTitle":"기본량과 단위","n":1,"title":"기본량과 단위","path":"tongsci1/1-1-2/1","student":"tongsci1/1-1-2/1/student.html","teacher":"tongsci1/1-1-2/1/teacher.html"},{"subject":"통합과학1","unit":"1-1-2","unitTitle":"기본량과 단위","n":2,"title":"기본량의 조합과 세계 시각","path":"tongsci1/1-1-2/2","student":"tongsci1/1-1-2/2/student.html","teacher":"tongsci1/1-1-2/2/teacher.html"},{"subject":"통합과학1","unit":"1-2-1","unitTitle":"측정과 측정 표준","n":1,"title":"측정과 측정 표준","path":"tongsci1/1-2-1/1","student":"tongsci1/1-2-1/1/student.html","teacher":"tongsci1/1-2-1/1/teacher.html"},{"subject":"통합과학1","unit":"1-2-1","unitTitle":"측정과 측정 표준","n":2,"title":"측정 표준의 쓰임","path":"tongsci1/1-2-1/2","student":"tongsci1/1-2-1/2/student.html","teacher":"tongsci1/1-2-1/2/teacher.html"},{"subject":"통합과학1","unit":"1-2-2","unitTitle":"신호와 정보","n":1,"title":"신호와 센서","path":"tongsci1/1-2-2/1","student":"tongsci1/1-2-2/1/student.html","teacher":"tongsci1/1-2-2/1/teacher.html"},{"subject":"통합과학1","unit":"1-2-2","unitTitle":"신호와 정보","n":2,"title":"디지털 정보와 현대 문명","path":"tongsci1/1-2-2/2","student":"tongsci1/1-2-2/2/student.html","teacher":"tongsci1/1-2-2/2/teacher.html"},{"subject":"통합과학1","unit":"2-1-1","unitTitle":"우주 초기에 생성된 원소","n":1,"title":"스펙트럼과 우주의 원소","path":"tongsci1/2-1-1/1","student":"tongsci1/2-1-1/1/student.html","teacher":"tongsci1/2-1-1/1/teacher.html"},{"subject":"통합과학1","unit":"2-1-1","unitTitle":"우주 초기에 생성된 원소","n":2,"title":"빅뱅과 입자의 생성","path":"tongsci1/2-1-1/2","student":"tongsci1/2-1-1/2/student.html","teacher":"tongsci1/2-1-1/2/teacher.html"},{"subject":"통합과학1","unit":"2-1-1","unitTitle":"우주 초기에 생성된 원소","n":3,"title":"우주 배경 복사와 빅뱅의 증거","path":"tongsci1/2-1-1/3","student":"tongsci1/2-1-1/3/student.html","teacher":"tongsci1/2-1-1/3/teacher.html"},{"subject":"통합과학1","unit":"2-1-2","unitTitle":"별의 진화와 원소의 생성","n":1,"title":"별의 탄생과 수소 핵융합","path":"tongsci1/2-1-2/1","student":"tongsci1/2-1-2/1/student.html","teacher":"tongsci1/2-1-2/1/teacher.html"},{"subject":"통합과학1","unit":"2-1-2","unitTitle":"별의 진화와 원소의 생성","n":2,"title":"별의 진화와 무거운 원소","path":"tongsci1/2-1-2/2","student":"tongsci1/2-1-2/2/student.html","teacher":"tongsci1/2-1-2/2/teacher.html"},{"subject":"통합과학1","unit":"2-1-2","unitTitle":"별의 진화와 원소의 생성","n":3,"title":"태양계와 지구의 형성","path":"tongsci1/2-1-2/3","student":"tongsci1/2-1-2/3/student.html","teacher":"tongsci1/2-1-2/3/teacher.html"},{"subject":"통합과학1","unit":"2-1-3","unitTitle":"원소의 주기성과 결합","n":1,"title":"주기율표와 원소의 성질","path":"tongsci1/2-1-3/1","student":"tongsci1/2-1-3/1/student.html","teacher":"tongsci1/2-1-3/1/teacher.html"},{"subject":"통합과학1","unit":"2-1-3","unitTitle":"원소의 주기성과 결합","n":2,"title":"전자 배치와 주기성","path":"tongsci1/2-1-3/2","student":"tongsci1/2-1-3/2/student.html","teacher":"tongsci1/2-1-3/2/teacher.html"},{"subject":"통합과학1","unit":"2-1-3","unitTitle":"원소의 주기성과 결합","n":3,"title":"원소가 결합하는 까닭","path":"tongsci1/2-1-3/3","student":"tongsci1/2-1-3/3/student.html","teacher":"tongsci1/2-1-3/3/teacher.html"},{"subject":"통합과학1","unit":"2-1-4","unitTitle":"이온 결합과 공유 결합","n":1,"title":"이온 결합","path":"tongsci1/2-1-4/1","student":"tongsci1/2-1-4/1/student.html","teacher":"tongsci1/2-1-4/1/teacher.html"},{"subject":"통합과학1","unit":"2-1-4","unitTitle":"이온 결합과 공유 결합","n":2,"title":"공유 결합","path":"tongsci1/2-1-4/2","student":"tongsci1/2-1-4/2/student.html","teacher":"tongsci1/2-1-4/2/teacher.html"},{"subject":"통합과학1","unit":"2-1-4","unitTitle":"이온 결합과 공유 결합","n":3,"title":"결합에 따른 물질의 성질","path":"tongsci1/2-1-4/3","student":"tongsci1/2-1-4/3/student.html","teacher":"tongsci1/2-1-4/3/teacher.html"},{"subject":"통합과학1","unit":"2-2-1","unitTitle":"지각과 생명체를 구성하는 물질","n":1,"title":"규산염 광물","path":"tongsci1/2-2-1/1","student":"tongsci1/2-2-1/1/student.html","teacher":"tongsci1/2-2-1/1/teacher.html"},{"subject":"통합과학1","unit":"2-2-1","unitTitle":"지각과 생명체를 구성하는 물질","n":2,"title":"단백질","path":"tongsci1/2-2-1/2","student":"tongsci1/2-2-1/2/student.html","teacher":"tongsci1/2-2-1/2/teacher.html"},{"subject":"통합과학1","unit":"2-2-1","unitTitle":"지각과 생명체를 구성하는 물질","n":3,"title":"핵산과 뉴클레오타이드","path":"tongsci1/2-2-1/3","student":"tongsci1/2-2-1/3/student.html","teacher":"tongsci1/2-2-1/3/teacher.html"},{"subject":"통합과학1","unit":"2-2-1","unitTitle":"지각과 생명체를 구성하는 물질","n":4,"title":"DNA 이중 나선과 염기 서열","path":"tongsci1/2-2-1/4","student":"tongsci1/2-2-1/4/student.html","teacher":"tongsci1/2-2-1/4/teacher.html"},{"subject":"통합과학1","unit":"2-2-2","unitTitle":"물질의 전기적 성질","n":1,"title":"도체·부도체·반도체","path":"tongsci1/2-2-2/1","student":"tongsci1/2-2-2/1/student.html","teacher":"tongsci1/2-2-2/1/teacher.html"},{"subject":"통합과학1","unit":"2-2-2","unitTitle":"물질의 전기적 성질","n":2,"title":"전기적 성질의 활용","path":"tongsci1/2-2-2/2","student":"tongsci1/2-2-2/2/student.html","teacher":"tongsci1/2-2-2/2/teacher.html"},{"subject":"통합과학1","unit":"3-1-1","unitTitle":"지구시스템의 구성과 상호작용","n":1,"title":"지구시스템과 지권","path":"tongsci1/3-1-1/1","student":"tongsci1/3-1-1/1/student.html","teacher":"tongsci1/3-1-1/1/teacher.html"},{"subject":"통합과학1","unit":"3-1-1","unitTitle":"지구시스템의 구성과 상호작용","n":2,"title":"기권과 수권","path":"tongsci1/3-1-1/2","student":"tongsci1/3-1-1/2/student.html","teacher":"tongsci1/3-1-1/2/teacher.html"},{"subject":"통합과학1","unit":"3-1-1","unitTitle":"지구시스템의 구성과 상호작용","n":3,"title":"에너지 흐름과 물질 순환","path":"tongsci1/3-1-1/3","student":"tongsci1/3-1-1/3/student.html","teacher":"tongsci1/3-1-1/3/teacher.html"},{"subject":"통합과학1","unit":"3-1-2","unitTitle":"지권의 변화와 판 구조론","n":1,"title":"판 구조론","path":"tongsci1/3-1-2/1","student":"tongsci1/3-1-2/1/student.html","teacher":"tongsci1/3-1-2/1/teacher.html"},{"subject":"통합과학1","unit":"3-1-2","unitTitle":"지권의 변화와 판 구조론","n":2,"title":"화산 활동과 지구시스템","path":"tongsci1/3-1-2/2","student":"tongsci1/3-1-2/2/student.html","teacher":"tongsci1/3-1-2/2/teacher.html"},{"subject":"통합과학1","unit":"3-1-2","unitTitle":"지권의 변화와 판 구조론","n":3,"title":"지진과 지구시스템","path":"tongsci1/3-1-2/3","student":"tongsci1/3-1-2/3/student.html","teacher":"tongsci1/3-1-2/3/teacher.html"},{"subject":"통합과학1","unit":"3-2-1","unitTitle":"중력의 작용","n":1,"title":"중력과 자유 낙하","path":"tongsci1/3-2-1/1","student":"tongsci1/3-2-1/1/student.html","teacher":"tongsci1/3-2-1/1/teacher.html"},{"subject":"통합과학1","unit":"3-2-1","unitTitle":"중력의 작용","n":2,"title":"수평으로 던진 물체","path":"tongsci1/3-2-1/2","student":"tongsci1/3-2-1/2/student.html","teacher":"tongsci1/3-2-1/2/teacher.html"},{"subject":"통합과학1","unit":"3-2-1","unitTitle":"중력의 작용","n":3,"title":"지구 주위의 운동","path":"tongsci1/3-2-1/3","student":"tongsci1/3-2-1/3/student.html","teacher":"tongsci1/3-2-1/3/teacher.html"},{"subject":"통합과학1","unit":"3-2-2","unitTitle":"역학 시스템과 안전","n":1,"title":"관성","path":"tongsci1/3-2-2/1","student":"tongsci1/3-2-2/1/student.html","teacher":"tongsci1/3-2-2/1/teacher.html"},{"subject":"통합과학1","unit":"3-2-2","unitTitle":"역학 시스템과 안전","n":2,"title":"운동량과 충격량","path":"tongsci1/3-2-2/2","student":"tongsci1/3-2-2/2/student.html","teacher":"tongsci1/3-2-2/2/teacher.html"},{"subject":"통합과학1","unit":"3-2-2","unitTitle":"역학 시스템과 안전","n":3,"title":"충격량과 안전","path":"tongsci1/3-2-2/3","student":"tongsci1/3-2-2/3/student.html","teacher":"tongsci1/3-2-2/3/teacher.html"},{"subject":"통합과학1","unit":"3-3-1","unitTitle":"생명 시스템에서의 화학 반응","n":1,"title":"세포와 물질대사","path":"tongsci1/3-3-1/1","student":"tongsci1/3-3-1/1/student.html","teacher":"tongsci1/3-3-1/1/teacher.html"},{"subject":"통합과학1","unit":"3-3-1","unitTitle":"생명 시스템에서의 화학 반응","n":2,"title":"효소의 작용","path":"tongsci1/3-3-1/2","student":"tongsci1/3-3-1/2/student.html","teacher":"tongsci1/3-3-1/2/teacher.html"},{"subject":"통합과학1","unit":"3-3-1","unitTitle":"생명 시스템에서의 화학 반응","n":3,"title":"효소 실험과 활용","path":"tongsci1/3-3-1/3","student":"tongsci1/3-3-1/3/student.html","teacher":"tongsci1/3-3-1/3/teacher.html"},{"subject":"통합과학1","unit":"3-3-2","unitTitle":"세포막을 통한 물질 출입","n":1,"title":"세포막과 확산","path":"tongsci1/3-3-2/1","student":"tongsci1/3-3-2/1/student.html","teacher":"tongsci1/3-3-2/1/teacher.html"},{"subject":"통합과학1","unit":"3-3-2","unitTitle":"세포막을 통한 물질 출입","n":2,"title":"삼투","path":"tongsci1/3-3-2/2","student":"tongsci1/3-3-2/2/student.html","teacher":"tongsci1/3-3-2/2/teacher.html"},{"subject":"통합과학1","unit":"3-3-3","unitTitle":"세포 내 정보의 흐름","n":1,"title":"유전자와 단백질","path":"tongsci1/3-3-3/1","student":"tongsci1/3-3-3/1/student.html","teacher":"tongsci1/3-3-3/1/teacher.html"},{"subject":"통합과학1","unit":"3-3-3","unitTitle":"세포 내 정보의 흐름","n":2,"title":"전사와 번역","path":"tongsci1/3-3-3/2","student":"tongsci1/3-3-3/2/student.html","teacher":"tongsci1/3-3-3/2/teacher.html"},{"subject":"통합과학1","unit":"3-3-3","unitTitle":"세포 내 정보의 흐름","n":3,"title":"유전부호와 단백질 만들기","path":"tongsci1/3-3-3/3","student":"tongsci1/3-3-3/3/student.html","teacher":"tongsci1/3-3-3/3/teacher.html"},{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":1,"title":"지질 시대와 화석","path":"tongsci2/1-1-1/1","student":"tongsci2/1-1-1/1/student.html","teacher":"tongsci2/1-1-1/1/teacher.html"},{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":2,"title":"지질 시대의 환경과 생물","path":"tongsci2/1-1-1/2","student":"tongsci2/1-1-1/2/student.html","teacher":"tongsci2/1-1-1/2/teacher.html"},{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":3,"title":"움직이는 대륙과 달라지는 환경","path":"tongsci2/1-1-1/3","student":"tongsci2/1-1-1/3/student.html","teacher":"tongsci2/1-1-1/3/teacher.html"},{"subject":"통합과학2","unit":"1-1-1","unitTitle":"지질 시대의 환경과 생물 변화","n":4,"title":"생물 대멸종과 생물다양성","path":"tongsci2/1-1-1/4","student":"tongsci2/1-1-1/4/student.html","teacher":"tongsci2/1-1-1/4/teacher.html"},{"subject":"통합과학2","unit":"1-1-2","unitTitle":"생물의 진화","n":1,"title":"변이와 자연선택","path":"tongsci2/1-1-2/1","student":"tongsci2/1-1-2/1/student.html","teacher":"tongsci2/1-1-2/1/teacher.html"},{"subject":"통합과학2","unit":"1-1-2","unitTitle":"생물의 진화","n":2,"title":"자연선택 모의실험","path":"tongsci2/1-1-2/2","student":"tongsci2/1-1-2/2/student.html","teacher":"tongsci2/1-1-2/2/teacher.html"},{"subject":"통합과학2","unit":"1-1-2","unitTitle":"생물의 진화","n":3,"title":"진화와 생물다양성","path":"tongsci2/1-1-2/3","student":"tongsci2/1-1-2/3/student.html","teacher":"tongsci2/1-1-2/3/teacher.html"},{"subject":"통합과학2","unit":"1-1-3","unitTitle":"생물다양성과 보전","n":1,"title":"생물다양성의 세 가지 요소","path":"tongsci2/1-1-3/1","student":"tongsci2/1-1-3/1/student.html","teacher":"tongsci2/1-1-3/1/teacher.html"},{"subject":"통합과학2","unit":"1-1-3","unitTitle":"생물다양성과 보전","n":2,"title":"생물다양성의 가치와 보전","path":"tongsci2/1-1-3/2","student":"tongsci2/1-1-3/2/student.html","teacher":"tongsci2/1-1-3/2/teacher.html"},{"subject":"통합과학2","unit":"1-1-3","unitTitle":"생물다양성과 보전","n":3,"title":"보전 사례 조사와 실천 방안","path":"tongsci2/1-1-3/3","student":"tongsci2/1-1-3/3/student.html","teacher":"tongsci2/1-1-3/3/teacher.html"},{"subject":"통합과학2","unit":"1-2-1","unitTitle":"산화와 환원","n":1,"title":"산소를 주고받는 산화와 환원","path":"tongsci2/1-2-1/1","student":"tongsci2/1-2-1/1/student.html","teacher":"tongsci2/1-2-1/1/teacher.html"},{"subject":"통합과학2","unit":"1-2-1","unitTitle":"산화와 환원","n":2,"title":"전자를 주고받는 산화와 환원","path":"tongsci2/1-2-1/2","student":"tongsci2/1-2-1/2/student.html","teacher":"tongsci2/1-2-1/2/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":1,"title":"산성과 염기성","path":"tongsci2/1-2-2/1","student":"tongsci2/1-2-2/1/student.html","teacher":"tongsci2/1-2-2/1/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":2,"title":"산과 염기의 이온화","path":"tongsci2/1-2-2/2","student":"tongsci2/1-2-2/2/student.html","teacher":"tongsci2/1-2-2/2/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":3,"title":"탐구: 산과 염기를 섞을 때의 온도","path":"tongsci2/1-2-2/3","student":"tongsci2/1-2-2/3/student.html","teacher":"tongsci2/1-2-2/3/teacher.html"},{"subject":"통합과학2","unit":"1-2-2","unitTitle":"산과 염기","n":4,"title":"중화 반응과 그 이용","path":"tongsci2/1-2-2/4","student":"tongsci2/1-2-2/4/student.html","teacher":"tongsci2/1-2-2/4/teacher.html"},{"subject":"통합과학2","unit":"1-2-3","unitTitle":"에너지의 흡수와 방출","n":1,"title":"에너지를 흡수하거나 방출하는 현상","path":"tongsci2/1-2-3/1","student":"tongsci2/1-2-3/1/student.html","teacher":"tongsci2/1-2-3/1/teacher.html"},{"subject":"통합과학2","unit":"1-2-3","unitTitle":"에너지의 흡수와 방출","n":2,"title":"에너지의 흡수와 방출 이용","path":"tongsci2/1-2-3/2","student":"tongsci2/1-2-3/2/student.html","teacher":"tongsci2/1-2-3/2/teacher.html"},{"subject":"통합과학2","unit":"1-2-3","unitTitle":"에너지의 흡수와 방출","n":3,"title":"탐구: 물과 산화 칼슘으로 음식 조리하기","path":"tongsci2/1-2-3/3","student":"tongsci2/1-2-3/3/student.html","teacher":"tongsci2/1-2-3/3/teacher.html"},{"subject":"통합과학2","unit":"2-1-1","unitTitle":"생물과 환경","n":1,"title":"생태계구성요소","path":"tongsci2/2-1-1/1","student":"tongsci2/2-1-1/1/student.html","teacher":"tongsci2/2-1-1/1/teacher.html"},{"subject":"통합과학2","unit":"2-1-1","unitTitle":"생물과 환경","n":2,"title":"생물과 환경의 상호 관계","path":"tongsci2/2-1-1/2","student":"tongsci2/2-1-1/2/student.html","teacher":"tongsci2/2-1-1/2/teacher.html"},{"subject":"통합과학2","unit":"2-1-2","unitTitle":"생태계평형","n":1,"title":"먹이 관계와 생태계평형","path":"tongsci2/2-1-2/1","student":"tongsci2/2-1-2/1/student.html","teacher":"tongsci2/2-1-2/1/teacher.html"},{"subject":"통합과학2","unit":"2-1-2","unitTitle":"생태계평형","n":2,"title":"탐구: 개체군 변동 모의실험","path":"tongsci2/2-1-2/2","student":"tongsci2/2-1-2/2/student.html","teacher":"tongsci2/2-1-2/2/teacher.html"},{"subject":"통합과학2","unit":"2-1-2","unitTitle":"생태계평형","n":3,"title":"환경 변화와 생태계","path":"tongsci2/2-1-2/3","student":"tongsci2/2-1-2/3/student.html","teacher":"tongsci2/2-1-2/3/teacher.html"},{"subject":"통합과학2","unit":"2-1-3","unitTitle":"지구 환경의 변화","n":1,"title":"온실 효과와 지구 온난화","path":"tongsci2/2-1-3/1","student":"tongsci2/2-1-3/1/student.html","teacher":"tongsci2/2-1-3/1/teacher.html"},{"subject":"통합과학2","unit":"2-1-3","unitTitle":"지구 환경의 변화","n":2,"title":"사막화와 엘니뇨","path":"tongsci2/2-1-3/2","student":"tongsci2/2-1-3/2/student.html","teacher":"tongsci2/2-1-3/2/teacher.html"},{"subject":"통합과학2","unit":"2-1-3","unitTitle":"지구 환경의 변화","n":3,"title":"기후 변화의 영향과 미래 시나리오","path":"tongsci2/2-1-3/3","student":"tongsci2/2-1-3/3/student.html","teacher":"tongsci2/2-1-3/3/teacher.html"},{"subject":"통합과학2","unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":1,"title":"태양 에너지의 생성","path":"tongsci2/2-2-1/1","student":"tongsci2/2-2-1/1/student.html","teacher":"tongsci2/2-2-1/1/teacher.html"},{"subject":"통합과학2","unit":"2-2-1","unitTitle":"태양 에너지의 생성과 전환","n":2,"title":"태양 에너지의 전환과 흐름","path":"tongsci2/2-2-1/2","student":"tongsci2/2-2-1/2/student.html","teacher":"tongsci2/2-2-1/2/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":1,"title":"전기 에너지의 생산","path":"tongsci2/2-2-2/1","student":"tongsci2/2-2-2/1/student.html","teacher":"tongsci2/2-2-2/1/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":2,"title":"전자기 유도","path":"tongsci2/2-2-2/2","student":"tongsci2/2-2-2/2/student.html","teacher":"tongsci2/2-2-2/2/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":3,"title":"발전기의 원리","path":"tongsci2/2-2-2/3","student":"tongsci2/2-2-2/3/student.html","teacher":"tongsci2/2-2-2/3/teacher.html"},{"subject":"통합과학2","unit":"2-2-2","unitTitle":"발전과 에너지원","n":4,"title":"발전과 에너지원","path":"tongsci2/2-2-2/4","student":"tongsci2/2-2-2/4/student.html","teacher":"tongsci2/2-2-2/4/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":1,"title":"에너지 전환과 보존","path":"tongsci2/2-2-3/1","student":"tongsci2/2-2-3/1/student.html","teacher":"tongsci2/2-2-3/1/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":2,"title":"에너지 효율","path":"tongsci2/2-2-3/2","student":"tongsci2/2-2-3/2/student.html","teacher":"tongsci2/2-2-3/2/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":3,"title":"에너지 문제와 신재생 에너지","path":"tongsci2/2-2-3/3","student":"tongsci2/2-2-3/3/student.html","teacher":"tongsci2/2-2-3/3/teacher.html"},{"subject":"통합과학2","unit":"2-2-3","unitTitle":"에너지 효율과 신재생 에너지","n":4,"title":"자가발전 학교 설계하기","path":"tongsci2/2-2-3/4","student":"tongsci2/2-2-3/4/student.html","teacher":"tongsci2/2-2-3/4/teacher.html"},{"subject":"통합과학2","unit":"3-1","unitTitle":"과학의 유용성과 빅데이터의 활용","n":1,"title":"감염병 진단과 과학의 유용성","path":"tongsci2/3-1/1","student":"tongsci2/3-1/1/student.html","teacher":"tongsci2/3-1/1/teacher.html"},{"subject":"통합과학2","unit":"3-1","unitTitle":"과학의 유용성과 빅데이터의 활용","n":2,"title":"빅데이터의 활용","path":"tongsci2/3-1/2","student":"tongsci2/3-1/2/student.html","teacher":"tongsci2/3-1/2/teacher.html"},{"subject":"통합과학2","unit":"3-2","unitTitle":"과학기술의 발전과 윤리","n":1,"title":"과학기술의 발전과 한계","path":"tongsci2/3-2/1","student":"tongsci2/3-2/1/student.html","teacher":"tongsci2/3-2/1/teacher.html"},{"subject":"통합과학2","unit":"3-2","unitTitle":"과학기술의 발전과 윤리","n":2,"title":"과학 관련 사회적 쟁점과 과학 윤리","path":"tongsci2/3-2/2","student":"tongsci2/3-2/2/student.html","teacher":"tongsci2/3-2/2/teacher.html"}];
+  var STDTXT = {"[10통과1-01-01] [10통과1-01-02]":"자연을 시간과 공간에서 기술할 수 있음을 알고, 길이와 시간 측정의 현대적 방법과 다양한 규모의 측정 사례를 조사할 수 있다. 과학 탐구에서 중요한 기본량의 의미를 알고, 자연 현상을 기본량으로 표현할 수 있다.","[10통과1-01-03] [10통과1-01-04]":"과학 탐구에서 측정과 어림의 의미를 알고, 일상생활의 여러 가지 상황에서 측정 표준의 유용성과 필요성을 논증할 수 있다. 자연에서 일어나는 다양한 변화를 측정·분석하여 정보를 산출함을 알고, 이러한 정보를 디지털로 변환하는 기술을 정보 통신에 활용하여 현대 문명에 미친 영향을 인식한다.","[10통과1-02-01] [10통과1-02-02] [10통과1-02-03]":"천체에서 방출되는 빛을 관측하여 우주 초기에 형성된 원소와 별의 진화 과정에서 생성된 원소를 추론할 수 있다. 세상을 구성하는 원소들의 성질이 주기성을 나타내는 현상을 통해 자연의 규칙성을 도출하고, 지구와 생명체를 구성하는 주요 원소들이 결합을 형성하는 이유를 해석할 수 있다. 인류의 생존에 필수적인 산소, 물, 소금 등이 만들어지는 결합의 차이를 이해하고, 이온 결합과 공유 결합의 성질을 비교할 수 있다.","[10통과1-02-04] [10통과1-02-05]":"지각과 생명체를 구성하는 물질들이 기본적인 단위체의 결합으로 형성된다는 것을 규산염 광물, 단백질과 핵산의 예를 통해 설명할 수 있다. 물질의 전기적 성질을 설명하고, 일상생활과 첨단 기술에서 활용되는 사례를 조사할 수 있다.","[10통과1-03-01] [10통과1-03-02]":"지구시스템은 태양계라는 시스템의 구성 요소임을 알고, 지구시스템을 구성하는 각 권역들의 성층 구조를 설명하고, 권역들 간의 물질 순환과 에너지 흐름의 결과로 나타나는 현상을 설명할 수 있다. 판 구조론을 이용하여 지권의 변화를 설명하고, 지권의 변화가 지구시스템에 미치는 영향을 추론할 수 있다.","[10통과1-03-03] [10통과1-03-04]":"중력을 받는 물체의 운동을 설명하고, 지구 주위의 다양한 운동을 중력의 작용으로 설명할 수 있다. 상호작용이 없을 때 물체가 운동 상태를 유지함을 설명하고, 충격량과 운동량의 관계를 충돌 관련 안전장치와 스포츠에 적용할 수 있다.","[10통과1-03-05] [10통과1-03-06]":"생명 시스템의 기본 단위인 세포의 구조와 기능을 알고, 생명 시스템 유지를 위해 일어나는 물질대사와 효소의 작용, 세포막을 통한 물질 출입, 세포 내 유전정보의 흐름을 설명할 수 있다.","[10통과2-01-01]":"지질 시대를 통해 지구 환경이 끊임없이 변화해 왔으며 이러한 환경 변화가 생물다양성에 미치는 영향을 추론할 수 있다.","[10통과2-01-02]":"변이의 발생과 자연선택 과정을 통해 생물의 진화가 일어나고, 진화의 과정을 통해 생물다양성이 형성되었음을 추론할 수 있다.","[10통과2-01-03]":"자연과 인류의 큰 변화를 가져온 광합성, 화석 연료 사용, 철의 제련 등에서 공통점을 찾아 산화와 환원을 이해하고, 생활 주변의 다양한 변화를 산화와 환원의 특징과 규칙성으로 분석할 수 있다.","[10통과2-01-04]":"대표적인 산·염기 물질의 특징을 알고, 산과 염기를 혼합할 때 나타나는 중화 반응을 생활 속에서 이용할 수 있다.","[10통과2-01-05]":"생활 주변에서 에너지를 흡수하거나 방출하는 현상을 찾아 에너지의 흡수 방출이 우리 생활에 어떻게 이용되는지 토의할 수 있다.","[10통과2-02-01]":"생태계구성요소를 이해하고 생물과 환경 사이의 상호 관계를 설명할 수 있다.","[10통과2-02-02]":"먹이 관계와 생태피라미드를 중심으로 생태계평형이 유지되는 과정을 이해하고, 환경의 변화가 생태계에 미칠 수 있는 영향에 대해 협력적으로 소통할 수 있다.","[10통과2-02-03]":"온실 효과 강화로 인한 지구 온난화의 메커니즘을 이해하고, 엘니뇨, 사막화 등과 같은 현상이 지구 환경과 인간 생활에 미치는 영향과 대처 방안을 분석할 수 있다.","[10통과2-02-04]":"태양에서 수소 핵융합 반응을 통해 질량 일부가 에너지로 바뀌고, 그중 일부가 지구에서 에너지 흐름을 일으키며 다양한 에너지로 전환되는 과정을 추론할 수 있다.","[10통과2-02-05]":"발전기에서 운동 에너지가 전기 에너지로 전환되는 과정을 이해하고, 열원으로서 화석 연료, 핵에너지를 이용하는 발전소가 인간 생활에 미치는 영향을 조사·발표할 수 있다.","[10통과2-02-06]":"에너지 효율의 의미와 중요성을 이해하고, 지속가능한 발전과 지구 환경 문제 해결에 신재생 에너지 기술을 활용하는 방안을 탐색할 수 있다.","[10통과2-03-01] [10통과2-03-02]":"감염병의 진단, 추적 등을 사례로 과학의 유용성을 설명하고, 미래 사회 문제 해결에서 과학의 필요성에 대해 논증할 수 있다. 빅데이터를 과학·기술·사회에서 사용하고 있는 사례를 조사하고, 빅데이터 활용의 장점과 문제점을 추론할 수 있다.","[10통과2-03-03] [10통과2-03-04]":"인공지능 로봇, 사물 인터넷 등과 같이 과학기술의 발전을 인간 삶과 환경 개선에 활용하는 사례를 찾고, 이러한 과학기술의 발전이 미래 사회에 미치는 유용성과 한계를 예측할 수 있다. 과학기술의 발전 과정에서 발생할 수 있는 과학 관련 사회적 쟁점(SSI)과 과학기술 이용에서 과학 윤리의 중요성에 대해 논증할 수 있다."};   // 성취기준 코드 → 설명(수업 통계)
   var GID = qs.get('gid') || "817402337132-ern5o53sgva1350h34a633b5l3e6lof0.apps.googleusercontent.com";
   var KEY = 'science-room:classes';
   var MODES = { anon: '익명', num: '번호만', numname: '번호와 이름' };
@@ -633,11 +686,150 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     go(false);
   };
 
+
+  var ST = null, STIX = {};
+  function stMsg(t) { document.getElementById('stmsg').textContent = t; }
+  function pc(x) { return x == null ? '—' : Math.round(x * 100) + '%'; }
+  function avg(a) { a = a.filter(function (x) { return x != null; }); return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : null; }
+  function stKey(r) { return r.room.length === 4 ? 'once' : r.room + '|' + (r.cls || ''); }
+  function stName(r) { return r.room.length === 4 ? '한 번 쓰는 방' : (r.room_name || '반 방 ' + r.room) + (r.cls ? ' · ' + r.cls : ''); }
+  function two(n) { return String(n).padStart(2, '0'); }
+  function hm(t) { var d = new Date(t); return two(d.getHours()) + ':' + two(d.getMinutes()); }
+  function md(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function day(t) { var d = new Date(t); return md(t) + '(' + '일월화수목금토'[d.getDay()] + ') ' + hm(t); }
+  function lname(r) { var l = find(r.path); return l ? label(l) : (r.title || r.path); }
+  function lshort(r) { var l = find(r.path); return l ? l.unit + ' ' + l.n + '차시' : r.path; }
+  // 응답률: 문항마다 답한 기기 / 들어온 기기의 평균 · 퀴즈 정답률: 판마다 정답률을 참여 인원으로 가중 평균
+  function resp(r) { return r.asks.length && r.devices ? avg(r.asks.map(function (a) { return Math.min(1, a[2] / r.devices); })) : null; }
+  function qsum(r) { var n = 0, d = 0, w = 0, acc = 0; r.quiz.forEach(function (q) { n += q.n; d += q.done; if (q.acc != null) { w += q.n; acc += q.acc * q.n; } }); return { n: n, d: d, acc: w ? acc / w / 100 : null }; }
+  // 장 번호: 장/<과목>.<단원>/index.json의 장 순서(없으면 장 id 그대로)
+  function stIx(path) {
+    var m = String(path).split('/'), k = m[0] + '.' + m[1];
+    if (!STIX[k]) STIX[k] = fetch('장/' + k + '/index.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    return STIX[k];
+  }
+  function slideOf(ix, path, sec) {
+    var m = String(path).split('/'), l = ix && (ix.lessons || []).filter(function (x) { return String(x.n) === m[2]; })[0];
+    var i = l ? l.slides.indexOf(m[0] + '.' + m[1] + '.' + m[2] + '.' + sec) : -1;
+    return i >= 0 ? (i + 1) + '장' : sec ? '«' + sec + '» 장' : '';
+  }
+  // 퀴즈가 있던 장: 시작할 때 선생님이 보던 장 차례(h)
+  function qAt(r, z) { return z.h != null ? (z.h + 1) + '장' : '<span data-sl="' + esc(r.path + '|' + z.id) + '"></span>'; }
+  function qname(q) {
+    if (/^w-/.test(q)) return '한 낱말 답';
+    var m = q.match(/-(q(\d+)|pred(\w*)|flap|share|factors)$/); if (!m) return q;
+    return m[2] ? '○× ' + m[2] + '번' : m[1].indexOf('pred') === 0 ? '예측' + (m[3] ? ' ' + m[3] : '') : { flap: '고르기', share: '생각 나누기', factors: '여럿 고르기' }[m[1]];
+  }
+  // 한 줄: 이름 · 막대 · 47% (7/15). kind: 'acc' 정답률(초록) | 'resp' 응답률(주황)
+  function bar(name, p, n, of, kind, sub) {
+    return '<li class="' + kind + '"><span class="st-lb">' + name + (sub ? '<span class="st-sub">' + sub + '</span>' : '') + '</span><span class="st-meter"><i style="width:' + Math.round((p || 0) * 100) + '%"></i></span><span class="st-v"><b>' + pc(p) + '</b> (' + n + '/' + of + ')</span></li>';
+  }
+  function statsCard() {
+    var card = document.getElementById('statscard'), days = Number(document.getElementById('stdays').value);
+    api('/stats/list', { session: sess().token, from: days ? Date.now() - days * 864e5 : 0 }).then(function (j) {
+      if (j.http === 404) { card.hidden = true; return; }
+      card.hidden = false;
+      if (j.error) { stMsg(j.error); return; }
+      ST = j; stMsg(''); stPick(); stDraw();
+    }, function () { stMsg('통계를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  }
+  function stPick() {
+    var sel = document.getElementById('stcls'), was = sel.value, seen = {};
+    var opts = ['<option value="">모든 반</option>'];
+    ST.rows.forEach(function (r) { var k = stKey(r); if (!seen[k]) { seen[k] = 1; opts.push('<option value="' + esc(k) + '">' + esc(stName(r)) + '</option>'); } });
+    sel.innerHTML = opts.join(''); if (seen[was]) sel.value = was;
+  }
+  function stDraw() {
+    var k = document.getElementById('stcls').value, rows = ST.rows.filter(function (r) { return !k || stKey(r) === k; }), box = document.getElementById('stbox');
+    var others = ST.others ? '<p class="small">관리자: 다른 선생님 수업 ' + ST.others + '번이 쌓여 있어요(내용은 그 선생님만 봐요).</p>' : '';
+    if (!rows.length) { box.innerHTML = '<p class="small">이 기간에 쌓인 수업이 없어요. 수업방에서 수업하고 «수업 끝내기»를 누르면 여기에 보여요.</p>' + others; return; }
+    var ra = avg(rows.map(resp)), qa = avg(rows.map(function (r) { return qsum(r).acc; })), aw = rows.reduce(function (s, r) { return s + r.away; }, 0);
+    var kpi = function (v, t, cls) { return '<div class="st-k ' + (cls || '') + '"><b>' + v + '</b><span>' + t + '</span></div>'; };
+    box.innerHTML = '<div class="st-kpi">' + kpi(rows.length, '수업') + kpi(pc(ra), '평균 응답률', 'resp') + kpi(pc(qa), '평균 퀴즈 정답률', 'acc') + kpi(aw + '번', '딴짓 알림') + '</div>'
+      + '<section class="st-sec"><h3 class="st-h">차시를 거치며</h3>' + stLine(rows.slice().sort(function (a, b) { return a.started - b.started; })) + '</section>'
+      + '<section class="st-sec"><h3 class="st-h">약한 문제 상위 5 <small>빠른 퀴즈 카드, 정답률 낮은 차례</small></h3>' + stWeak(rows) + '</section>'
+      + '<section class="st-sec"><h3 class="st-h">성취기준별 퀴즈 정답률</h3><ul class="st-bars">' + stStd(rows) + '</ul></section>'
+      + '<section class="st-sec"><h3 class="st-h">수업마다 <small>줄을 누르면 문항별로 펼쳐요</small></h3><div class="st-table"><div class="st-tr st-th" aria-hidden="true"><span>날짜</span><span>차시</span><span>반</span><span>학생</span><span>응답률</span><span>퀴즈 정답률</span><span>딴짓</span></div>' + rows.map(stRow).join('') + '</div></section>' + others;
+    // 장 번호는 단원 장 목록을 받은 뒤에 채운다
+    [].forEach.call(box.querySelectorAll('[data-sl]'), function (el) { var a = el.getAttribute('data-sl').split('|'); stIx(a[0]).then(function (ix) { el.textContent = slideOf(ix, a[0], a[1]); }); });
+  }
+  // 약한 문제: 같은 퀴즈 카드끼리 묶어 머리를 한 번만
+  function stWeak(rows) {
+    var by = {};
+    rows.forEach(function (r) { r.quiz.forEach(function (q) { q.items.forEach(function (it) {
+      var g = r.path + '|' + q.id, key = g + '|' + (it[3] || it[0]), x = by[key] || (by[key] = { label: it[0], t: 0, ok: 0, g: g, r: r, q: q });
+      x.t += it[1]; x.ok += it[2];
+    }); }); });
+    var list = Object.keys(by).map(function (k) { return by[k]; }).filter(function (x) { return x.t && x.ok < x.t; });
+    list.sort(function (a, b) { return (a.t < 2) - (b.t < 2) || a.ok / a.t - b.ok / b.t || b.t - a.t; });   // 한 명만 푼 카드는 뒤로
+    if (!list.length) return '<p class="small">빠른 퀴즈를 하면 많이 틀린 카드가 여기에 보여요.</p>';
+    var groups = [];
+    list.slice(0, 5).forEach(function (x) { var g = groups.filter(function (y) { return y.g === x.g; })[0]; if (!g) groups.push(g = { g: x.g, r: x.r, q: x.q, xs: [] }); g.xs.push(x); });
+    return groups.map(function (g) {
+      return '<p class="st-grp">' + (g.q.title ? '«' + esc(g.q.title) + '» · ' : '빠른 퀴즈 · ') + esc(lshort(g.r)) + ' · ' + qAt(g.r, g.q) + '</p><ul class="st-bars">'
+        + g.xs.map(function (x) { return bar(esc(x.label), x.ok / x.t, x.ok, x.t, 'acc'); }).join('') + '</ul>';
+    }).join('');
+  }
+  function stStd(rows) {
+    var by = {};
+    rows.forEach(function (r) { var k = r.std || '', x = by[k] || (by[k] = { t: 0, ok: 0, units: {} }); var l = find(r.path); if (l) x.units[l.unit + ' ' + l.unitTitle] = 1; r.quiz.forEach(function (q) { q.items.forEach(function (it) { x.t += it[1]; x.ok += it[2]; }); }); });
+    var list = Object.keys(by).filter(function (k) { return by[k].t; }).sort(function (a, b) { return by[a].ok / by[a].t - by[b].ok / by[b].t; });
+    if (!list.length) return '<li class="small">빠른 퀴즈를 하면 성취기준마다 정답률이 모여요.</li>';
+    return list.map(function (k) {
+      var x = by[k], t = STDTXT[k] || '', short = t.length > 30 ? t.slice(0, 30) + '…' : t;
+      return bar(esc(short || k || '성취기준 없음'), x.ok / x.t, x.ok, x.t, 'acc', esc([k, Object.keys(x.units).join(', ')].filter(Boolean).join(' · ')));
+    }).join('');
+  }
+  function stRow(r) {
+    var q = qsum(r), re = resp(r);
+    var cell = function (cls, lab, v) { return '<span class="' + cls + '">' + (lab ? '<i>' + lab + ' </i>' : '') + v + '</span>'; };
+    var head = '<summary class="st-tr">' + cell('c-d', '', day(r.started)) + cell('c-l', '', esc(lname(r))) + cell('c-c', '', esc(stName(r)))
+      + cell('c-n', '학생', r.devices + '명') + cell('c-r', '응답', pc(re)) + cell('c-a', '정답', r.quiz.length ? pc(q.acc) : '—') + cell('c-w', '딴짓', r.away + '번') + '</summary>';
+    var asks = r.asks.slice().sort(function (a, b) { return a[2] - b[2]; }).map(function (a) {
+      return bar(esc(qname(a[0])) + (a[1] ? ' <span class="st-at" data-sl="' + esc(r.path + '|' + a[1]) + '"></span>' : ''), r.devices ? Math.min(1, a[2] / r.devices) : null, a[2], r.devices, 'resp');
+    }).join('');
+    var quiz = r.quiz.map(function (z) {
+      var tried = z.items.filter(function (it) { return it[1]; }), skip = z.items.length - tried.length;
+      return '<p class="st-grp">빠른 퀴즈' + (z.title ? ' «' + esc(z.title) + '»' : '') + ' · ' + qAt(r, z) + ' · ' + z.n + '명 참여 · ' + z.done + '명 완료 · 정답률 ' + (z.acc == null ? '—' : z.acc + '%') + '</p>'
+        + '<ul class="st-bars">' + tried.sort(function (a, b) { return a[2] / a[1] - b[2] / b[1]; }).map(function (it) { return bar(esc(it[0]), it[2] / it[1], it[2], it[1], 'acc'); }).join('') + '</ul>'
+        + (skip ? '<p class="small">아무도 풀지 않은 카드 ' + skip + '장은 뺐어요.</p>' : '');
+    }).join('');
+    return '<details class="st-row">' + head + '<div class="st-body">'
+      + '<p class="small">' + day(r.started) + ' ~ ' + hm(r.ended) + ' · 최대 동시 ' + r.peak + '명 · 들어온 기기 ' + r.devices + '대 · 딴짓 알림 ' + r.away + '번(' + r.away_n + '명)' + (r.std ? ' · ' + esc(r.std) : '') + '</p>'
+      + (asks ? '<p class="st-grp">문항별 응답률 · 답한 학생 / 들어온 학생</p><ul class="st-bars">' + asks + '</ul>' : '<p class="small">이 수업에는 학생이 답한 문항이 없어요.</p>')
+      + quiz + '</div></details>';
+  }
+  // 꺾은선: 수업 차례대로 퀴즈 정답률·응답률. 점마다 차시와 날짜(같은 날이면 시각), 값은 점 옆에. 6개가 넘으면 옆으로 넘긴다
+  function stLine(rows) {
+    if (rows.length < 2) return '<p class="small">수업이 두 번 넘게 쌓이면 꺾은선으로 보여요.</p>';
+    rows = rows.slice(-30);
+    var n = rows.length, GAP = 108, L = 52, R = 56, T = 28, B = 58, H = 250, W = Math.max(600, L + R + GAP * (n - 1));
+    var x = function (i) { return n > 5 ? L + GAP * i : L + (W - L - R) * i / (n - 1); }, y = function (v) { return T + (H - T - B) * (1 - v); };
+    var g = [0, .5, 1].map(function (v) { return '<line x1="' + L + '" x2="' + (W - R + 24) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="st-grid"/><text x="' + (L - 10) + '" y="' + y(v) + '" text-anchor="end" dominant-baseline="middle">' + v * 100 + '%</text>'; }).join('');
+    var xl = rows.map(function (r, i) {
+      var sameDay = (i > 0 && md(rows[i - 1].started) === md(r.started)) || (i < n - 1 && md(rows[i + 1].started) === md(r.started));
+      var when = i > 0 && md(rows[i - 1].started) === md(r.started) ? hm(r.started) : md(r.started) + (sameDay ? ' ' + hm(r.started) : '');
+      return '<text x="' + x(i) + '" y="' + (H - 32) + '" text-anchor="middle" class="st-xl">' + esc(lshort(r)) + '</text><text x="' + x(i) + '" y="' + (H - 12) + '" text-anchor="middle">' + when + '</text>';
+    }).join('');
+    var RV = rows.map(resp), AV = rows.map(function (r) { return qsum(r).acc; });
+    var line = function (vals, cls, name, other) {
+      var pts = vals.map(function (v, i) { return v == null ? null : [x(i), y(v), v, i]; }).filter(Boolean); if (!pts.length) return '';
+      var dyOf = function (p) { var o = other[p[3]]; return o == null || p[2] > o || (p[2] === o && cls === 'acc') ? -12 : 22; };   // 높은 쪽 값은 점 위, 낮은 쪽은 점 아래
+      return '<polyline class="' + cls + '" points="' + pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>'
+        + pts.map(function (p) { return '<circle class="' + cls + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5"><title>' + esc(lname(rows[p[3]])) + ' · ' + name + ' ' + pc(p[2]) + '</title></circle><text class="st-pv ' + cls + '" x="' + p[0].toFixed(1) + '" y="' + (p[1] + dyOf(p)).toFixed(1) + '" text-anchor="middle">' + pc(p[2]) + '</text>'; }).join('');
+    };
+    return '<div class="st-legend"><span class="acc">퀴즈 정답률</span><span class="resp">응답률</span>' + (n > 6 ? '<span class="st-hint">옆으로 넘겨 지난 수업 보기</span>' : '') + '</div>'
+      + '<div class="st-wrap">' + (n > 6 ? '<div class="st-yax" style="height:' + H + 'px">' + [0, .5, 1].map(function (v) { return '<span style="top:' + y(v) + 'px">' + v * 100 + '%</span>'; }).join('') + '</div>' : '') + '<div class="st-scroll"><svg class="st-chart" viewBox="0 0 ' + W + ' ' + H + '" style="' + (n > 6 ? 'width:' + W + 'px' : 'min-width:520px') + '" role="img" aria-label="수업마다 퀴즈 정답률과 응답률">' + g + xl
+      + line(RV, 'resp', '응답률', AV) + line(AV, 'acc', '퀴즈 정답률', RV) + '</svg></div></div>';
+  }
+  document.getElementById('stcls').onchange = function () { if (ST) stDraw(); };
+  document.getElementById('stdays').onchange = function () { statsCard(); };
+
   // 화면 전체: 로그인 상태에 따라 카드를 보이고 숨긴다
   function renderAll() {
     var s = sess(), ok = !!(s && s.status === 'approved');
     meCard(); adminCard();
-    if (ok) { boxCard(); browseCard(); } else { document.getElementById('boxcard').hidden = true; document.getElementById('browsecard').hidden = true; }
+    if (ok) { boxCard(); browseCard(); statsCard(); } else { document.getElementById('boxcard').hidden = true; document.getElementById('browsecard').hidden = true; document.getElementById('statscard').hidden = true; }
     document.getElementById('makecard').hidden = !ok;
     document.getElementById('classes').hidden = !ok;
     if (ok) render(); else document.getElementById('classes').innerHTML = '';
