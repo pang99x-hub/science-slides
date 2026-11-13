@@ -166,9 +166,15 @@ h1 .nm { display: inline-block; margin: -1.1em 0 -.35em .12em; vertical-align: -
 h1 .nm img { height: 2em; display: block; }
 @media (max-width: 760px) { h1 .nm { margin: -.2em 0 -.2em .1em; vertical-align: -.35em; } h1 .nm img { height: 1.7em; } }
 footer { position: relative; }
-.stat { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); justify-self: start; background: var(--paper-2, #fff); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 14px; }
+.stat { margin: 0; white-space: nowrap; max-width: 100%; font-size: clamp(11px, 3.4vw, 17px); overflow: hidden; font-weight: 700; color: var(--ink); justify-self: start; background: var(--paper-2, #fff); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 14px; }
 .stat b { color: var(--accent); font-size: 1.15em; }
-.stat .since { font-size: 13px; font-weight: 500; color: var(--ink-3, #6b7587); margin-left: 4px; }
+.stat .since { font-size: .78em; font-weight: 500; color: var(--ink-3, #6b7587); margin-left: 4px; }
+/* 통계가 칸보다 길면 왼쪽으로 흘러가며 보인다(같은 줄을 두 번 이어 붙여 끊김 없이) */
+.stat .run { display: inline-block; }
+.stat.roll .run { animation: statroll var(--roll, 20s) linear infinite; padding-right: 0; }
+.stat.roll:hover .run { animation-play-state: paused; }
+@keyframes statroll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .stat.roll .run { animation: none; } .stat { white-space: normal; border-radius: 14px; } }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .tabs button { min-height: 40px; padding: 0 18px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); color: var(--ink); font: 700 16px/1 var(--f-body); cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }
@@ -286,7 +292,7 @@ ${site.draft ? '<div class="draft">미리보기 — 아직 공개하지 않은 �
 <header>
   <h1>${esc(site.sub)} <span class="nm"><img src="brand/tag.svg" alt="${esc(site.name)}"></span></h1>
   <p class="tag">${esc(site.tagline)}</p>
-  <p class="stat" id="stat" hidden>열린 수업 <b></b>회 <span class="since">2026년 11월 12일부터</span></p>
+  <p class="stat" id="stat" hidden><span class="run"></span></p>
   <p class="pen">보고, 끌어 보고, 다시 생각하기</p>
   <img class="vine" src="brand/vine.svg" alt="">
 </header>
@@ -335,10 +341,19 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
 </div>
 <script>${JOIN_JS}</script>
 <script>
-// 열린 수업 횟수: 워커가 주는 숫자 하나. 못 받거나 0이면 줄을 숨긴 채 둔다
+// 첫 화면 통계(2026-11-13 «우리 통계 넣기로 한것도 넣자. 길면 왼쪽으로 돌면서», «통합과학 1 몇차시 2 몇차시 이렇게 넣자»): 선생님·학교 수, 열린 수업·학생 참여 횟수, 과목별 차시 수.
+// 워커가 숫자만 준다. 0인 것은 빼고, 못 받으면 줄을 숨긴 채 둔다
 (() => {
-  const api = (new URLSearchParams(location.search).get('roomapi') || ${JSON.stringify(site.roomApi || '')}).replace(/\\/$/, ''), el = document.getElementById('stat');
-  if (api) fetch(api + '/count').then((r) => r.json()).then((j) => { if (j.total > 0) { el.querySelector('b').textContent = j.total.toLocaleString('ko-KR'); el.hidden = false; } }).catch(() => {});
+  const api = (new URLSearchParams(location.search).get('roomapi') || ${JSON.stringify(site.roomApi || '')}).replace(/\\/$/, ''), el = document.getElementById('stat'), run = el.querySelector('.run');
+  const n = (v) => '<b>' + Number(v).toLocaleString('ko-KR') + '</b>';
+  if (api) fetch(api + '/count').then((r) => r.json()).then((j) => {
+    const parts = [j.teachers > 0 && '선생님 ' + n(j.teachers) + '명', j.schools > 0 && '학교 ' + n(j.schools) + '곳', j.total > 0 && '열린 수업 ' + n(j.total) + '회', j.students > 0 && '학생 참여 ' + n(j.students) + '회'].filter(Boolean);
+    if (!parts.length) return;
+    // 과목별 차시 수는 빌드 때 lessons.json에서 센다(차시가 바뀌면 따라 바뀐다)
+    const line = parts.concat(${JSON.stringify(Object.entries(units.reduce((m, u) => ({ ...m, [u.subject]: (m[u.subject] || 0) + u.lessons.length }), {})))}.map(([k, v]) => k + ' ' + n(v) + '차시')).join(' · ') + (j.total > 0 ? ' <span class="since">횟수는 2026.11.13부터</span>' : '');
+    run.innerHTML = line; el.hidden = false;
+    if (run.offsetWidth > el.clientWidth - 28) { run.innerHTML = line + '&emsp;·&emsp;' + line + '&emsp;·&emsp;'; el.classList.add('roll'); el.style.setProperty('--roll', Math.round(run.offsetWidth / 2 / 40) + 's'); }   // 1초에 40px쯤
+  }).catch(() => {});
 })();
 </script>
 <script>
@@ -354,7 +369,7 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
   tabs.forEach((b) => { b.onclick = () => show(b.dataset.s); });
   let first = null; try { first = localStorage.getItem(TKEY); } catch (e) {}
   show(first);
-  const go = () => { const id = decodeURIComponent(location.hash.slice(1)), d = id && document.getElementById(id); const sec = d && d.closest('.subjsec'); if (sec) show(sec.dataset.s); if (d && d.tagName === 'DETAILS') { d.open = true; d.scrollIntoView({ block: 'start' }); } };
+  const go = () => { const id = decodeURIComponent(location.hash.slice(1)), d = id && (document.getElementById(id) || document.querySelector('details[id^="' + CSS.escape(id) + '-"]'));   /* 옛 중단원 꼬리(#tongsci1-3-3)는 첫 소단원으로 */ const sec = d && d.closest('.subjsec'); if (sec) show(sec.dataset.s); if (d && d.tagName === 'DETAILS') { d.open = true; d.scrollIntoView({ block: 'start' }); } };
   go(); addEventListener('hashchange', go);
   document.getElementById('openall').onclick = () => { all.forEach((d) => { d.open = true; }); save(); };
   document.getElementById('closeall').onclick = () => { all.forEach((d) => { d.open = false; }); save(); };

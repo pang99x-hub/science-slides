@@ -476,11 +476,11 @@ export function teachPage(site, units) {
   <div class="tabp" data-tab="box">
   <div class="card" id="boxcard" hidden>
     <h2>내 수업함</h2>
-    <p class="muted">차시를 내 수업에 맞게 고쳐 <b>수업함에 저장</b>해 두면, 어느 컴퓨터에서든 로그인해서 열 수 있어요.</p>
-    <div id="boxlist" class="stack"></div>
-    <p class="small" style="margin:0"><b>새로 고칠 차시 고르기</b> · 지금 고칠 수 있는 차시만 나와요.</p>
-    <div class="row"><select id="boxnew" aria-label="고칠 차시"></select><button class="btn" type="button" id="boxgo">이 차시 고치기</button></div>
+    <p class="muted">차시를 골라 <b>수업함에 담고</b>, 목록에서 <b>고치기</b>를 눌러 내 수업에 맞게 고쳐요. 로그인하면 어느 컴퓨터에서든 열려요.</p>
+    <style>#boxpick .grow { flex: 1 1 240px; } #boxpick .subj { flex: 0 1 170px; } #boxpick .btn { flex: 0 0 auto; min-height: 48px; } #boxlist .row.hit { outline: 3px solid var(--hl); outline-offset: 4px; border-radius: 6px; }</style>
+    <div class="form" id="boxpick"><label class="subj">과목<select id="boxsubj"></select></label><label class="grow">단원<select id="boxunit"></select></label><label class="grow">차시<select id="boxlesson"></select></label><button class="btn main" type="button" id="boxadd">수업함에 담기</button></div>
     <p class="small" id="boxmsg" aria-live="polite"></p>
+    <div id="boxlist" class="stack"></div>
   </div>
   </div>
   <div class="tabp" data-tab="browse">
@@ -799,10 +799,32 @@ ${AUTH_JS}
   var EDITABLE = ${JSON.stringify(editable)}, boxHave = {};
   function boxMsg(t) { document.getElementById('boxmsg').textContent = t; }
   function boxUrl(base, more) { return 'deck.html?d=' + base + more + pass; }
-  function boxCard() {
+  // 담을 수 있는 단원: 장/units.json(장 묶음이 있는 단원). 없으면 이 페이지를 만들 때 본 장 묶음
+  var UNITS = null;
+  function boxUnits() { return UNITS ? Promise.resolve(UNITS) : fetch('장/units.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (u) { UNITS = Array.isArray(u) && u.length ? u : EDITABLE; return UNITS; }); }
+  function ukey(l) { return l.path.split('/').slice(0, 2).join('.'); }
+  function opts(sel, list, val, text) { var v = sel.value; sel.innerHTML = list.map(function (x) { return '<option value="' + esc(val(x)) + '">' + esc(text(x)) + '</option>'; }).join(''); if (list.some(function (x) { return val(x) === v; })) sel.value = v; }
+  function once(list, f) { var seen = {}; return list.filter(function (x) { var k = f(x); if (seen[k]) return false; seen[k] = true; return true; }); }
+  // 과목 → 단원 → 차시 고르기(고른 것은 그대로 둔다)
+  function boxPick() {
+    var g = function (id) { return document.getElementById(id); }, sb = g('boxsubj'), ub = g('boxunit'), lb = g('boxlesson');
+    var can = LESSONS.filter(function (l) { return UNITS.indexOf(ukey(l)) >= 0; });
+    opts(sb, once(can, function (l) { return l.subject; }), function (l) { return l.subject; }, function (l) { return l.subject; });
+    opts(ub, once(can.filter(function (l) { return l.subject === sb.value; }), ukey), ukey, function (l) { return l.unit + ' ' + l.unitTitle; });
+    opts(lb, can.filter(function (l) { return ukey(l) === ub.value; }), function (l) { return l.path; }, function (l) { return l.n + '차시 ' + l.title + (boxHave[l.path] ? ' (담음)' : ''); });
+    g('boxadd').disabled = !can.length;
+  }
+  document.getElementById('boxsubj').onchange = document.getElementById('boxunit').onchange = boxPick;
+  // 목록에서 그 차시 줄을 짚어 준다
+  function boxShow(base, text) {
+    var row = document.querySelector('#boxlist [data-base="' + base + '"]');
+    boxMsg(text);
+    if (!row) return;
+    row.classList.add('hit'); row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setTimeout(function () { row.classList.remove('hit'); }, 4000);
+  }
+  function boxCard(focus, text) {
     var card = document.getElementById('boxcard'), s = sess();
-    var can = LESSONS.filter(function (l) { return EDITABLE.indexOf(l.path.split('/').slice(0, 2).join('.')) >= 0; });
-    document.getElementById('boxnew').innerHTML = can.map(function (l) { return '<option value="' + esc(l.path) + '">' + esc(l.unit + ' ' + l.unitTitle + ' · ' + l.n + '차시 ' + l.title) + '</option>'; }).join('');
     api('/decks/list', { session: s.token }).then(function (j) {
       if (j.http === 404) { card.hidden = true; return; }
       card.hidden = false;
@@ -817,10 +839,34 @@ ${AUTH_JS}
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&save') + '">내려받기</a>'
           + '<button class="btn small" type="button" data-share="' + (d.shared ? 0 : 1) + '">' + (d.shared ? '공유 끄기' : '공유하기') + '</button>'
           + '<button class="btn small" type="button" data-del>지우기</button></div>';
-      }).join('') : '<p class="small">아직 저장한 수업이 없어요. 아래에서 차시를 골라 고친 뒤 편집기 위쪽의 «수업함에 저장»을 눌러 주세요.</p>';
+      }).join('') : '<p class="small">아직 담은 수업이 없어요. 위에서 차시를 골라 수업함에 담아 보세요.</p>';
+      boxUnits().then(boxPick);
+      if (focus) boxShow(focus, text);
     }, function () { boxMsg('수업함을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   }
-  document.getElementById('boxgo').onclick = function () { var b = document.getElementById('boxnew').value; if (b) window.open(boxUrl(b, boxHave[b] ? '&box&edit' : '&edit')); };
+  // 수업함에 담기: 고른 차시를 원래 장 순서 그대로 저장한다(워커 /decks/save). 이 브라우저에서 고쳐 둔 작업본이 있으면 그것을 담는다(고치기를 누르면 수업함 것으로 덮이므로)
+  document.getElementById('boxadd').onclick = function () {
+    var b = this, p = document.getElementById('boxlesson').value, m = p.split('/');
+    if (!p) return;
+    if (boxHave[p]) { boxShow(p, '이미 수업함에 있는 차시예요. 표시한 줄에서 고치거나 수업하세요.'); return; }
+    b.disabled = true; boxMsg('담는 중…');
+    fetch('장/' + m[0] + '.' + m[1] + '/index.json').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (ix) {
+      var x = ix.lessons.filter(function (y) { return String(y.n) === m[2]; })[0];
+      if (!x) throw new Error();
+      var order = x.slides.map(function (id) { return { id: id, src: id }; }), mine = null, edits = {};
+      try { mine = JSON.parse(localStorage.getItem('deck-order:' + p)); } catch (e) {}
+      if (Array.isArray(mine) && mine.length) order = mine;
+      order.forEach(function (o) { var v = null; try { v = localStorage.getItem('deck-edit:' + o.id); } catch (e) {} if (v) edits[o.id] = v; });
+      return api('/decks/save', { session: sess().token, base: p, title: ix.unit.unitTitle + ' ' + x.n + '차시', order: order, edits: edits }).then(function (j) {
+        if (!j.error) try { localStorage.removeItem('deck-dirty:' + p); } catch (e) {}
+        return j;
+      });
+    }).then(function (j) {
+      b.disabled = false;
+      if (j.error) { boxMsg(j.error); return; }
+      boxCard(p, '수업함에 담았어요. 고치기를 누르면 편집기가 열려요.');
+    }, function () { b.disabled = false; boxMsg('담지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  };
   document.getElementById('boxlist').onclick = function (e) {
     var row = e.target.closest('[data-base]');
     if (row && e.target.hasAttribute('data-share')) {   // 공유: 승인된 선생님 모두가 «자료 둘러보기»에서 보고 담아 간다
@@ -866,7 +912,7 @@ ${AUTH_JS}
   function renderAll() {
     var s = sess(), ok = !!(s && s.status === 'approved');
     meCard(); adminCard();
-    if (ok && EDITABLE.length) { boxCard(); browseCard(); } else { document.getElementById('boxcard').hidden = true; document.getElementById('browsecard').hidden = true; }
+    if (ok) { boxCard(); browseCard(); } else { document.getElementById('boxcard').hidden = true; document.getElementById('browsecard').hidden = true; }
     document.getElementById('makecard').hidden = !ok;
     document.getElementById('classes').hidden = !ok;
     if (ok) render(); else document.getElementById('classes').innerHTML = '';

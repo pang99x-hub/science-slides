@@ -43,7 +43,11 @@
     .ed-top { position: fixed; z-index: 1000; left: 0; right: 0; top: 0; height: 56px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: #fff; border-bottom: 1px solid #d5dae1; color: #1b1f24; }
     .ed-top b { font-weight: 700; margin-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 16em; }
     .ed-top .sep { width: 1px; height: 24px; background: #d5dae1; margin: 0 6px; }
-    .ed-top .say { flex: 1; min-width: 0; color: #5b6573; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; }
+    .ed-top .gap { flex: 1; }
+    @media (max-width: 1360px) { .ed-ui.ed-top { gap: 4px; } .ed-ui.ed-top button { padding: 0 8px; } .ed-top b { max-width: 7em; } }   /* 단추가 다 들어가게 좁은 화면에서는 줄인다 */
+    @media (max-width: 1100px) { .ed-top b { display: none; } }
+    .ed-top .say { position: fixed; z-index: 999; top: 64px; right: 12px; max-width: calc(100% - 260px); color: #3b4452; background: rgba(255, 255, 255, .94); border: 1px solid #d5dae1; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 12px; font-size: 13px; pointer-events: none; }
+    .ed-top .say:empty { display: none; }   /* 저장 안내는 단추 줄 아래 오른쪽에 띄운다(단추 줄이 차서 가려지지 않게). AI 창을 열면 그 뒤로 숨는다 */
     .ed-ui button { height: 38px; min-width: 38px; padding: 0 12px; border: 1px solid #d5dae1; border-radius: 8px; background: #fff; color: #1b1f24; cursor: pointer; white-space: nowrap; }
     .ed-ui button:hover { background: #f1f4f8; } .ed-ui button:disabled { opacity: .35; cursor: default; }
     .ed-ui button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
@@ -67,7 +71,7 @@
     .ed-tools button { width: 32px; min-width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-color: transparent; background: none; border-radius: 6px; color: #3b4452; }
     .ed-tools button:hover:not(:disabled) { background: #e6eaf0; } .ed-tools button.warn { color: #b42318; }
     .ed-tools .gap { flex: 1; } .ed-tools .sep { width: 1px; height: 18px; background: #d5dae1; margin: 0 4px; }
-    .ed-pop .ask { width: 100%; color: #1b1f24; } .ed-pop .cap { width: 100%; color: #5b6573; font-size: 12px; margin-top: 4px; }
+    .ed-pop .ask { width: 100%; color: #1b1f24; word-break: keep-all; } .ed-pop .cap { width: 100%; color: #5b6573; font-size: 12px; margin-top: 4px; }
     .ed-notes { position: fixed; z-index: 1000; left: 228px; right: 0; bottom: 0; height: 96px; display: flex; gap: 8px; align-items: stretch; padding: 8px 12px; background: #fff; border-top: 1px solid #d5dae1; color: #5b6573; }
     .ed-notes label { width: 5.5em; padding-top: 6px; }
     .ed-notes textarea { flex: 1; resize: none; padding: 6px 10px; border: 1px solid #d5dae1; border-radius: 8px; color: #1b1f24; background: #fff; }
@@ -101,7 +105,7 @@
   // 단추 아래에 펼치는 작은 고르기 상자
   const popup = h('div', { className: 'ed-ui ed-pop' });
   const shut = () => { popup.style.display = 'none'; };
-  popup.onclick = (e) => { if (!e.target.matches('input')) shut(); };
+  popup.onclick = (e) => { if (!e.target.matches('input, select')) shut(); };
   function pop(e, ...kids) {
     const r = e.currentTarget.getBoundingClientRect(); popup.replaceChildren(...kids); popup.style.display = 'flex';
     Object.assign(popup.style, { left: Math.max(8, Math.min(r.left, innerWidth - popup.offsetWidth - 8)) + 'px', top: r.bottom + 6 + 'px' });
@@ -110,12 +114,12 @@
   // 되돌릴 수 없는 일은 단추 아래 작은 상자에서 한 번 더 묻는다
   const ask = (e, text, yes, fn) => pop(e, h('span', { className: 'ask', textContent: text }), btn(yes, yes, fn, 'warn'), btn('취소', '그만두기', () => {}));
   const icon = (d, title, fn, cls = '') => { const b = btn('', title, fn, cls); b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`; b.setAttribute('aria-label', title); return b; };
-  const resetB = btn('이 장 원래대로', '이 장에서 고친 것을 모두 버립니다', (e) => (src.slides[at()].src ? ask(e, '이 장에서 고친 것을 모두 버릴까요?', '원래대로', () => { localStorage.removeItem(key(at())); location.reload(); }) : tell('새로 만든 장은 돌아갈 원래 모습이 없습니다. 필요 없으면 왼쪽 휴지통으로 빼세요')), 'warn');   // 새로 만든 장은 저장분이 곧 장이라 지우면 빈 장이 된다
+  const resetB = btn('이 장 원래대로', '이 장에서 고친 것을 모두 버립니다', (e) => (src.slides[at()].src ? ask(e, '이 장에서 고친 것을 모두 버릴까요?', '원래대로', () => { localStorage.removeItem(key(at())); touch(); location.reload(); }) : tell('새로 만든 장은 돌아갈 원래 모습이 없습니다. 필요 없으면 왼쪽 휴지통으로 빼세요')), 'warn');   // 새로 만든 장은 저장분이 곧 장이라 지우면 빈 장이 된다
   const top = h('div', { className: 'ed-ui ed-top' },
-    h('b', { textContent: '고치기 · ' + src.title }), undoB, redoB, h('span', { className: 'sep' }),
+    h('b', { textContent: '고치기 · ' + src.title }), btn('다른 차시 열기', '다른 단원·차시를 골라 편집기로 엽니다', (e) => openOther(e)), undoB, redoB, h('span', { className: 'sep' }),
     btn('＋ 글 상자', '글 상자 넣기', () => addBox('text')), btn('＋ 그림', '내 컴퓨터의 그림 넣기 (복사한 그림은 Ctrl+V, 파일은 끌어다 놓아도 됩니다)', () => { bgNext = false; file.click(); }),
     btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('AI로 고치기', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
-    say, resetB, btn('수업함에 저장', '고친 수업을 내 수업함에 저장합니다 · 선생님 페이지에서 어느 컴퓨터로든 엽니다', () => boxSave()), btn('내려받기', '고친 수업을 내 HTML 파일 하나로 내려받습니다(인터넷 없이 열립니다)', () => { endText(); window.open(`${location.pathname}?d=${src.d}&mine&save`); }), btn('수업 화면으로 보기', '고친 수업을 새 창에서 엽니다', () => window.open(`${location.pathname}?d=${src.d}&mine#/${Reveal.getIndices().h}`), 'go'), file);
+    say, h('span', { className: 'gap' }), resetB, btn('수업함에 저장', '고친 수업을 내 수업함에 저장합니다 · 선생님 페이지에서 어느 컴퓨터로든 엽니다', () => boxSave()), btn('내려받기', '고친 수업을 내 HTML 파일 하나로 내려받습니다(인터넷 없이 열립니다)', () => { endText(); window.open(`${location.pathname}?d=${src.d}&mine&save`); }), btn('수업 화면으로 보기', '고친 수업을 새 창에서 엽니다', () => window.open(`${location.pathname}?d=${src.d}&mine#/${Reveal.getIndices().h}`), 'go'), file);
   const list = h('div', { className: 'ed-ui ed-list' });
   const frame = h('div', { className: 'ed-ui ed-frame' }), hov = h('div', { className: 'ed-ui ed-frame hover' });
   const bar = h('div', { className: 'ed-ui ed-bar' });
@@ -124,7 +128,7 @@
   const notes = h('div', { className: 'ed-ui ed-notes' }, h('label', { htmlFor: 'ed-memo', textContent: '발표자 메모' }), memo);
   const band = h('div', { className: 'ed-ui ed-band' });
   document.body.append(top, list, notes, hov, frame, band, bar, popup, ...guides);
-  for (const b of [bar, popup]) b.onmousedown = (e) => { if (!e.target.matches('input')) e.preventDefault(); };   // 글 고치는 중에 단추를 눌러도 고른 글자가 풀리지 않게
+  for (const b of [bar, popup]) b.onmousedown = (e) => { if (!e.target.matches('input, select')) e.preventDefault(); };   // 글 고치는 중에 단추를 눌러도 고른 글자가 풀리지 않게
 
   // ---------- 도우미 ----------
   const cur = () => Reveal.getCurrentSlide();
@@ -166,7 +170,7 @@
   }
   const clean = (m) => { const c = m.cloneNode(true); for (const e of [c, ...c.querySelectorAll('[data-eid]')]) e.removeAttribute('data-eid'); return c.outerHTML; };
   function after(i) {
-    try { localStorage.setItem(key(i), clean(models[i])); tell('저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })); }
+    try { localStorage.setItem(key(i), clean(models[i])); touch(); tell('저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })); }
     catch (e) { tell('저장하지 못했습니다(그림이 너무 큽니다)'); }
     shut(); undoB.disabled = !hist.length; redoB.disabled = !redo.length;
     marks(); paintBar(); showMemo(); aiShow();
@@ -296,24 +300,61 @@
   }
   // 장 넣기·빼기·순서: 내 순서를 저장하고 새로 연다
   // shortcut: 장 구성을 바꾸면 화면을 새로 열어 되돌리기 기록이 사라진다, 워커 저장(3단계) 때 그 자리에서 바꾸게 고친다
-  const ORDER = 'deck-order:' + src.d;
+  const ORDER = 'deck-order:' + src.d, DIRTY = 'deck-dirty:' + src.d;   // DIRTY: 이 브라우저에서 고친 뒤 수업함에 아직 저장하지 않음
+  function touch() { try { localStorage.setItem(DIRTY, '1'); } catch (e) { /* 꽉 참 */ } }
+  const session = () => { try { const s = JSON.parse(localStorage.getItem('science-room:session')); return s && s.token ? s : null; } catch (e) { return null; } };
+  const roomApi = () => (new URLSearchParams(location.search).get('roomapi') || 'https://science-room.pang99x.workers.dev').replace(/\/$/, '');
   // 수업함에 저장: 이 브라우저의 작업본(장 순서 + 고친 장)을 수업방 워커의 내 계정에 올린다
   async function boxSave() {
     endText();
-    let s = null; try { s = JSON.parse(localStorage.getItem('science-room:session')); } catch (e) { /* 로그인 안 됨 */ }
-    if (!s || !s.token) return tell('선생님 페이지에서 로그인하면 수업함에 저장할 수 있습니다');
+    const s = session();
+    if (!s) { tell('선생님 페이지에서 로그인하면 수업함에 저장할 수 있습니다'); return false; }
     const o = order(), edits = {};
     for (const x of o) { const v = localStorage.getItem('deck-edit:' + x.id); if (v) edits[x.id] = v; }
-    const api = (new URLSearchParams(location.search).get('roomapi') || 'https://science-room.pang99x.workers.dev').replace(/\/$/, '');
     tell('수업함에 저장하는 중…');
     try {
-      const r = await fetch(api + '/decks/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: s.token, base: src.d, title: src.title, order: o, edits }) }), j = await r.json();
+      const r = await fetch(roomApi() + '/decks/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: s.token, base: src.d, title: src.title, order: o, edits }) }), j = await r.json();
       tell(j.error || '수업함에 저장했습니다 · 선생님 페이지의 «내 수업함»에서 엽니다');
-    } catch (e) { tell('수업함에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요'); }
+      if (!j.error) localStorage.removeItem(DIRTY);
+      return !j.error;
+    } catch (e) { tell('수업함에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요'); return false; }
+  }
+  // 다른 차시 열기: 과목 → 단원 → 차시를 골라 그 차시 편집기로 간다. 수업함에 담은 차시는 수업함 것을 연다
+  async function openOther(e) {
+    endText();
+    const at0 = { currentTarget: e.currentTarget }, [slug, unit] = src.d.split('/');
+    const json = (u) => fetch(u).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const s = session();
+    const [all, can, mine] = await Promise.all([json('lessons.json'), json('장/units.json'),
+      s ? fetch(roomApi() + '/decks/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: s.token }) }).then((r) => r.json()).catch(() => null) : null]);
+    const inBox = new Set(((mine && mine.decks) || []).map((x) => x.base));
+    // units.json이 없으면 지금 단원만 고른다(장 묶음이 있는 단원만 편집기로 열린다)
+    let units = ((all && all.units) || []).filter((u) => (Array.isArray(can) ? can : [slug + '.' + unit]).includes(u.subjectSlug + '.' + u.unit));
+    if (!units.length) units = [{ subject: '', subjectSlug: slug, unit, unitTitle: src.title.replace(/ \d+차시$/, ''), lessons: src.lessons }];
+    const mk = (label, list, val) => { const el = h('select', { ariaLabel: label }); el.append(...list.map(([v, t]) => h('option', { value: v, textContent: t }))); if (list.some(([v]) => v === val)) el.value = val; el.style.cssText = 'width:100%;height:38px;padding:0 8px;border:1px solid #d5dae1;border-radius:8px;background:#fff;color:#1b1f24'; return el; };
+    const subj = mk('과목', [...new Set(units.map((u) => u.subjectSlug))].map((x) => [x, (units.find((u) => u.subjectSlug === x).subject || x)]), slug);
+    const uSel = h('span', { style: 'display:contents' }), lSel = h('span', { style: 'display:contents' });
+    let uBox, lBox;
+    const fillL = (val) => { const u = units.find((x) => x.subjectSlug + '/' + x.unit === uBox.value); lBox = mk('차시', (u ? u.lessons : []).map((l) => { const d = uBox.value + '/' + l.n; return [d, `${l.n}차시 ${l.title}` + (d === src.d ? ' (지금 고치는 중)' : inBox.has(d) ? ' (수업함)' : '')]; }), val); lSel.replaceChildren(lBox); };
+    const fillU = (val) => { uBox = mk('단원', units.filter((u) => u.subjectSlug === subj.value).map((u) => [u.subjectSlug + '/' + u.unit, `${u.unit} ${u.unitTitle}`]), val); uBox.onchange = () => fillL(); uSel.replaceChildren(uBox); fillL(src.d); };
+    subj.onchange = () => fillU(); fillU(slug + '/' + unit);
+    const go = (d) => {
+      const q = new URLSearchParams(location.search); q.set('d', d); q.delete('box'); q.delete('edit');
+      const useBox = inBox.has(d) && !localStorage.getItem('deck-dirty:' + d);   // 그 차시를 이 브라우저에서 고친 뒤 저장하지 않았으면 그 작업본을 연다
+      location.href = location.pathname + '?' + q.toString().replace(/=(?=&|$)/g, '').replace(/%2F/g, '/') + (useBox ? '&box' : '') + '&edit';
+    };
+    const open = () => {
+      const d = lBox.value; if (!d || d === src.d) return tell('지금 고치고 있는 차시입니다');
+      if (!localStorage.getItem(DIRTY)) return go(d);
+      setTimeout(() => pop(at0, h('span', { className: 'ask', textContent: '이 차시에서 고친 것을 아직 수업함에 저장하지 않았습니다. 고친 것은 이 브라우저에 남지만, 다른 컴퓨터에서 열려면 저장해야 합니다.' }),
+        btn('저장하고 열기', '수업함에 저장한 뒤 고른 차시를 엽니다', async () => { if (await boxSave()) go(d); }, 'go'), btn('저장 없이 열기', '이 브라우저에만 남기고 엽니다', () => go(d)), btn('취소', '그만두기', () => {})));   // 이 상자를 누른 클릭이 끝난 뒤에 띄운다(바로 띄우면 같은 클릭에 닫힌다)
+    };
+    pop(at0, h('span', { className: 'cap', textContent: '과목' }), subj, h('span', { className: 'cap', textContent: '단원' }), uSel, h('span', { className: 'cap', textContent: '차시' }), lSel,
+      btn('이 차시 고치기', '고른 차시를 편집기로 엽니다', open, 'go'));
   }
   const order = () => src.slides.map((s) => (s.src ? { id: s.id, src: s.src } : { id: s.id }));
   const newId = () => 'mine.' + Date.now().toString(36) + (++seq).toString(36);
-  function reorder(next, go) { endText(); localStorage.setItem(ORDER, JSON.stringify(next)); location.hash = '#/' + go; location.reload(); }
+  function reorder(next, go) { endText(); localStorage.setItem(ORDER, JSON.stringify(next)); touch(); location.hash = '#/' + go; location.reload(); }
   function moveSlide(d) { const i = at(), o = order(), j = i + d; if (j < 0 || j >= o.length) return; [o[i], o[j]] = [o[j], o[i]]; reorder(o, j); }
   // 같은 체험 장을 복제하면 움직이는 부분은 앞쪽 장에서만 작동한다(장 이름이 겹친다)
   function copySlide() { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, clean(models[i])); o.splice(i + 1, 0, { ...o[i], id }); reorder(o, i + 1); }
@@ -347,7 +388,7 @@
       icon('M12 5v14M5 12h14', '장 넣기', addMenu), icon('M9 9h11v11H9zM5 15V5a1 1 0 0 1 1-1h9', '이 장 복제', copySlide), h('span', { className: 'sep' }),
       off(icon('M12 19V5M5 12l7-7 7 7', '이 장을 앞으로 옮기기', () => moveSlide(-1)), i === 0), off(icon('M12 5v14M5 12l7 7 7-7', '이 장을 뒤로 옮기기', () => moveSlide(1)), i === slides.length - 1),
       h('span', { className: 'gap' }),
-      ...(localStorage.getItem(ORDER) ? [icon('M4 12a8 8 0 1 0 3-6.2M4 4v5h5', '장 구성 원래대로', (e) => ask(e, '넣고 빼고 옮긴 것을 버리고 원래 차시 순서로 돌릴까요?', '원래대로', () => { localStorage.removeItem(ORDER); location.hash = ''; location.reload(); }))] : []),
+      ...(localStorage.getItem(ORDER) ? [icon('M4 12a8 8 0 1 0 3-6.2M4 4v5h5', '장 구성 원래대로', (e) => ask(e, '넣고 빼고 옮긴 것을 버리고 원래 차시 순서로 돌릴까요?', '원래대로', () => { localStorage.removeItem(ORDER); touch(); location.hash = ''; location.reload(); }))] : []),
       off(icon('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3', '이 장 빼기', (e) => ask(e, `${i + 1}번 장을 수업에서 뺄까요?`, '빼기', dropSlide), 'warn'), slides.length < 2)),
     ...slides.map((s, n) => {
       const t = s.querySelector('h1, h2, [data-ed-add="text"]');
@@ -748,7 +789,8 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     if (ev === 'dblclick' && isText(L(hit.id))) startText(hit.id);
   }, true);
   window.addEventListener('dragover', (e) => e.preventDefault());
-  window.addEventListener('drop', (e) => { e.preventDefault(); const f = picIn(e.dataTransfer.files); if (f) addImage(f); });
+  // Reveal이 data-state="drop" 장에서 같은 이름의 이벤트를 window에 보낸다(dataTransfer 없음)
+  window.addEventListener('drop', (e) => { if (!e.dataTransfer) return; e.preventDefault(); const f = picIn(e.dataTransfer.files); if (f) addImage(f); });
   window.addEventListener('paste', (e) => {   // 복사한 그림은 그림으로 넣고, 글 고칠 때 붙여 넣기는 꾸밈 없는 글만
     const f = picIn(e.clipboardData && e.clipboardData.files);
     if (f) { e.preventDefault(); return addImage(f); }
