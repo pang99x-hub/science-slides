@@ -1114,7 +1114,7 @@ ${STATS_JS}
     if (ok) render(); else document.getElementById('classes').innerHTML = '';
   }
   // 첫 화면 «새 수업방 만들기»(#makecard)로 왔으면 만들기 칸으로 옮겨 이름 칸에 둔다
-  var toMake = function () { var m = document.getElementById('makecard'); if (location.hash === '#makecard' && !m.hidden) { m.scrollIntoView({ block: 'center' }); document.getElementById('name').focus(); } };
+  var toMake = function () { var m = document.getElementById('makecard'); if (location.hash === '#makecard' && !m.hidden) { m.scrollIntoView({ block: 'center' }); } };      // 입력 칸은 잡지 않는다(폰에서 들어올 때마다 자판이 올라왔다, 11/14)
   renderAll(); toMake();
   if (sess()) syncMe().then(function () { renderAll(); toMake(); }, renderAll);   // 다른 기기에서 만든 수업방·승인 여부를 맞춘다
   // 승인을 기다리는 동안 30초마다 확인해 승인되면 저절로 열어 준다
