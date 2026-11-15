@@ -55,6 +55,7 @@
       localStorage.setItem('deck-order:' + d, JSON.stringify(j.order));
       for (const x of j.order) if (j.edits[x.id]) localStorage.setItem('deck-edit:' + x.id, j.edits[x.id]); else localStorage.removeItem('deck-edit:' + x.id);
       if (own) localStorage.setItem('deck-title:' + d, j.title);
+      localStorage.setItem('deck-box:' + d, '1');   // 수업함에 있는 수업: 편집기가 자동 저장한다
       localStorage.removeItem('deck-dirty:' + d);   // 수업함 것과 같아졌다(편집기가 다른 차시로 갈 때 저장할지 묻는 표시)
       q.delete('box'); history.replaceState(null, '', location.pathname + '?' + q.toString().replace(/=(?=&|$)/g, '').replace(/%2F/g, '/'));
     } else boxed = j;

@@ -610,7 +610,7 @@ export function teachPage(site, units) {
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
   </header>
   <style>.tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 4px; padding-bottom: 4px; } .tabs .btn { flex: 0 0 auto; white-space: nowrap; } @media (max-width: 720px) { .tabs { gap: 5px; } .tabs .btn { min-height: 38px; padding: 0 11px; font-size: 14px; } } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
-  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
+  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
   <div class="tabp" data-tab="me">
   <div class="card" id="me">
     <h2 id="mehead">선생님 로그인</h2>
@@ -686,7 +686,7 @@ export function teachPage(site, units) {
   <div class="card" id="boxcard" hidden>
     <h2>내 수업함</h2>
     <p class="muted">차시를 골라 <b>수업함에 담고</b>, 목록에서 <b>고치기</b>를 눌러 내 수업에 맞게 고쳐요. 로그인하면 어느 컴퓨터에서든 열려요.</p>
-    <style>#boxpick .grow { flex: 1 1 240px; } #boxpick .subj { flex: 0 1 170px; } #boxpick .btn { flex: 0 0 auto; min-height: 48px; } #boxlist .row.hit { outline: 3px solid var(--hl); outline-offset: 4px; border-radius: 6px; }</style>
+    <style>#boxpick .grow { flex: 1 1 240px; } #boxpick .subj { flex: 0 1 170px; } #boxpick .btn { flex: 0 0 auto; min-height: 48px; } #boxlist .acts { flex: 1 1 100%; display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; } #boxlist .acts .btn { flex: 0 0 auto; white-space: nowrap; } @media (max-width: 720px) { #boxlist .acts { gap: 4px; } #boxlist .acts .btn { padding: 0 9px; font-size: 13px; } } #boxlist .row.hit { outline: 3px solid var(--hl); outline-offset: 4px; border-radius: 6px; }</style>
     <div class="form" id="boxpick"><label class="subj">과목<select id="boxsubj"></select></label><label class="grow">단원<select id="boxunit"></select></label><label class="grow">차시<select id="boxlesson"></select></label><button class="btn main" type="button" id="boxadd">수업함에 담기</button></div>
     <p class="small" id="boxmsg" aria-live="polite"></p>
     <div id="boxlist" class="stack"></div>
@@ -1050,11 +1050,11 @@ ${AUTH_JS}
         boxHave[d.base] = true;
         var day = new Date(d.updated_at);
         return '<div class="row" data-base="' + esc(d.base) + '"><b>' + esc(d.title) + '</b><span class="small">' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일 저장' + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + (d.shared ? ' · <b>공유 중</b>' : '') + '</span>' + (d.shared && d.post ? '<a class="btn small" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
-          + '<a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box') + '">수업하기</a>'
+          + '<span class="acts"><a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box') + '">수업하기</a>'
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&edit') + '">고치기</a>'
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&save') + '">내려받기</a>'
           + '<button class="btn small" type="button" data-share="' + (d.shared ? 0 : 1) + '">' + (d.shared ? '공유 끄기' : '공유하기') + '</button>'
-          + '<button class="btn small" type="button" data-del>지우기</button></div>';
+          + '<button class="btn small" type="button" data-del>지우기</button></span></div>';
       }).join('') : '<p class="small">아직 담은 수업이 없어요. 위에서 차시를 골라 수업함에 담아 보세요.</p>';
       boxUnits().then(boxPick);
       if (focus) boxShow(focus, text);
@@ -1069,7 +1069,7 @@ ${AUTH_JS}
     api('/decks/save', { session: sess().token, base: base, title: name, order: [{ id: 'my.' + id + '.1' }], edits: {} }).then(function (j) {
       b.disabled = false;
       if (j.error) { say(j.error); return; }
-      location.href = boxUrl(base, '&box&edit');
+      say(''); location.href = boxUrl(base, '&box&edit');   // 뒤로 돌아왔을 때 «만드는 중…»이 남지 않게
     }, function () { b.disabled = false; say('만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   };
   // 수업함에 담기: 고른 차시를 원래 장 순서 그대로 저장한다(워커 /decks/save). 이 브라우저에서 고쳐 둔 작업본이 있으면 그것을 담는다(고치기를 누르면 수업함 것으로 덮이므로)

@@ -23,7 +23,8 @@ self.addEventListener('fetch', (e) => {
   const req = e.request; if (req.method !== 'GET') return;
   const u = new URL(req.url);
   if (u.origin === location.origin && u.pathname.startsWith(new URL(self.registration.scope).pathname)) {
-    const page = req.mode === 'navigate' || /\.(html|json|webmanifest)$/.test(u.pathname) || u.pathname.endsWith('/');
+    const page = req.mode === 'navigate' || /\.(html|json|webmanifest)$/.test(u.pathname) || u.pathname.endsWith('/')
+      || (/\.js$/.test(u.pathname) && !u.pathname.includes('/lib/'));   // edit.js처럼 이름에 지문이 없는 스크립트는 저장분을 먼저 주면 올린 뒤 한 번은 옛 판이 뜬다
     e.respondWith(page ? fresh(req) : kept(req));
   } else if (/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) e.respondWith(kept(req));
 });

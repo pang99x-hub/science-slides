@@ -365,21 +365,30 @@
   // 장 넣기·빼기·순서: 내 순서를 저장하고 새로 연다
   // shortcut: 장 구성을 바꾸면 화면을 새로 열어 되돌리기 기록이 사라진다, 워커 저장(3단계) 때 그 자리에서 바꾸게 고친다
   const ORDER = 'deck-order:' + src.d, DIRTY = 'deck-dirty:' + src.d;   // DIRTY: 이 브라우저에서 고친 뒤 수업함에 아직 저장하지 않음
-  function touch() { try { localStorage.setItem(DIRTY, '1'); } catch (e) { /* 꽉 참 */ } }
+  // 자동 저장: 수업함에 있는 수업(INBOX 표시)은 손을 멈추고 30초 뒤, 그리고 화면을 떠날 때 수업함에 올린다. 바뀐 것(DIRTY)이 없으면 올리지 않는다
+  // shortcut: 수업함에서 지운 수업을 이 브라우저에서 다시 고치면 자동 저장이 그 수업을 다시 만든다, 지울 때 표시도 지우게 되면 고친다
+  const INBOX = 'deck-box:' + src.d;
+  let autoT = 0, rev = 0;   // rev: 올리는 동안 또 고쳤는지 본다
+  const auto = (leave) => { clearTimeout(autoT); if (localStorage.getItem(INBOX) && localStorage.getItem(DIRTY) && session()) boxSave(leave ? 'leave' : 'auto'); };
+  function touch() { rev++; try { localStorage.setItem(DIRTY, '1'); } catch (e) { /* 꽉 참 */ } clearTimeout(autoT); autoT = setTimeout(auto, 30000); }
+  if (localStorage.getItem(DIRTY)) autoT = setTimeout(auto, 30000);   // 장 구성을 바꾸면 화면이 새로 열린다
+  document.addEventListener('visibilitychange', () => { if (document.hidden) auto(true); });
+  addEventListener('pagehide', () => auto(true));
   const session = () => { try { const s = JSON.parse(localStorage.getItem('science-room:session')); return s && s.token ? s : null; } catch (e) { return null; } };
   const roomApi = () => (new URLSearchParams(location.search).get('roomapi') || 'https://science-room.pang99x.workers.dev').replace(/\/$/, '');
   // 수업함에 저장: 이 브라우저의 작업본(장 순서 + 고친 장)을 수업방 워커의 내 계정에 올린다
-  async function boxSave() {
-    endText();
+  async function boxSave(quiet) {   // quiet: 'auto'(글 쓰는 중이면 끊지 않는다) | 'leave'(떠나는 중)
+    if (quiet !== 'auto') endText();
     const s = session();
     if (!s) { tell('선생님 페이지에서 로그인하면 수업함에 저장할 수 있습니다'); return false; }
     const o = order(), edits = {};
     for (const x of o) { const v = localStorage.getItem('deck-edit:' + x.id); if (v) edits[x.id] = v; }
     tell('수업함에 저장하는 중…');
     try {
-      const r = await fetch(roomApi() + '/decks/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: s.token, base: src.d, title: src.title, order: o, edits }) }), j = await r.json();
-      tell(j.error || '수업함에 저장했습니다 · 선생님 페이지의 «내 수업함»에서 엽니다');
-      if (!j.error) localStorage.removeItem(DIRTY);
+      const body = JSON.stringify({ session: s.token, base: src.d, title: src.title, order: o, edits }), rev0 = rev;
+      const r = await fetch(roomApi() + '/decks/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: quiet === 'leave' && body.length < 20000 }), j = await r.json();   // keepalive는 64KB까지(한글은 3바이트)
+      tell(j.error || (quiet ? '수업함에 자동 저장했습니다' : '수업함에 저장했습니다 · 선생님 페이지의 «내 수업함»에서 엽니다'));
+      if (!j.error) { if (rev === rev0) localStorage.removeItem(DIRTY); localStorage.setItem(INBOX, '1'); }
       return !j.error;
     } catch (e) { tell('수업함에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요'); return false; }
   }
