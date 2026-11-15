@@ -89,6 +89,18 @@
     .ed-list button i { font-style: normal; color: #8a94a3; min-width: 1.4em; } .ed-list button em { font-style: normal; color: #2563eb; margin-left: auto; white-space: nowrap; }
     .ed-list button[aria-current="true"] { background: #fff; border-color: #2563eb; }
     .ed-list > button { flex-wrap: wrap; cursor: grab; } .ed-list > button.drop { box-shadow: 0 -3px 0 #2563eb; }
+    .ed-pick { position: fixed; inset: 0; z-index: 1002; display: flex; align-items: center; justify-content: center; background: rgba(16, 24, 40, .45); font: 14px/1.4 system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; color: #1b1f24; }
+    .ed-pick > div { display: flex; flex-direction: column; width: min(1180px, calc(100vw - 16px)); height: min(860px, calc(100vh - 16px)); background: #fff; border-radius: 14px; overflow: hidden; }
+    .ed-pick header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid #d5dae1; } .ed-pick header b { white-space: nowrap; }
+    .ed-pick select.subj { flex: 0 1 auto; } .ed-pick select { flex: 1 1 150px; min-width: 0; height: 38px; padding: 0 8px; border: 1px solid #d5dae1; border-radius: 8px; font: inherit; color: inherit; background: #fff; }
+    .ed-pick header button { height: 38px; padding: 0 12px; border: 1px solid #d5dae1; border-radius: 8px; background: #fff; font: inherit; color: inherit; cursor: pointer; white-space: nowrap; }
+    .ed-pick header button.main { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 700; } .ed-pick header button:disabled { background: #eef1f5; border-color: #d5dae1; color: #5b6573; cursor: default; }
+    .ed-pick p { margin: 0; padding: 8px 14px; background: #f6f8fb; color: #5b6573; font-size: 13px; word-break: keep-all; }
+    .ed-pick .grid { flex: 1; overflow-y: auto; padding: 2px 14px 16px; } .ed-pick h3 { margin: 14px 0 8px; font-size: 14px; color: #5b6573; }
+    .ed-pick .cards { display: grid; grid-template-columns: repeat(auto-fill, 272px); gap: 10px; justify-content: center; }
+    .ed-pick .card { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 2px solid #d5dae1; border-radius: 10px; background: #fff; font: inherit; color: inherit; text-align: left; cursor: pointer; word-break: keep-all; }
+    .ed-pick .card[aria-pressed="true"] { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 2px #2563eb; }
+    .ed-pick .pv { display: block; width: 256px; height: 144px; overflow: hidden; position: relative; border-radius: 6px; background: #fff; pointer-events: none; }
     .ed-thumb { flex: 0 0 192px; width: 192px; height: 108px; overflow: hidden; position: relative; border: 1px solid #d5dae1; border-radius: 4px; background: #fff; pointer-events: none; }
     html.ed-on .ed-thumb > .reveal { position: absolute !important; inset: 0 auto auto 0 !important; width: 1920px !important; height: 1080px !important; transform: scale(.1); transform-origin: 0 0; }
     .ed-thumb .slides { position: absolute; inset: 0; width: 1920px; height: 1080px; transform: none; zoom: 1; }
@@ -100,7 +112,7 @@
     .ed-bar { position: fixed; z-index: 995; display: none; gap: 4px; padding: 4px; background: #fff; border: 1px solid #d5dae1; border-radius: 10px; box-shadow: 0 4px 16px rgba(16, 24, 40, .16); align-items: center; }
     .ed-bar button { height: 34px; min-width: 34px; padding: 0 9px; border-color: transparent; }
     .ed-ui button.dot { width: 26px; min-width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid #98a2b3; }
-    .ed-pop { position: fixed; z-index: 1001; display: none; flex-wrap: wrap; gap: 6px; max-width: 330px; padding: 8px; background: #fff; border: 1px solid #d5dae1; border-radius: 10px; box-shadow: 0 4px 16px rgba(16, 24, 40, .16); align-items: center; }
+    .ed-pop { position: fixed; z-index: 1001; display: none; max-height: calc(100vh - 120px); overflow-y: auto; flex-wrap: wrap; gap: 6px; max-width: 330px; padding: 8px; background: #fff; border: 1px solid #d5dae1; border-radius: 10px; box-shadow: 0 4px 16px rgba(16, 24, 40, .16); align-items: center; }
     .ed-bar .sep { width: 1px; height: 20px; background: #d5dae1; margin: 0 2px; }
     .ed-tools { position: sticky; top: 0; z-index: 1; display: flex; gap: 2px; align-items: center; margin: 0 -8px 8px; padding: 6px 8px; background: #f6f8fa; border-bottom: 1px solid #d5dae1; }
     .ed-tools button { width: 32px; min-width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-color: transparent; background: none; border-radius: 6px; color: #3b4452; }
@@ -131,6 +143,17 @@
     .ed-ai .mini { margin: 0; padding-left: 18px; line-height: 2.4; white-space: normal; } .ed-ai .mini button { height: 30px; font-size: 13px; }
     .ed-ai #ed-ai-out { font-size: 13px; font-weight: 600; } .ed-ai #ed-ai-out:empty { display: none; }
     .ed-guide { position: fixed; z-index: 989; background: #e11d48; pointer-events: none; display: none; }
+    /* 폰(좁은 화면): 장 목록을 아래 가로 띠로 내려 장이 화면 너비를 다 쓰게 한다. 위 단추 줄은 옆으로 민다 */
+    @media (max-width: 760px) {
+      .ed-ui.ed-top { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; } .ed-ui.ed-top > * { flex: none; } .ed-top .say { max-width: calc(100% - 24px); }
+      html.ed-on .reveal { left: 0; width: 100% !important; height: calc(100% - 262px) !important; }
+      .ed-list { top: auto; right: 0; bottom: 64px; width: auto; height: 142px; display: flex; gap: 4px; overflow: auto hidden; padding: 6px 8px 6px 0; border-right: 0; border-top: 1px solid #d5dae1; }
+      .ed-tools { position: sticky; left: 0; top: auto; flex: none; width: 76px; flex-wrap: wrap; align-content: center; margin: -6px 4px -6px 0; padding: 4px; border-bottom: 0; border-right: 1px solid #d5dae1; } .ed-tools .gap, .ed-tools .sep { display: none; }
+      .ed-list > button { flex: none; width: 144px; margin: 0; padding: 4px 8px; min-height: 0; align-content: flex-start; } .ed-list > button.drop { box-shadow: -3px 0 0 #2563eb; }
+      .ed-list > button span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ed-list > button em { display: none; }
+      .ed-thumb { zoom: .66; }
+      .ed-notes { left: 0; height: 64px; padding: 6px 8px; } .ed-notes label { width: auto; writing-mode: horizontal-tb; font-size: 12px; max-width: 3em; }
+    }
   ` }));
   document.documentElement.classList.add('ed-on');
 
@@ -155,10 +178,11 @@
   const top = h('div', { className: 'ed-ui ed-top' },
     h('b', { textContent: '고치기 · ' + src.title }), undoB, redoB, h('span', { className: 'sep' }),
     btn('＋ 글 상자', '글 상자 넣기', () => addBox('text')), btn('＋ 그림', '내 컴퓨터의 그림 넣기 (복사한 그림은 Ctrl+V, 파일은 끌어다 놓아도 됩니다)', () => { bgNext = false; file.click(); }),
-    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), h('span', { className: 'sep' }), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('색 조합', '이 장의 색·배경 조합 고르기', (e) => toneMenu(e)), h('span', { className: 'sep' }), btn('AI로 고치기', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
+    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), btn('＋ 슬라이드', '자료실의 슬라이드를 카드로 보고 골라 넣기', pickPanel), h('span', { className: 'sep' }), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('색 조합', '이 장의 색·배경 조합 고르기', (e) => toneMenu(e)), h('span', { className: 'sep' }), btn('AI로 고치기', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
     say, h('span', { className: 'gap' }), btn('쓰는 법', '편집기 쓰는 법을 짧게 봅니다', (e) => helpMenu(e)), btn('더 보기', '다른 차시 열기 · 이 장 원래대로 · 내려받기', (e) => moreMenu(e)), btn('수업함에 저장', '고친 수업을 내 수업함에 저장합니다 · 선생님 페이지에서 어느 컴퓨터로든 엽니다', () => boxSave()), btn('수업 화면으로 보기', '고친 수업을 새 창에서 엽니다', () => window.open(`${location.pathname}?d=${src.d}&mine#/${Reveal.getIndices().h}`), 'go'), file);
   // 가끔 쓰는 것은 «더 보기»에 모은다
   const moreMenu = (e) => pop(e, btn('다른 차시 열기', '다른 단원·차시를 골라 편집기로 엽니다', (ev) => { ev.stopPropagation(); openOther(ev); }, 'line'), resetB,
+    ...(src.d.startsWith('my/') ? [btn('수업 이름 바꾸기', '새로 만든 수업의 이름을 바꿉니다', () => { const v = (prompt('수업 이름', src.title) || '').replace(/\s+/g, ' ').trim().slice(0, 80); if (!v) return; src.title = v; localStorage.setItem('deck-title:' + src.d, v); touch(); top.querySelector('b').textContent = '고치기 · ' + v; tell('이름을 바꿨습니다 · «수업함에 저장»을 누르면 수업함에도 반영됩니다'); }, 'line')] : []),
     btn('내려받기', '고친 수업을 내 HTML 파일 하나로 내려받습니다(인터넷 없이 열립니다)', () => { endText(); window.open(`${location.pathname}?d=${src.d}&mine&save`); }, 'line'));
   const list = h('div', { className: 'ed-ui ed-list' });
   const frame = h('div', { className: 'ed-ui ed-frame' }), hov = h('div', { className: 'ed-ui ed-frame hover' });
@@ -431,18 +455,59 @@
   const liveHtml = (title, doc, memo, tone) => `<section data-state="blank" class="std" data-ed-live="${attr(title)}"${tone && tone !== '모눈' ? ` style="${toneVars(tone)}"` : ''}><iframe sandbox="allow-scripts" title="${attr(title)}" style="position:absolute;left:0;top:0;width:1920px;height:1080px;border:0" srcdoc="${attr(kit(doc, tone))}"></iframe>${memo ? `<aside class="notes">${memo}</aside>` : ''}</section>`;
   const liveOf = (m) => m.dataset.edLive != null && m.querySelector('iframe[srcdoc]');
   function blankSlide() { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, blankHtml('제목', '내용을 입력하세요')); o.splice(i + 1, 0, { id }); reorder(o, i + 1); }
-  function addMenu(e) {   // 빈 장, 또는 다른 차시의 장 가져오기
-    pop(e, btn('빈 장', '지금 장 뒤에 빈 장 넣기', blankSlide, 'line'), h('span', { className: 'cap', textContent: '꿈틀 꼴 (글은 넣은 뒤 눌러서 고칩니다)' }), ...Object.keys(TPLS).map((n) => btn(n, '지금 장 뒤에 이 꼴의 장 넣기', () => tplSlide(n), 'line')), h('span', { className: 'cap', textContent: '다른 차시에서 가져오기' }), ...src.lessons.map((l) => btn(`${l.n}차시 · ${l.title}`, '이 차시의 장 보기', async (ev) => {
-      ev.stopPropagation();
-      const got = await Promise.all(l.slides.map((id) => fetch(`장/${id}/t.json`).then((r) => r.json()).catch(() => null)));
-      popup.replaceChildren(...l.slides.map((id, n) => {
-        const t = document.createElement('template'); t.innerHTML = got[n] ? got[n].html : '';
-        const hd = t.content.querySelector('h1, h2');
-        return btn(`${n + 1}. ${hd ? hd.textContent.trim() : id.split('.').pop()}`, '지금 장 뒤에 넣기', () => {
-          const i = at(), o = order(); o.splice(i + 1, 0, { id: o.some((x) => x.id === id) ? newId() : id, src: id }); reorder(o, i + 1);
-        }, 'line');
-      }));
-    }, 'line')));
+  function addMenu(e) {   // 빈 장·꿈틀 꼴 장, 또는 자료실 슬라이드 고르기
+    pop(e, btn('빈 장', '지금 장 뒤에 빈 장 넣기', blankSlide, 'line'), h('span', { className: 'cap', textContent: '꿈틀 꼴 (글은 넣은 뒤 눌러서 고칩니다)' }), ...Object.keys(TPLS).map((n) => btn(n, '지금 장 뒤에 이 꼴의 장 넣기', () => tplSlide(n), 'line')),
+      h('span', { className: 'cap', textContent: '자료실에서 가져오기' }), btn('슬라이드 고르기…', '자료실의 슬라이드을 카드로 보고 골라 넣기', pickPanel, 'line'));
+  }
+  const own = src.d.startsWith('my/');   // 새로 만든 수업
+  // 틀·꾸밈이 단원마다 달라 한 수업에는 한 단원의 슬라이드만 섞는다: 이미 단원이 정해진 수업은 그 단원으로 묶인다
+  const s0 = src.slides.find((x) => x.src), lockU = own ? s0 && s0.src.split('.').slice(0, 2).join('.') : src.d.split('/').slice(0, 2).join('.');
+  // 슬라이드 고르기: 단원 한 줄 → 그 단원의 슬라이드이 카드로 → 골라서 지금 장 뒤에 넣는다(번호만 적어 수업함 용량이 늘지 않는다)
+  async function pickPanel() {
+    shut(); endText();
+    const units = (await fetch('lessons.json').then((r) => r.json())).units;
+    // 찾기 한 줄: 교과 → 대단원 → 중단원 - 소단원 (area는 «대단원 › 중단원», 중단원 이름이 없는 단원도 있다)
+    const uid = (u) => `${u.subjectSlug}.${u.unit}`, area = (u) => u.area.split(' › '), u0 = units.find((u) => uid(u) === lockU) || units[0];
+    const [subj, big, sel] = [['교과', 'subj'], ['대단원', 'big'], ['중단원 - 소단원', 'unit']].map(([title, className]) => h('select', { title, className, disabled: !!lockU }));
+    const fill = (s, vals, v) => { s.replaceChildren(...vals.map(([value, textContent]) => h('option', { value, textContent }))); if (v) s.value = v; };
+    const fillBig = (v) => fill(big, [...new Set(units.filter((u) => u.subject === subj.value).map((u) => area(u)[0]))].map((x) => [x, x]), v);
+    const fillUnit = (v) => fill(sel, units.filter((u) => u.subject === subj.value && area(u)[0] === big.value).map((u) => [uid(u), `${area(u)[1] ? area(u)[1] + ' - ' : ''}${u.unit} ${u.unitTitle}`]), v);
+    fill(subj, [...new Set(units.map((u) => u.subject))].map((x) => [x, x]), u0.subject); fillBig(area(u0)[0]); fillUnit(uid(u0));
+    const grid = h('div', { className: 'grid' }), on = () => [...grid.querySelectorAll('.card[aria-pressed="true"]')].map((c) => c.dataset.id);
+    const go = btn('', '고른 슬라이드을 지금 장 뒤에 넣기', () => {
+      const i = at(), o = order(); let k = 0;
+      for (const id of on()) o.splice(i + ++k, 0, { id: own || o.some((x) => x.id === id) ? newId() : id, src: id });   // 새 수업은 늘 새 번호(원래 차시의 작업본과 섞이지 않게)
+      reorder(o, i + 1);
+    }, 'main');
+    const count = () => { const n = on().length; go.textContent = n ? `고른 ${n}개 넣기` : '슬라이드을 고르세요'; go.disabled = !n; };
+    const card = (id, U, sheet) => {
+      const view = h('div', { className: 'pv', inert: true }), name = h('span', { textContent: id.split('.').pop() });
+      const c = h('button', { type: 'button', className: 'card', title: '눌러서 고르기 · 다시 누르면 빼기', onclick: () => { c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') !== 'true'); count(); } }, view, name);
+      c.dataset.id = id; c.setAttribute('aria-pressed', 'false');
+      fetch(`장/${id}/t.json`).then((r) => r.json()).then((j) => {
+        const t = document.createElement('template'); t.innerHTML = j.html.replace(/@@([A-Z0-9_]+)@@/g, (all, k) => (j.media[k] ? `장/${U}/media/${j.media[k]}` : all));
+        const sec = t.content.querySelector('section'), hd = t.content.querySelector('h1, h2'); if (!sec) return;
+        if (hd) name.textContent = hd.textContent.trim();
+        sec.querySelectorAll('iframe, aside.notes, script, video, audio').forEach((x) => x.remove()); sec.classList.add('present'); sec.style.display = 'block';
+        // 미리보기는 그 단원 틀의 꾸밈을 입혀 따로 그린다(이 화면의 꾸밈·장 이름과 섞이지 않게). 움직이는 부분은 비어 보인다
+        const root = view.attachShadow({ mode: 'open' }); root.adoptedStyleSheets = [sheet];
+        root.append(h('style', { textContent: '.reveal{position:absolute!important;left:0;top:0;width:1920px!important;height:1080px!important;transform:scale(.13334);transform-origin:0 0}.slides{position:absolute!important;inset:0!important;width:1920px!important;height:1080px!important;transform:none!important;zoom:1!important}' + j.css }), h('div', { className: 'reveal' }, h('div', { className: 'slides' }, sec)));
+      }).catch(() => {});
+      return c;
+    };
+    const show = async () => {
+      const U = sel.value; grid.textContent = '불러오는 중…'; count();
+      const [ix, shell] = await Promise.all([fetch(`장/${U}/index.json`).then((r) => r.json()), fetch(`장/${U}/shell.t.html`).then((r) => r.text())]);
+      if (sel.value !== U) return;
+      const sheet = new CSSStyleSheet(); sheet.replaceSync([...new DOMParser().parseFromString(shell, 'text/html').querySelectorAll('style')].map((x) => x.textContent).join('\n').replace(/:root\b/g, ':host'));
+      grid.replaceChildren(...ix.lessons.flatMap((l) => [h('h3', { textContent: `${l.n}차시 · ${l.title}` }), h('div', { className: 'cards' }, ...l.slides.map((id) => card(id, U, sheet)))]));
+    };
+    subj.onchange = () => { fillBig(); fillUnit(); show(); }; big.onchange = () => { fillUnit(); show(); }; sel.onchange = show;
+    const close = () => { box.remove(); removeEventListener('keydown', esc, true); }, esc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    const box = h('div', { className: 'ed-pick', onclick: (e) => { if (e.target === box) close(); } }, h('div', { role: 'dialog', ariaLabel: '슬라이드 고르기' },
+      h('header', {}, h('b', { textContent: '슬라이드 고르기' }), subj, big, sel, go, btn('닫기', '넣지 않고 닫기', close)),
+      ...(lockU ? [h('p', { textContent: '한 수업에는 한 단원의 슬라이드만 넣을 수 있어요(단원마다 틀이 달라서요). 다른 단원은 새 수업에서 고르세요.' })] : []), grid));
+    document.body.append(box); addEventListener('keydown', esc, true); show();
   }
   // 장 미리보기 그림: 장을 베껴 1/10로 줄여 보인다(움직이는 부분·캔버스 그림은 비어 보인다)
   let dragN = null;
@@ -463,8 +528,9 @@
       off(icon('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3', '이 장 빼기', (e) => ask(e, `${i + 1}번 장을 수업에서 뺄까요?`, '빼기', dropSlide), 'warn'), slides.length < 2)),
     ...slides.map((s, n) => {
       const t = s.querySelector('h1, h2, [data-ed-add="text"]');
-      const b = h('button', { type: 'button', draggable: true, onclick: () => Reveal.slide(n) }, h('i', { textContent: n + 1 }), h('span', { textContent: s.dataset.edLive || (t && t.textContent.trim()) || s.dataset.state || '장' }), h('em', { textContent: localStorage.getItem(key(n)) ? '고침' : '' }), thumb(s));
+      const b = h('button', { type: 'button', draggable: true, onclick: () => Reveal.slide(n) }, h('i', { textContent: n + 1 }), h('span', { textContent: s.dataset.edLive || (t && t.textContent.trim()) || (s.dataset.state === 'blank' ? '빈 장' : s.dataset.state) || '장' }), h('em', { textContent: localStorage.getItem(key(n)) ? '고침' : '' }), thumb(s));
       b.setAttribute('aria-current', n === i);
+      if (n === i) requestAnimationFrame(() => b.scrollIntoView({ block: 'nearest', inline: 'nearest' }));   // 지금 장이 목록에 보이게(폰의 가로 띠 포함)
       // 끌어서 순서 바꾸기: 놓은 자리로 옮긴다(화살표 단추와 같은 reorder)
       b.ondragstart = (e) => { dragN = n; e.dataTransfer.effectAllowed = 'move'; };
       b.ondragover = (e) => { if (dragN !== null && dragN !== n) { e.preventDefault(); b.classList.add('drop'); } };
@@ -723,6 +789,8 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     line: '<div data-ed-add="line" style="position:absolute;left:760px;top:537px;width:400px;height:6px;background:#1b1f24;z-index:4"></div>',
     oval: '<div data-ed-add="oval" style="position:absolute;left:810px;top:390px;width:300px;height:300px;background:#bfdbfe;border-radius:50%;z-index:4"></div>',
   };
+  // 새로 만든 수업의 첫 장: 텅 빈 장 대신 수업 이름을 제목으로 둔 장에서 시작한다
+  if (src.d.startsWith('my/') && src.slides.length === 1 && !src.slides[0].src && !localStorage.getItem('deck-edit:' + src.slides[0].id)) { localStorage.setItem('deck-edit:' + src.slides[0].id, blankHtml(src.title, '내용을 입력하세요')); location.reload(); return; }
   const tableHtml = (r, c) => `<table data-ed-add="table" style="position:absolute;left:${960 - Math.min(1500, 240 * c) / 2}px;top:${Math.max(120, 540 - 36 * r)}px;width:${Math.min(1500, 240 * c)}px;border-collapse:collapse;background:#fff;z-index:5">` +
     ('<tr>' + '<td data-edit="add" style="border:2px solid #94a3b8;padding:12px 16px;font-size:30px;line-height:1.3;color:#1b1f24">&nbsp;</td>'.repeat(c) + '</tr>').repeat(r) + '</table>';
   function tableMenu(e) {   // 격자에서 줄×칸 고르기

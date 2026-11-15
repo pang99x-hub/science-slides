@@ -19,8 +19,10 @@
   // shortcut: 수업은 자료실 차시(d = tongsci1/3-3/1 → 단원 index.json의 장 순서)만 연다, 선생님이 만든 수업은 3단계에서 워커가 주는 목록으로 넓힌다
   const m = d.match(/^(\w+)\/([\w-]+)\/(\d+)$/);
   if (!m) throw new Error('수업 번호(d)가 없거나 모양이 다릅니다');
-  const unit = `장/${m[1]}.${m[2]}/`;
-  const index = await get(unit + 'index.json', 'json').catch(async (e) => {
+  // 새로 만든 수업(d = my/<번호>/1): 자료실 차시 없이 빈 장 하나에서 시작한다. 장과 이름은 수업함·이 브라우저에만 있다
+  // shortcut: 틀·꾸밈은 한 단원(tongsci1.3-3-1) 것을 빌린다, 그 단원 번호가 바뀌면 여기도 고친다(전용 틀을 만들면 푼다)
+  const own = m[1] === 'my'; let U = own ? 'tongsci1.3-3-1' : `${m[1]}.${m[2]}`, unit = `장/${U}/`;
+  const index = own ? { unit: { unitTitle: '' }, lessons: [{ n: 1, title: '', slides: [] }] } : await get(unit + 'index.json', 'json').catch(async (e) => {
     // 번호가 바뀐 수업(중단원 3-3/3 → 소단원 3-3-2/1): 이 브라우저의 작업본을 새 번호로 옮기고 새 주소로 간다
     const { '#slides': gone = {}, ...moved } = await get('장/moved.json', 'json').catch(() => ({}));
     if (!moved[d]) throw e;
@@ -52,6 +54,7 @@
     if (edit) {   // 고치기: 수업함 것으로 이 브라우저의 작업본을 바꾸고, 새로 고쳐도 다시 덮지 않게 주소에서 box를 뺀다
       localStorage.setItem('deck-order:' + d, JSON.stringify(j.order));
       for (const x of j.order) if (j.edits[x.id]) localStorage.setItem('deck-edit:' + x.id, j.edits[x.id]); else localStorage.removeItem('deck-edit:' + x.id);
+      if (own) localStorage.setItem('deck-title:' + d, j.title);
       localStorage.removeItem('deck-dirty:' + d);   // 수업함 것과 같아졌다(편집기가 다른 차시로 갈 때 저장할지 묻는 표시)
       q.delete('box'); history.replaceState(null, '', location.pathname + '?' + q.toString().replace(/=(?=&|$)/g, '').replace(/%2F/g, '/'));
     } else boxed = j;
@@ -62,11 +65,16 @@
     const o = boxed ? boxed.order : JSON.parse(localStorage.getItem('deck-order:' + d));
     if (Array.isArray(o) && o.length && o.every((x) => x && /^[\w.-]+$/.test(x.id) && (!x.src || /^[\w.-]+$/.test(x.src)))) order = o;
   } catch (e) { /* 깨진 순서는 버리고 원래 차시대로 */ }
-  const deck = { title: `${index.unit.unitTitle} ${lesson.n}차시`, slides: order.map((x) => x.id) };
+  if (!order.length) order = [{ id: `my.${m[2]}.1` }];   // 새로 만든 수업의 첫 빈 장
+  // 새로 만든 수업에 자료실 장이 있으면 그 단원의 틀을 쓴다(틀·꾸밈이 단원마다 달라 한 수업에는 한 단원의 장만 섞는다)
+  let picks = own ? [] : index.lessons;
+  const from = own && order.find((x) => x.src);
+  if (from) { U = from.src.split('.').slice(0, 2).join('.'); unit = `장/${U}/`; picks = (await get(unit + 'index.json', 'json')).lessons; }
+  const deck = { title: own ? (boxed && boxed.title) || localStorage.getItem('deck-title:' + d) || '새 수업' : `${index.unit.unitTitle} ${lesson.n}차시`, slides: order.map((x) => x.id) };
   const BLANK = '<section data-state="blank" class="std"><div class="sheet"></div><div class="frame"></div></section>';
 
   const [shell, ...slides] = await Promise.all([get(`${unit}shell.${f}.html`, 'text'),
-    ...order.map((x) => (x.src ? get(`장/${x.src}/${f}.json`, 'json') : { unit: `${m[1]}.${m[2]}`, html: BLANK, css: '', js: '', needs: [], media: {} }))]);
+    ...order.map((x) => (x.src ? get(`장/${x.src}/${f}.json`, 'json') : { unit: U, html: BLANK, css: '', js: '', needs: [], media: {} }))]);
   // shortcut: 고친 장은 이 브라우저(localStorage)에만 있다(선생님용 글 그대로라 학생용에는 쓰지 않는다), 3단계에서 워커 저장으로 바꾼다
   if ((mine && f === 't') || boxed) slides.forEach((s, i) => { const h = boxed ? boxed.edits[deck.slides[i]] : localStorage.getItem('deck-edit:' + deck.slides[i]); if (h) s.html = h; });
   let tplJs = '';   // AI 창구로 만든 꿈틀 꼴 장(data-tpl)에 뒤집기·OX 동작을 붙인다(새 장은 제 동작 코드가 없다)
@@ -99,12 +107,12 @@
 
   if (boxed && !share) html = html.replace('<html ', '<html data-box="1" ');   // 수업방(room.js)이 «내 수업으로 수업 중»을 알리고 따라간다
   if (edit) {
-    const data = JSON.stringify({ d, title: deck.title, media, slides: slides.map((s, i) => ({ id: deck.slides[i], src: order[i].src, html: s.html })), lessons: index.lessons.map((l) => ({ n: l.n, title: l.title, slides: l.slides })) }).replace(/</g, '\\u003c');
+    const data = JSON.stringify({ d, title: deck.title, media, slides: slides.map((s, i) => ({ id: deck.slides[i], src: order[i].src, html: s.html })), lessons: picks.map((l) => ({ n: l.n, title: l.title, slides: l.slides })) }).replace(/</g, '\\u003c');
     const i = html.lastIndexOf('</body>');
     html = html.slice(0, i) + '<scr' + 'ipt type="application/json" id="ed-src">' + data + '</scr' + 'ipt><scr' + 'ipt src="edit.js"></scr' + 'ipt>' + html.slice(i);
   }
   if (share && boxed && !save) {   // 공유 미리 보기: 지금 보는 장 하나만 같은 차시의 내 수업 맨 뒤에 담는다(워커 /decks/take)
-    const T = JSON.stringify({ api, id: share, ids: deck.slides, d, n: lesson.n, unit: index.unit.unitTitle, lessons: index.lessons.map((l) => ({ n: l.n, title: l.title, slides: l.slides })) }).replace(/</g, '\\u003c');
+    const T = JSON.stringify({ api, id: share, ids: deck.slides, d, n: lesson.n, unit: index.unit.unitTitle, lessons: picks.map((l) => ({ n: l.n, title: l.title, slides: l.slides })) }).replace(/</g, '\\u003c');
     const i = html.lastIndexOf('</body>');
     // 오른쪽 위에 둔다(아래 가운데는 장의 출처 줄을 가린다). 담을 차시는 같은 단원 안에서 고른다
     html = html.slice(0, i) + '<div style="position:fixed;right:14px;top:10px;z-index:99;display:flex;gap:6px;font:700 15px system-ui,sans-serif"><select id="taketo" aria-label="담을 차시" style="font:inherit;max-width:11em;padding:.4em .5em;border-radius:99px;border:2px solid #1c2333;background:#fff;color:#1c2333"></select>'
