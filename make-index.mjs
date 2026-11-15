@@ -219,6 +219,7 @@ kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bot
 .lesson .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pdf { font: 600 13px/1 var(--f-body); color: var(--ink-2); text-decoration: none; border: 1.5px solid var(--rule); border-radius: 999px; padding: 5px 10px; background: var(--paper-2); white-space: nowrap; }
 .pdf::before { content: "↓ "; }
+.saybox { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 50; font: 600 14px/1 var(--f-body); color: #fff; background: rgba(20, 28, 44, .92); border-radius: 999px; padding: 12px 18px; opacity: 0; pointer-events: none; transition: opacity .2s; } .saybox.on { opacity: 1; }
 .react { margin-left: auto; display: flex; align-items: center; gap: 2px; } .react button { font: 600 13px/1 var(--f-body); color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 6px 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; } .react button:hover { color: var(--accent); background: var(--paper-2); } .react button.on { color: var(--stamp); } .react b { font-weight: 600; }
 .pdf:hover { border-color: var(--accent); color: var(--accent); }
 .pdf:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
@@ -365,6 +366,8 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
   const T = {}, LKEY = 'science-slides:liked', box = (l) => document.querySelector('.react[data-l="' + l + '"]');
   let liked = []; try { liked = JSON.parse(localStorage.getItem(LKEY)) || []; } catch (e) {}
   const paint = (l) => { const x = box(l), t = T[l] || {}; if (!x) return; const on = liked.includes(l), b = x.querySelector('[data-a="like"]'); b.classList.toggle('on', on); b.firstChild.textContent = on ? '♥ ' : '♡ '; b.setAttribute('aria-pressed', on); b.querySelector('b').textContent = t.likes || 0; x.querySelector('[data-a="talk"] b').textContent = t.comments || 0; };
+  // 공유 창이 없는 컴퓨터에서는 주소를 복사하고 화면 아래에 잠깐 알린다
+  const say = (t) => { let o = document.querySelector('.saybox'); if (!o) { o = document.createElement('div'); o.className = 'saybox'; o.setAttribute('role', 'status'); document.body.append(o); } o.textContent = t; o.classList.add('on'); clearTimeout(say.t); say.t = setTimeout(() => o.classList.remove('on'), 2000); };
   window.__talks = (list) => { list.forEach((t) => { T[t.lesson] = t; }); document.querySelectorAll('.react').forEach((x) => paint(x.dataset.l)); };
   window.__talks([]);
   const sess = () => { try { const s = JSON.parse(localStorage.getItem('science-room:session')); return s && s.token && s.status === 'approved' ? s : null; } catch (e) { return null; } };
@@ -372,9 +375,13 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
   document.addEventListener('click', (e) => {
     const b = e.target.closest('.react button'); if (!b) return;
     const x = b.parentNode, l = x.dataset.l, a = b.dataset.a;
-    if (a === 'send') { const u = new URL(l + '/teacher.html', location.href).href; if (navigator.share) navigator.share({ title: x.dataset.t, url: u }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => { b.title = '주소를 복사했어요'; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 1500); }); return; }
+    if (a === 'send') { const u = new URL(l + '/teacher.html', location.href).href; if (navigator.share) navigator.share({ title: x.dataset.t, url: u }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => say('주소를 복사했어요'), () => say('주소를 복사하지 못했어요')); return; }
     if (!sess()) { location.href = 'teach.html' + q; return; }   // 공감·댓글은 로그인한 선생님만
-    if (a === 'like') { b.disabled = true; talk(x, { like: !liked.includes(l) }).then((j) => { if (j.id) { T[l] = { ...T[l], id: j.id, likes: j.likes }; liked = liked.filter((k) => k !== l).concat(j.liked ? [l] : []); try { localStorage.setItem(LKEY, JSON.stringify(liked)); } catch (e) {} paint(l); } }).catch(() => {}).then(() => { b.disabled = false; }); return; }
+    if (a === 'like') {
+      // 누르는 즉시 바꾸고 서버 답으로 맞춘다. 실패하면 되돌린다
+      const was = liked.slice(), t0 = T[l], on = !liked.includes(l);
+      liked = liked.filter((k) => k !== l).concat(on ? [l] : []); T[l] = { ...t0, likes: Math.max(0, ((t0 && t0.likes) || 0) + (on ? 1 : -1)) }; paint(l);
+      b.disabled = true; talk(x, { like: on }).then((j) => { if (!j.id) throw 0; return j; }).catch(() => { liked = was; T[l] = t0; paint(l); return {}; }).then((j) => { if (j.id) { T[l] = { ...T[l], id: j.id, likes: j.likes }; liked = liked.filter((k) => k !== l).concat(j.liked ? [l] : []); try { localStorage.setItem(LKEY, JSON.stringify(liked)); } catch (e) {} paint(l); } }).catch(() => {}).then(() => { b.disabled = false; }); return; }
     const go = (id) => { location.href = 'teach.html' + q + '#p' + id; };   // 댓글: 선생님 페이지 게시판 탭에서 그 글을 연다
     if (T[l] && T[l].id) go(T[l].id); else talk(x, {}).then((j) => { if (j.id) go(j.id); }).catch(() => {});
   });

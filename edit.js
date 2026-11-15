@@ -176,13 +176,13 @@
   const icon = (d, title, fn, cls = '') => { const b = btn('', title, fn, cls); b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`; b.setAttribute('aria-label', title); return b; };
   const resetB = btn('이 장 원래대로', '이 장에서 고친 것을 모두 버립니다', (e) => (e.stopPropagation(), src.slides[at()].src ? ask(e, '이 장에서 고친 것을 모두 버릴까요?', '원래대로', () => { localStorage.removeItem(key(at())); touch(); location.reload(); }) : tell('새로 만든 장은 돌아갈 원래 모습이 없습니다. 필요 없으면 왼쪽 휴지통으로 빼세요') || shut()), 'warn line');   // 새로 만든 장은 저장분이 곧 장이라 지우면 빈 장이 된다
   const top = h('div', { className: 'ed-ui ed-top' },
-    h('b', { textContent: '고치기 · ' + src.title }), undoB, redoB, h('span', { className: 'sep' }),
+    h('b', { textContent: '수정 · ' + src.title }), undoB, redoB, h('span', { className: 'sep' }),
     btn('＋ 글 상자', '글 상자 넣기', () => addBox('text')), btn('＋ 그림', '내 컴퓨터의 그림 넣기 (복사한 그림은 Ctrl+V, 파일은 끌어다 놓아도 됩니다)', () => { bgNext = false; file.click(); }),
-    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), btn('＋ 슬라이드', '자료실의 슬라이드를 카드로 보고 골라 넣기', pickPanel), h('span', { className: 'sep' }), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('색 조합', '이 장의 색·배경 조합 고르기', (e) => toneMenu(e)), h('span', { className: 'sep' }), btn('AI로 고치기', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
+    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), btn('＋ 슬라이드', '자료실의 슬라이드를 카드로 보고 골라 넣기', pickPanel), h('span', { className: 'sep' }), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('색 조합', '이 장의 색·배경 조합 고르기', (e) => toneMenu(e)), h('span', { className: 'sep' }), btn('AI로 수정', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
     say, h('span', { className: 'gap' }), btn('쓰는 법', '편집기 쓰는 법을 짧게 봅니다', (e) => helpMenu(e)), btn('더 보기', '다른 차시 열기 · 이 장 원래대로 · 내려받기', (e) => moreMenu(e)), btn('수업함에 저장', '고친 수업을 내 수업함에 저장합니다 · 선생님 페이지에서 어느 컴퓨터로든 엽니다', () => boxSave()), btn('수업 화면으로 보기', '고친 수업을 새 창에서 엽니다', () => window.open(`${location.pathname}?d=${src.d}&mine#/${Reveal.getIndices().h}`), 'go'), file);
   // 가끔 쓰는 것은 «더 보기»에 모은다
   const moreMenu = (e) => pop(e, btn('다른 차시 열기', '다른 단원·차시를 골라 편집기로 엽니다', (ev) => { ev.stopPropagation(); openOther(ev); }, 'line'), resetB,
-    ...(src.d.startsWith('my/') ? [btn('수업 이름 바꾸기', '새로 만든 수업의 이름을 바꿉니다', () => { const v = (prompt('수업 이름', src.title) || '').replace(/\s+/g, ' ').trim().slice(0, 80); if (!v) return; src.title = v; localStorage.setItem('deck-title:' + src.d, v); touch(); top.querySelector('b').textContent = '고치기 · ' + v; tell('이름을 바꿨습니다 · «수업함에 저장»을 누르면 수업함에도 반영됩니다'); }, 'line')] : []),
+    ...(src.d.startsWith('my/') ? [btn('수업 이름 바꾸기', '새로 만든 수업의 이름을 바꿉니다', () => { const v = (prompt('수업 이름', src.title) || '').replace(/\s+/g, ' ').trim().slice(0, 80); if (!v) return; src.title = v; localStorage.setItem('deck-title:' + src.d, v); touch(); top.querySelector('b').textContent = '수정 · ' + v; tell('이름을 바꿨습니다 · «수업함에 저장»을 누르면 수업함에도 반영됩니다'); }, 'line')] : []),
     btn('내려받기', '고친 수업을 내 HTML 파일 하나로 내려받습니다(인터넷 없이 열립니다)', () => { endText(); window.open(`${location.pathname}?d=${src.d}&mine&save`); }, 'line'));
   const list = h('div', { className: 'ed-ui ed-list' });
   const frame = h('div', { className: 'ed-ui ed-frame' }), hov = h('div', { className: 'ed-ui ed-frame hover' });
@@ -318,14 +318,14 @@
     const sep = () => h('span', { className: 'sep' });
     // 맞춤: 여럿이면 서로에게, 하나면 슬라이드에 맞춘다(2026-11-15 «기본적으로 정렬을 할 수 있게»)
     const fit = () => btn('맞춤', more.length ? '서로 줄 맞추기' : '슬라이드의 가장자리·가운데에 맞추기', (e) => pop(e, ...[['왼쪽', 'x', 0], ['가운데', 'x', .5], ['오른쪽', 'x', 1], ['위', 'y', 0], ['중간', 'y', .5], ['아래', 'y', 1]].map(([n, ax, f]) => btn(n, n + ' 맞춤', () => alignAll(ax, f)))));
-    if (more.length) {   // 여러 개: 맞춤·묶기·색·복제·지우기만
+    if (more.length) {   // 여러 개: 맞춤·묶기·색·복제·삭제만
       const grouped = ids().every((id) => L(id).dataset.edG && L(id).dataset.edG === el.dataset.edG);
       bar.append(h('span', { textContent: `${ids().length}개` }), sep(),
         fit(),
         grouped ? btn('묶음 풀기', '묶음을 풉니다', () => commit(multi(ids().map((id) => attrOp(id, 'data-ed-g', null))))) : btn('묶기', '하나처럼 함께 고르고 옮기게 묶습니다', () => { const g = 'g' + ++seq; commit(multi(ids().map((id) => attrOp(id, 'data-ed-g', g)))); }), sep(),
         btn('글자색', '글자 색', (e) => pop(e, ...dots(COLORS, (c) => paint({ color: c })))),
         btn('채움', '채움 색', (e) => pop(e, ...dots(FILLS, (c) => commit(multi(ids().map((id) => styleOp(id, { [L(id).matches('svg') ? 'color' : 'background-color']: c }))))))), sep(),
-        btn('복제', '똑같은 것을 하나씩 더 (Ctrl+D)', duplicate), btn('지우기', '지우기 (Delete)', remove, 'warn'));
+        btn('복제', '똑같은 것을 하나씩 더 (Ctrl+D)', duplicate), btn('삭제', '삭제 (Delete)', remove, 'warn'));
       return;
     }
     // 글은 높이가 글 양을 따라가므로 좌우 점만, 나머지는 여덟 점
@@ -351,7 +351,7 @@
         btn('링크', '고른 글자에 누리집 주소 걸기', linkMenu), sep());
     }
     if (el.closest('table')) {
-      bar.append(btn('표', '줄·칸 넣고 빼기', (e) => pop(e, btn('아래에 줄 넣기', '', () => tableOp('row+'), 'line'), btn('오른쪽에 칸 넣기', '', () => tableOp('col+'), 'line'), btn('이 줄 지우기', '', () => tableOp('row-'), 'line warn'), btn('이 칸 지우기', '', () => tableOp('col-'), 'line warn'))), sep());
+      bar.append(btn('표', '줄·칸 넣고 빼기', (e) => pop(e, btn('아래에 줄 넣기', '', () => tableOp('row+'), 'line'), btn('오른쪽에 칸 넣기', '', () => tableOp('col+'), 'line'), btn('이 줄 삭제', '', () => tableOp('row-'), 'line warn'), btn('이 칸 삭제', '', () => tableOp('col-'), 'line warn'))), sep());
     }
     if (!pic && (!shape || kind)) bar.append(btn('채움', '채움 색', (e) => pop(e, ...dots(FILLS, (c) => commit(styleOp(sel, { [shape ? 'color' : 'background-color']: c }))),
       ...(shape ? [] : [btn('없음', '채움 없음', () => commit(styleOp(sel, { 'background-color': 'transparent' })))]))));
@@ -360,7 +360,7 @@
       btn('가늘게', '가는 선', () => commit(styleOp(sel, { 'border-style': 'solid', 'border-width': '2px' }))), btn('굵게', '굵은 선', () => commit(styleOp(sel, { 'border-style': 'solid', 'border-width': '8px' }))))));
     bar.append(sep());
     bar.append(fit(), btn('앞으로', '다른 것보다 앞에 놓기', () => layer(1)), btn('뒤로', '다른 것보다 뒤에 놓기', () => layer(-1)), sep(),
-      btn('복제', '똑같은 것을 하나 더 (Ctrl+D)', duplicate), btn('지우기', '지우기 (Delete)', remove, 'warn'));
+      btn('복제', '똑같은 것을 하나 더 (Ctrl+D)', duplicate), btn('삭제', '삭제 (Delete)', remove, 'warn'));
     const up = outer(sel);
     if (up) bar.append(sep(), btn('바깥 상자', '이것을 담은 상자를 고릅니다', () => select(up)));
   }
@@ -425,7 +425,7 @@
         btn('저장하고 열기', '수업함에 저장한 뒤 고른 차시를 엽니다', async () => { if (await boxSave()) go(d); }, 'go'), btn('저장 없이 열기', '이 브라우저에만 남기고 엽니다', () => go(d)), btn('취소', '그만두기', () => {})));   // 이 상자를 누른 클릭이 끝난 뒤에 띄운다(바로 띄우면 같은 클릭에 닫힌다)
     };
     pop(at0, h('span', { className: 'cap', textContent: '과목' }), subj, h('span', { className: 'cap', textContent: '단원' }), uSel, h('span', { className: 'cap', textContent: '차시' }), lSel,
-      btn('이 차시 고치기', '고른 차시를 편집기로 엽니다', open, 'go'));
+      btn('이 차시 수정', '고른 차시를 편집기로 엽니다', open, 'go'));
   }
   const order = () => src.slides.map((s) => (s.src ? { id: s.id, src: s.src } : { id: s.id }));
   const newId = () => 'mine.' + Date.now().toString(36) + (++seq).toString(36);
@@ -603,7 +603,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
   const say1 = (t) => btn(t, '누르면 복사됩니다. AI 대화창에 붙여 넣으세요', () => copy(t, '복사했습니다. AI 대화창에 붙여 넣으세요'));
   const step = (n, title, sub, ...kids) => h('li', {}, h('i', { textContent: n }), h('div', {}, h('b', { textContent: title }), h('span', { textContent: sub }), ...kids));
   const ai = h('div', { className: 'ed-ui ed-ai', id: 'ed-ai' },
-    h('div', { className: 'head' }, h('h2', { textContent: 'AI로 고치기' }), btn('✕', '닫기', () => aiOpen(false), 'x')),
+    h('div', { className: 'head' }, h('h2', { textContent: 'AI로 수정' }), btn('✕', '닫기', () => aiOpen(false), 'x')),
     h('ol', { className: 'steps' },
       step('1', '브라우저 AI 열기', '크롬의 Claude 확장 프로그램(오른쪽 위 퍼즐 모양), 제미나이, ChatGPT처럼 지금 보는 페이지를 직접 다루는 AI면 됩니다. 없으면 Chrome 웹 스토어에서 설치합니다.'),
       step('2', '말로 시키기', '대화창에 하고 싶은 일을 적으면 AI가 고칩니다.'),
@@ -736,7 +736,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     '빈칸 확인 (3문제)': { blanks: [1, 2, 3].map(() => ({ q: '문제를 적으세요', a: '답' })) },
     '○× + 빈칸': { ox: [1, 2].map(() => ({ q: '문제를 적으세요', a: 'o', why: '까닭을 적으세요' })), blanks: [1, 2].map(() => ({ q: '문제를 적으세요', a: '답' })) } };
   function tplSlide(name) { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, toned(tplHtml({ eyebrow: '단원 · 차시', title: '제목', ...TPLS[name] }), toneOf(models[i]))); o.splice(i + 1, 0, { id }); reorder(o, i + 1); }
-  const helpMenu = (e) => pop(e, ...['글 고치기: 글을 두 번 누릅니다', '상자 넣기: 「＋ 도형」의 네모(글이 든 상자는 「＋ 글 상자」에 채움·테두리)', '옮기기·크기: 끌어서 옮기고, 모서리 점을 끌어 크기를 바꿉니다(위 동그란 점은 돌리기)', '새 장: 왼쪽 위 ＋ 를 누르고 꿈틀 꼴(이론·정리·확인)을 고릅니다', '카드·문제 늘리기: 하나를 고르고 「복제」(카드 통째는 「바깥 상자」로 고릅니다), 줄이기는 「지우기」', '○× 정답 바꾸기: 문제 옆 ○나 ×를 누르면 그것이 정답이 됩니다', '색 조합: 입힐 장을 고르고 조합을 누릅니다', '잘못했으면 ↶ (Ctrl+Z)'].map((t) => h('span', { className: 'ask', textContent: '· ' + t })));
+  const helpMenu = (e) => pop(e, ...['글 수정: 글을 두 번 누릅니다', '상자 넣기: 「＋ 도형」의 네모(글이 든 상자는 「＋ 글 상자」에 채움·테두리)', '옮기기·크기: 끌어서 옮기고, 모서리 점을 끌어 크기를 바꿉니다(위 동그란 점은 돌리기)', '새 장: 왼쪽 위 ＋ 를 누르고 꿈틀 꼴(이론·정리·확인)을 고릅니다', '카드·문제 늘리기: 하나를 고르고 「복제」(카드 통째는 「바깥 상자」로 고릅니다), 줄이기는 「삭제」', '○× 정답 바꾸기: 문제 옆 ○나 ×를 누르면 그것이 정답이 됩니다', '색 조합: 입힐 장을 고르고 조합을 누릅니다', '잘못했으면 ↶ (Ctrl+Z)'].map((t) => h('span', { className: 'ask', textContent: '· ' + t })));
   const setBg = (f) => readImage(f, (url) => commit(styleOp(sheetId(), { 'background-image': `url("${url}")`, 'background-size': 'cover', 'background-position': 'center' })));
   function shapeMenu(e) {
     const ic = (title, inner, fn) => { const b = btn('', title, fn); b.innerHTML = `<svg viewBox="0 0 100 100" width="24" height="24" aria-hidden="true">${inner}</svg>`; b.setAttribute('aria-label', title); return b; };
@@ -860,7 +860,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
   });
   const picIn = (list) => [...(list || [])].find((x) => x.type.startsWith('image/'));
 
-  // 글 고치기: 화면 쪽 글을 원본 글로 되돌린 뒤(장 모듈이 글자를 쪼개 둔 흔적 지우기) 그 자리에서 고친다
+  // 글 수정: 화면 쪽 글을 원본 글로 되돌린 뒤(장 모듈이 글자를 쪼개 둔 흔적 삭제) 그 자리에서 고친다
   function startText(id, all) {
     const el = L(id); if (!isText(el)) return;
     sel = id; paintBar();
