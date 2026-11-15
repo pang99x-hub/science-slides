@@ -122,6 +122,11 @@ input[type=text], input[type=email], select { min-height: 48px; }
 #msg:empty, .card p.small:empty { display: none; }
 .makeform .btn { min-height: 48px; }
 select { height: 48px; max-width: 100%; min-width: 0; }
+.shrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; border-top: 1px dashed var(--rule); padding-top: 10px; } .shrow:first-child { border-top: 0; padding-top: 0; } #browselist { gap: 10px; }
+.shrow .talk { font-size: 13px; font-weight: 600; color: var(--ink-3); text-decoration: none; white-space: nowrap; justify-self: end; padding: 4px 0; } .shrow .talk:hover { color: var(--accent); }
+.shrow .acts { display: flex; gap: 6px; justify-self: end; } .shrow .acts .btn { white-space: nowrap; }
+.shrow > b, .shrow > .small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .shrow > .small, .shrow .acts { grid-column: 1 / -1; } .shrow .acts { justify-self: stretch; } .shrow .acts .btn { flex: 1 1 0; } }
 .row > select { flex: 1 1 0; }   /* 긴 차시 이름이 폰 화면 밖으로 밀지 않게 */
 #msg { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 @media (max-width: 720px) {
@@ -609,8 +614,8 @@ export function teachPage(site, units) {
     <h1>선생님 페이지</h1>
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
   </header>
-  <style>.tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 4px; padding-bottom: 4px; } .tabs .btn { flex: 0 0 auto; white-space: nowrap; } @media (max-width: 720px) { .tabs { gap: 5px; } .tabs .btn { min-height: 38px; padding: 0 11px; font-size: 14px; } } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
-  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><a class="btn" href="board.html">게시판</a><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
+  <style>.tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 4px; padding-bottom: 4px; } .tabs .btn { flex: 0 0 auto; white-space: nowrap; } @media (max-width: 720px) { .tabs { gap: 5px; } .tabs .btn { min-height: 38px; padding: 0 11px; font-size: 14px; } } @media (max-width: 560px) { .tabs { gap: 2px; } .tabs .btn { flex: 1 1 auto; padding: 0 3px; font-size: min(13px, 2.9vw); letter-spacing: -.03em; } } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
+  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><button class="btn" type="button" role="tab" data-tab="board">게시판</button><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
   <div class="tabp" data-tab="me">
   <div class="card" id="me">
     <h2 id="mehead">선생님 로그인</h2>
@@ -705,6 +710,7 @@ export function teachPage(site, units) {
     <p class="small" id="browsemsg" aria-live="polite"></p>
   </div>
   </div>
+  <div class="tabp" data-tab="board"><iframe id="boardf" title="선생님 게시판" style="width:100%;height:70vh;border:0;display:block"></iframe></div>
   <div class="tabp" data-tab="rooms">
   <div id="classes" class="stack"></div>
   <div class="card" id="makecard" hidden>
@@ -739,7 +745,14 @@ export function teachPage(site, units) {
 (function () {
   var tabs = document.getElementById('tabs'), mk = document.getElementById('makecard'), ps = [].slice.call(document.querySelectorAll('.tabp')), bs = [].slice.call(tabs.querySelectorAll('button')), cur = 'rooms';
   try { cur = sessionStorage.getItem('science-room:tab') || cur; } catch (e) {}
-  function show(t) { var on = !mk.hidden; cur = t; tabs.hidden = !on; ps.forEach(function (p) { p.hidden = on && p.dataset.tab !== t; }); bs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === t); }); try { sessionStorage.setItem('science-room:tab', t); } catch (e) {} }
+  // 게시판은 board.html을 이 탭 안에 그대로 넣는다(같은 출처라 로그인이 이어진다). 처음 열 때만 부르고, 높이는 속 내용에 맞춘다
+  var bf = document.getElementById('boardf'), api = new URLSearchParams(location.search).get('roomapi');
+  bf.onload = function () { var w = bf.contentDocument.querySelector('.wrap'); new ResizeObserver(function () { bf.style.height = w.offsetHeight + 'px'; }).observe(w); };
+  function boardTab(hash) { bf.src = 'board.html?embed' + (api ? '&roomapi=' + encodeURIComponent(api) : '') + (hash || ''); show('board'); }
+  // 수업함·둘러보기의 «이야기» 단추도 탭 안에서 그 글을 연다
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[data-post]'); if (a && !mk.hidden) { e.preventDefault(); boardTab('#p' + a.getAttribute('data-post')); window.scrollTo(0, 0); } });
+  var want = /^#p\\d+$/.test(location.hash) ? location.hash : '';   // 첫 화면 차시 카드의 💬 로 온 글
+  function show(t) { var on = !mk.hidden; cur = t; if (on && want) { var h = want; want = ''; return boardTab(h); } if (on && t === 'board' && !bf.getAttribute('src')) return boardTab(); tabs.hidden = !on; ps.forEach(function (p) { p.hidden = on && p.dataset.tab !== t; }); bs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === t); }); try { sessionStorage.setItem('science-room:tab', t); } catch (e) {} }
   bs.forEach(function (b) { b.onclick = function () { show(b.dataset.tab); }; });
   new MutationObserver(function () { show(cur); }).observe(mk, { attributes: true, attributeFilter: ['hidden'] });
   show(cur);
@@ -1051,7 +1064,7 @@ ${AUTH_JS}
       document.getElementById('boxlist').innerHTML = j.decks.length ? j.decks.map(function (d) {
         boxHave[d.base] = true;
         var day = new Date(d.updated_at);
-        return '<div class="row" data-base="' + esc(d.base) + '"><b>' + esc(d.title) + '</b><span class="small">' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일 저장' + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + (d.shared ? ' · <b>공유 중</b>' : '') + '</span>' + (d.shared && d.post ? '<a class="btn small" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
+        return '<div class="row" data-base="' + esc(d.base) + '"><b>' + esc(d.title) + '</b><span class="small">' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일 저장' + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + (d.shared ? ' · <b>공유 중</b>' : '') + '</span>' + (d.shared && d.post ? '<a class="btn small" data-post="' + d.post + '" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
           + '<span class="acts"><a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box') + '">수업하기</a>'
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&edit') + '">고치기</a>'
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&save') + '">내려받기</a>'
@@ -1142,10 +1155,12 @@ ${AUTH_JS}
       var list = SHARED.filter(function (d) { return !narrowed || d.base.indexOf('my/') === 0 || keys.indexOf(d.base.split('/').slice(0, 2).join('.')) >= 0; });
       document.getElementById('browselist').innerHTML = list.length ? list.map(function (d) {
         var day = new Date(d.updated_at);
-        return '<div class="row" data-id="' + d.id + '"><b>' + esc(d.title) + '</b><span class="small">' + esc(d.by || '선생님') + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + ' · ' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일</span>'
-          + '<a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&share=' + d.id) + '">미리 보기</a>'
-          + (d.post ? '<a class="btn small" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
-          + (d.mine ? '<span class="small">내가 공유한 수업</span>' : '<button class="btn small" type="button" data-copy>내 수업함에 담기</button>') + '</div>';
+        // 두 줄: 제목 | 공감·댓글 수, 만든 이 | 단추(2026-11-15 «정렬이 안되어 있고 칸을 많이 잡아먹는다»)
+        return '<div class="shrow" data-id="' + d.id + '"><b>' + esc(d.title) + '</b>'
+          + (d.post ? '<a class="talk" data-post="' + d.post + '" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '" aria-label="이야기: 공감 ' + d.likes + ', 댓글 ' + d.comments + '" title="이야기 보기">♡ ' + d.likes + '&ensp;💬 ' + d.comments + '</a>' : '<span></span>')
+          + '<span class="small">' + esc(d.by || '선생님') + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + ' · ' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일' + (d.mine ? ' · 내가 공유' : '') + '</span>'
+          + '<span class="acts"><a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&share=' + d.id) + '">미리 보기</a>'
+          + (d.mine ? '' : '<button class="btn small" type="button" data-copy>내 수업함에 담기</button>') + '</span></div>';
       }).join('') : '<p class="small">' + (SHARED.length ? '이 단원에 공유된 수업은 아직 없어요.' : '아직 공유된 수업이 없어요. «내 수업함»에서 «공유하기»를 누르면 여기에 보여요.') + '</p>';
     });
   }
@@ -1348,6 +1363,7 @@ ul.plist, ul.cl { list-style: none; margin: 0; padding: 0; display: grid; gap: 1
 textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
 .cl li { border-top: 1px dashed var(--rule); padding-top: 8px; }
 .cform { display: grid; gap: 8px; justify-items: start; }
+.embed .topnav, .embed .pagehead { display: none; } .embed body { background: none; } .embed .wrap { padding: 0; max-width: none; }
 .btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
 </style>
 <body>
@@ -1393,6 +1409,7 @@ textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px sol
   var API = (qs.get('roomapi') || ${JSON.stringify(site.roomApi || '')}).replace(/\\/$/, '');
   var GID = qs.get('gid') || ${JSON.stringify(site.googleClientId || '')};
   var LESSONS = ${lessonData(lessons)};
+  if (qs.has('embed')) document.documentElement.classList.add('embed');   // 선생님 페이지 게시판 탭 안
 ${AUTH_JS}
 ${BOARD_JS}
 })();

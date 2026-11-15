@@ -113,6 +113,11 @@ input[type=text], input[type=email], select { min-height: 48px; }
 #msg:empty, .card p.small:empty { display: none; }
 .makeform .btn { min-height: 48px; }
 select { height: 48px; max-width: 100%; min-width: 0; }
+.shrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; border-top: 1px dashed var(--rule); padding-top: 10px; } .shrow:first-child { border-top: 0; padding-top: 0; } #browselist { gap: 10px; }
+.shrow .talk { font-size: 13px; font-weight: 600; color: var(--ink-3); text-decoration: none; white-space: nowrap; justify-self: end; padding: 4px 0; } .shrow .talk:hover { color: var(--accent); }
+.shrow .acts { display: flex; gap: 6px; justify-self: end; } .shrow .acts .btn { white-space: nowrap; }
+.shrow > b, .shrow > .small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .shrow > .small, .shrow .acts { grid-column: 1 / -1; } .shrow .acts { justify-self: stretch; } .shrow .acts .btn { flex: 1 1 0; } }
 .row > select { flex: 1 1 0; }   /* 긴 차시 이름이 폰 화면 밖으로 밀지 않게 */
 #msg { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 @media (max-width: 720px) {

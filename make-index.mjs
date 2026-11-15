@@ -114,7 +114,7 @@ const unitHtml = (u) => `
     <p class="std"><b>성취기준 ${esc(u.standard)}</b> ${esc(u.standardText)}</p>
     <ol class="lessons">
 ${u.lessons.map((l) => `      <li class="lesson">
-        <div class="top"><span class="no">${l.n}차시</span>${pdfOf(l) ? `<a class="pdf" href="${esc(pdfOf(l))}" download="${esc(`${u.unit} ${l.n}차시 ${l.title}.pdf`)}" title="장마다 마지막 단계까지 연 화면 모음(A4 가로, 인쇄·복습용)">PDF 받기</a>` : ''}</div>
+        <div class="top"><span class="no">${l.n}차시</span><span class="react" data-l="${esc(l.teacher.replace(/\/teacher\.html$/, ''))}" data-t="${esc(`${u.subject} ${u.unit} ${l.n}차시 ${l.title}`)}"><button type="button" data-a="like" aria-label="공감">♡ <b>0</b></button><button type="button" data-a="talk" aria-label="댓글">💬 <b>0</b></button><button type="button" data-a="send" aria-label="공유" title="공유"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button></span>${pdfOf(l) ? `<a class="pdf" href="${esc(pdfOf(l))}" download="${esc(`${u.unit} ${l.n}차시 ${l.title}.pdf`)}" title="장마다 마지막 단계까지 연 화면 모음(A4 가로, 인쇄·복습용)">PDF 받기</a>` : ''}</div>
         <h3>${esc(l.title)}</h3>
         <p class="q">${esc(l.question)}</p>
         <p class="meta">${esc(u.textbook)} ${esc(l.pages)}쪽 기준 · ${l.slides}장</p>
@@ -219,6 +219,7 @@ kbd { font: 600 13px var(--f-body); border: 1.5px solid var(--ink-2); border-bot
 .lesson .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pdf { font: 600 13px/1 var(--f-body); color: var(--ink-2); text-decoration: none; border: 1.5px solid var(--rule); border-radius: 999px; padding: 5px 10px; background: var(--paper-2); white-space: nowrap; }
 .pdf::before { content: "↓ "; }
+.react { margin-left: auto; display: flex; align-items: center; gap: 2px; } .react button { font: 600 13px/1 var(--f-body); color: var(--ink-3); background: none; border: 0; border-radius: 999px; padding: 6px 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; } .react button:hover { color: var(--accent); background: var(--paper-2); } .react button.on { color: var(--stamp); } .react b { font-weight: 600; }
 .pdf:hover { border-color: var(--accent); color: var(--accent); }
 .pdf:focus-visible { outline: 4px solid var(--hl); outline-offset: 2px; }
 .lesson .no { align-self: flex-start; font-size: 13px; font-weight: 700; color: var(--paper-2); background: var(--accent); border-radius: 999px; padding: 1px 10px; }
@@ -347,6 +348,7 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
   const api = (new URLSearchParams(location.search).get('roomapi') || ${JSON.stringify(site.roomApi || '')}).replace(/\\/$/, ''), el = document.getElementById('stat'), run = el.querySelector('.run');
   const n = (v) => '<b>' + Number(v).toLocaleString('ko-KR') + '</b>';
   if (api) fetch(api + '/count').then((r) => r.json()).then((j) => {
+    window.__talks(j.talks || []);
     const parts = [j.teachers > 0 && '선생님 ' + n(j.teachers) + '명', j.schools > 0 && '학교 ' + n(j.schools) + '곳', j.total > 0 && '열린 수업 ' + n(j.total) + '회', j.students > 0 && '학생 참여 ' + n(j.students) + '회'].filter(Boolean);
     if (!parts.length) return;
     // 과목별 차시 수는 빌드 때 lessons.json에서 센다(차시가 바뀌면 따라 바뀐다)
@@ -354,6 +356,28 @@ ${units.map((u, i) => { const p = units[i - 1]; return (!p || p.subject !== u.su
     run.innerHTML = line; el.hidden = false;
     if (run.offsetWidth > el.clientWidth - 28) { run.innerHTML = line + '&emsp;·&emsp;' + line + '&emsp;·&emsp;'; el.classList.add('roll'); el.style.setProperty('--roll', Math.round(run.offsetWidth / 2 / 40) + 's'); }   // 1초에 40px쯤
   }).catch(() => {});
+})();
+</script>
+<script>
+// 차시 카드의 공감·댓글·공유(2026-11-15). 수는 누구에게나 보이고, 공감·댓글은 승인된 선생님만(게시판의 그 차시 이야기 글 — 수업방/src/board.mjs talk). 공유는 누구나
+(() => {
+  const api = (new URLSearchParams(location.search).get('roomapi') || ${JSON.stringify(site.roomApi || '')}).replace(/\\/$/, ''), pass = new URLSearchParams(location.search).get('roomapi'), q = pass ? '?roomapi=' + encodeURIComponent(pass) : '';
+  const T = {}, LKEY = 'science-slides:liked', box = (l) => document.querySelector('.react[data-l="' + l + '"]');
+  let liked = []; try { liked = JSON.parse(localStorage.getItem(LKEY)) || []; } catch (e) {}
+  const paint = (l) => { const x = box(l), t = T[l] || {}; if (!x) return; const on = liked.includes(l), b = x.querySelector('[data-a="like"]'); b.classList.toggle('on', on); b.firstChild.textContent = on ? '♥ ' : '♡ '; b.setAttribute('aria-pressed', on); b.querySelector('b').textContent = t.likes || 0; x.querySelector('[data-a="talk"] b').textContent = t.comments || 0; };
+  window.__talks = (list) => { list.forEach((t) => { T[t.lesson] = t; }); document.querySelectorAll('.react').forEach((x) => paint(x.dataset.l)); };
+  window.__talks([]);
+  const sess = () => { try { const s = JSON.parse(localStorage.getItem('science-room:session')); return s && s.token && s.status === 'approved' ? s : null; } catch (e) { return null; } };
+  const talk = (x, body) => fetch(api + '/board/talk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: sess().token, lesson: x.dataset.l, title: x.dataset.t, ...body }) }).then((r) => r.json());
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.react button'); if (!b) return;
+    const x = b.parentNode, l = x.dataset.l, a = b.dataset.a;
+    if (a === 'send') { const u = new URL(l + '/teacher.html', location.href).href; if (navigator.share) navigator.share({ title: x.dataset.t, url: u }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => { b.title = '주소를 복사했어요'; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 1500); }); return; }
+    if (!sess()) { location.href = 'teach.html' + q; return; }   // 공감·댓글은 로그인한 선생님만
+    if (a === 'like') { b.disabled = true; talk(x, { like: !liked.includes(l) }).then((j) => { if (j.id) { T[l] = { ...T[l], id: j.id, likes: j.likes }; liked = liked.filter((k) => k !== l).concat(j.liked ? [l] : []); try { localStorage.setItem(LKEY, JSON.stringify(liked)); } catch (e) {} paint(l); } }).catch(() => {}).then(() => { b.disabled = false; }); return; }
+    const go = (id) => { location.href = 'teach.html' + q + '#p' + id; };   // 댓글: 선생님 페이지 게시판 탭에서 그 글을 연다
+    if (T[l] && T[l].id) go(T[l].id); else talk(x, {}).then((j) => { if (j.id) go(j.id); }).catch(() => {});
+  });
 })();
 </script>
 <script>

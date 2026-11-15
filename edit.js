@@ -316,10 +316,12 @@
     const el = sel && L(sel); if (!el) return;
     const text = isText(el), kind = el.dataset.edAdd;
     const sep = () => h('span', { className: 'sep' });
+    // 맞춤: 여럿이면 서로에게, 하나면 슬라이드에 맞춘다(2026-11-15 «기본적으로 정렬을 할 수 있게»)
+    const fit = () => btn('맞춤', more.length ? '서로 줄 맞추기' : '슬라이드의 가장자리·가운데에 맞추기', (e) => pop(e, ...[['왼쪽', 'x', 0], ['가운데', 'x', .5], ['오른쪽', 'x', 1], ['위', 'y', 0], ['중간', 'y', .5], ['아래', 'y', 1]].map(([n, ax, f]) => btn(n, n + ' 맞춤', () => alignAll(ax, f)))));
     if (more.length) {   // 여러 개: 맞춤·묶기·색·복제·지우기만
       const grouped = ids().every((id) => L(id).dataset.edG && L(id).dataset.edG === el.dataset.edG);
       bar.append(h('span', { textContent: `${ids().length}개` }), sep(),
-        btn('맞춤', '줄 맞추기', (e) => pop(e, ...[['왼쪽', 'x', 0], ['가운데', 'x', .5], ['오른쪽', 'x', 1], ['위', 'y', 0], ['중간', 'y', .5], ['아래', 'y', 1]].map(([n, ax, f]) => btn(n, n + ' 맞춤', () => alignAll(ax, f))))),
+        fit(),
         grouped ? btn('묶음 풀기', '묶음을 풉니다', () => commit(multi(ids().map((id) => attrOp(id, 'data-ed-g', null))))) : btn('묶기', '하나처럼 함께 고르고 옮기게 묶습니다', () => { const g = 'g' + ++seq; commit(multi(ids().map((id) => attrOp(id, 'data-ed-g', g)))); }), sep(),
         btn('글자색', '글자 색', (e) => pop(e, ...dots(COLORS, (c) => paint({ color: c })))),
         btn('채움', '채움 색', (e) => pop(e, ...dots(FILLS, (c) => commit(multi(ids().map((id) => styleOp(id, { [L(id).matches('svg') ? 'color' : 'background-color']: c }))))))), sep(),
@@ -357,7 +359,7 @@
       ...dots(COLORS, (c) => commit(styleOp(sel, { 'border-style': 'solid', 'border-color': c, 'border-width': parseFloat(getComputedStyle(L(sel)).borderTopWidth) ? getComputedStyle(L(sel)).borderTopWidth : '4px' }))),
       btn('가늘게', '가는 선', () => commit(styleOp(sel, { 'border-style': 'solid', 'border-width': '2px' }))), btn('굵게', '굵은 선', () => commit(styleOp(sel, { 'border-style': 'solid', 'border-width': '8px' }))))));
     bar.append(sep());
-    bar.append(btn('앞으로', '다른 것보다 앞에 놓기', () => layer(1)), btn('뒤로', '다른 것보다 뒤에 놓기', () => layer(-1)), sep(),
+    bar.append(fit(), btn('앞으로', '다른 것보다 앞에 놓기', () => layer(1)), btn('뒤로', '다른 것보다 뒤에 놓기', () => layer(-1)), sep(),
       btn('복제', '똑같은 것을 하나 더 (Ctrl+D)', duplicate), btn('지우기', '지우기 (Delete)', remove, 'warn'));
     const up = outer(sel);
     if (up) bar.append(sep(), btn('바깥 상자', '이것을 담은 상자를 고릅니다', () => select(up)));
@@ -746,8 +748,9 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
   function layer(d) { const el = L(sel), cs = getComputedStyle(el); commit(styleOp(sel, { ...(cs.position === 'static' ? { position: 'relative' } : {}), 'z-index': String((parseInt(cs.zIndex) || 0) + d) })); }
   const paint = (p) => commit(multi(ids().map((id) => styleOp(id, p))));
   function remove() { const all = ids(); if (!all.length) return; select(null); commit(multi(all.map(removeOp))); }
-  function alignAll(ax, f) {   // 고른 것들의 바깥 테두리 기준
-    const us = ids().map((id) => [id, unit(L(id)), pos(L(id))]), lo = Math.min(...us.map(([, u]) => u[ax])), hi = Math.max(...us.map(([, u]) => u[ax] + (ax === 'x' ? u.w : u.h)));
+  function alignAll(ax, f) {   // 고른 것들의 바깥 테두리 기준, 하나만 골랐으면 슬라이드 기준
+    const us = ids().map((id) => [id, unit(L(id)), pos(L(id))]), one = us.length < 2, page = cur().getBoundingClientRect();
+    const lo = one ? 0 : Math.min(...us.map(([, u]) => u[ax])), hi = one ? (ax === 'x' ? page.width : page.height) / scale() : Math.max(...us.map(([, u]) => u[ax] + (ax === 'x' ? u.w : u.h)));
     commit(multi(us.map(([id, u, p]) => { const d = lo + (hi - lo) * f - (u[ax] + (ax === 'x' ? u.w : u.h) * f); return styleOp(id, { ...(p.st ? LIFT : {}), [ax === 'x' ? 'left' : 'top']: px((ax === 'x' ? p.left : p.top) + d) }); })));
   }
   function bullets() {
