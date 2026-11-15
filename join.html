@@ -90,6 +90,11 @@ details.fold > summary { list-style: none; display: flex; flex-wrap: wrap; align
 details.fold > summary::-webkit-details-marker { display: none; }
 details.fold > summary::after { content: '▾'; margin-left: auto; font-size: 18px; color: var(--ink-3); transition: transform .15s; }
 details.fold:not([open]) > summary::after { transform: rotate(-90deg); }
+details.room > summary { list-style: none; display: grid; gap: 10px; color: var(--ink); font-weight: 400; }
+details.room > summary::-webkit-details-marker { display: none; }
+details.room .roomhead .code::after { content: ' ▾'; color: var(--ink-3); }
+details.room:not([open]) .roomhead .code::after { content: ' ▸'; }
+.roombody { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 details.fold[open] > summary { margin-bottom: 12px; }
 .fold-body { display: grid; gap: 12px; }
 .roomhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
@@ -199,7 +204,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   }
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function find(path) { return LESSONS.filter(function (l) { return l.path === path; })[0] || null; }
+  function find(path) { path = String(path).replace(/^deck\//, ''); return LESSONS.filter(function (l) { return l.path === path; })[0] || null; }   // 재생기·내 수업(deck/…)도 같은 차시
   function label(l) { return l.unit + ' ' + l.n + '차시 ' + l.title; }
   function uhead(l) { var n = LESSONS.filter(function (x) { return x.unit === l.unit; }).length, first = LESSONS.filter(function (x) { return x.subject === l.subject; })[0]; return (first && first.unit === l.unit && l.subject ? '<h3 class="subjl">' + esc(l.subject) + '</h3>' : '') + '<section class="ugroup"><h3 class="uhead"><span class="ucode">' + esc(l.unit) + '</span>' + esc(l.unitTitle) + '<span class="ucount">' + n + '차시</span></h3><ul class="lessons">'; }
   function nextOf(path) { for (var i = 0; i < LESSONS.length - 1; i++) if (LESSONS[i].path === path) return LESSONS[i + 1].path; return null; }

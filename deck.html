@@ -56,7 +56,9 @@
       q.delete('box'); history.replaceState(null, '', location.pathname + '?' + q.toString().replace(/=(?=&|$)/g, '').replace(/%2F/g, '/'));
     } else boxed = j;
   }
-  if (mine && f === 't') try {
+  // 학생 화면: 방에서 선생님이 수업함의 내 수업으로 수업 중이면 그 수업(걸러진 것)을 받는다. 아니면(404) 원래 차시
+  if (f === 's' && /^\d{4}(\d\d)?$/.test(q.get('room') || '')) try { const j = await (await fetch(`${api}/rooms/${q.get('room')}/deck?base=${encodeURIComponent(d)}`)).json(); if (Array.isArray(j.order) && j.edits) boxed = j; } catch (e) { /* 못 받으면 원래 차시 */ }
+  if ((mine && f === 't') || boxed) try {
     const o = boxed ? boxed.order : JSON.parse(localStorage.getItem('deck-order:' + d));
     if (Array.isArray(o) && o.length && o.every((x) => x && /^[\w.-]+$/.test(x.id) && (!x.src || /^[\w.-]+$/.test(x.src)))) order = o;
   } catch (e) { /* 깨진 순서는 버리고 원래 차시대로 */ }
@@ -66,7 +68,12 @@
   const [shell, ...slides] = await Promise.all([get(`${unit}shell.${f}.html`, 'text'),
     ...order.map((x) => (x.src ? get(`장/${x.src}/${f}.json`, 'json') : { unit: `${m[1]}.${m[2]}`, html: BLANK, css: '', js: '', needs: [], media: {} }))]);
   // shortcut: 고친 장은 이 브라우저(localStorage)에만 있다(선생님용 글 그대로라 학생용에는 쓰지 않는다), 3단계에서 워커 저장으로 바꾼다
-  if (mine && f === 't') slides.forEach((s, i) => { const h = boxed ? boxed.edits[deck.slides[i]] : localStorage.getItem('deck-edit:' + deck.slides[i]); if (h) s.html = h; });
+  if ((mine && f === 't') || boxed) slides.forEach((s, i) => { const h = boxed ? boxed.edits[deck.slides[i]] : localStorage.getItem('deck-edit:' + deck.slides[i]); if (h) s.html = h; });
+  let tplJs = '';   // AI 창구로 만든 꿈틀 꼴 장(data-tpl)에 뒤집기·OX 동작을 붙인다(새 장은 제 동작 코드가 없다)
+  slides.forEach((s, i) => { const t = /^<section[^>]*\sdata-tpl="(ox|flip)"/.exec(s.html); if (!t || order[i].src || (edit && t[1] === 'flip')) return;   // 편집 화면에서는 카드를 펼쳐 둔다(뒷면 글을 고칠 수 있게)
+    s.html = s.html.replace('<section', `<section id="tpl-${i}"`); tplJs += `\nwindow.Deck.part('tpl-${i}', (root) => { const f = ${t[1] === 'ox' ? '(window.LessonParts || {}).mountWrap' : '(window.RxT || window.EvT || window.T1 || {}).sum'}; if (f) f(root); });`; });   // 동작 묶음이 없는 단원에서는 가만히 있는 장으로 남는다
+  // 색 조합: 지금 장의 색 변수를 재생기 틀(.reveal)에도 입혀 넘김 단추·쪽 번호·장 바깥 여백이 따라 바뀌게 한다
+  tplJs += `\n(function w() { if (!(window.Reveal && Reveal.isReady && Reveal.isReady())) return setTimeout(w, 100); const r = document.querySelector('.reveal'), f = () => { for (const k of [...r.style]) if (k.startsWith('--')) r.style.removeProperty(k); const s = Reveal.getCurrentSlide(); if (s) for (const k of [...s.style]) if (k.startsWith('--')) r.style.setProperty(k, s.style.getPropertyValue(k)); }; f(); Reveal.on('slidechanged', f); })();`;
   if (edit) {   // 편집기가 화면의 요소와 원본 글의 요소를 짝지을 번호
     let n = 0; const t = document.createElement('template');
     for (const s of slides) { t.innerHTML = s.html; for (const el of t.content.querySelectorAll('*')) el.setAttribute('data-eid', ++n); s.html = t.innerHTML; }
@@ -80,14 +87,17 @@
   const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const once = slides.filter((s, i) => order.findIndex((x) => x.src === order[i].src) === i);   // 같은 장을 복제해도 꾸밈·동작 코드는 한 번만
   let html = shell;
+  // 내려받는 한 파일에는 틀이 부르는 공통 스크립트(lib/)도 넣는다(인터넷 없이 열리게)
+  if (save) { const libs = [...new Set(html.match(/<script src="lib\/[\w.-]+"><\/script>/g) || [])], js = await Promise.all(libs.map((t) => get(t.slice(13, -11), 'text'))); libs.forEach((t, i) => { html = html.split(t).join('<scr' + 'ipt>' + js[i] + '</scr' + 'ipt>'); }); }
   for (const [mark, text] of [
     ['%%SLIDES%%', slides.map((s) => s.html).join('\n\n')],
-    ['%%SLIDECSS%%', once.map((s) => s.css).join('')],
+    ['%%SLIDECSS%%', 'body.blank{white-space:normal}' + once.map((s) => s.css).join('')],   // 빈 장(data-state="blank")이 body에 붙이는 .blank가 차시 틀의 빈칸 꾸밈(.blank: 줄 바꿈 없음)과 이름이 겹쳐 추가한 글이 한 줄로 잘리던 것을 막는다
     ['%%NEEDS%%', mods.map((js) => '<scr' + 'ipt>' + js + '</scr' + 'ipt>\n').join('')],
-    ['%%SLIDEJS%%', once.map((s) => s.js).join('\n')],
+    ['%%SLIDEJS%%', once.map((s) => s.js).join('\n') + tplJs],
   ]) html = html.replace(mark, () => text);
   html = html.split('%%TITLE%%').join(esc(deck.title)).split('%%D%%').join(d).replace(/@@([A-Z0-9_]+)@@/g, (all, k) => media[k] || all);
 
+  if (boxed && !share) html = html.replace('<html ', '<html data-box="1" ');   // 수업방(room.js)이 «내 수업으로 수업 중»을 알리고 따라간다
   if (edit) {
     const data = JSON.stringify({ d, title: deck.title, media, slides: slides.map((s, i) => ({ id: deck.slides[i], src: order[i].src, html: s.html })), lessons: index.lessons.map((l) => ({ n: l.n, title: l.title, slides: l.slides })) }).replace(/</g, '\\u003c');
     const i = html.lastIndexOf('</body>');

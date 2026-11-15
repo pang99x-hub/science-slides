@@ -90,6 +90,11 @@ details.fold > summary { list-style: none; display: flex; flex-wrap: wrap; align
 details.fold > summary::-webkit-details-marker { display: none; }
 details.fold > summary::after { content: '▾'; margin-left: auto; font-size: 18px; color: var(--ink-3); transition: transform .15s; }
 details.fold:not([open]) > summary::after { transform: rotate(-90deg); }
+details.room > summary { list-style: none; display: grid; gap: 10px; color: var(--ink); font-weight: 400; }
+details.room > summary::-webkit-details-marker { display: none; }
+details.room .roomhead .code::after { content: ' ▾'; color: var(--ink-3); }
+details.room:not([open]) .roomhead .code::after { content: ' ▸'; }
+.roombody { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 details.fold[open] > summary { margin-bottom: 12px; }
 .fold-body { display: grid; gap: 12px; }
 .roomhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }

@@ -20,6 +20,37 @@
   const isText = (el) => el.matches('[data-edit]');
   const COLORS = ['#1b1f24', '#d92d20', '#1d4ed8', '#15803d', '#c2410c', '#7c3aed', '#6b7280', '#ffffff'];
   const FILLS = ['#ffffff', '#fde68a', '#bfdbfe', '#bbf7d0', '#fecaca', '#e5e7eb', '#1b1f24', '#d92d20', '#1d4ed8', '#15803d'];
+  // 색 조합: 차시 틀(shell)의 색 변수를 그 장에서만 바꾼다. BASE는 틀의 기본값(격리된 틀 안 문서는 바깥 변수를 못 받아 따로 넣어 준다)
+  const BASE = { paper: '#f2f5f3', 'paper-2': '#fbfcf9', grid: '#dbe4e2', 'grid-strong': '#c9d5d3', ink: '#1d2433', 'ink-2': '#4b566a', 'ink-3': '#7b8597', rule: '#c3cecd', accent: '#1f5f4a', 'accent-soft': '#dcebe4', hl: '#ffe27a' };
+  const TONES = { 모눈: {}, 백지: { paper: '#ffffff', 'paper-2': '#ffffff', grid: 'transparent', 'grid-strong': 'transparent' },
+    크림: { paper: '#fbf4e4', 'paper-2': '#fffdf6', grid: '#efe3c8', 'grid-strong': '#e3d3ae', ink: '#33291c', 'ink-2': '#6a5a45', 'ink-3': '#9a8a73', rule: '#d9c9a8', accent: '#b4541f', 'accent-soft': '#f6dfcc', hl: '#ffd98a' },
+    하늘: { paper: '#eef5fb', 'paper-2': '#fbfdff', grid: '#d6e4f0', 'grid-strong': '#c2d5e6', ink: '#14263f', 'ink-2': '#45597a', 'ink-3': '#7a8aa3', rule: '#bdd0e2', accent: '#1c62b8', 'accent-soft': '#d9e8f8' },
+    벚꽃: { paper: '#fbf1f3', 'paper-2': '#fffafb', grid: '#f0dade', 'grid-strong': '#e6c6cc', ink: '#3a1f2a', 'ink-2': '#6d4a57', 'ink-3': '#9c7c88', rule: '#e2c3ca', accent: '#b83a5e', 'accent-soft': '#f8dbe3' },
+    칠판: { paper: '#1f3d33', 'paper-2': '#2a4d41', grid: '#27493d', 'grid-strong': '#31594b', ink: '#f4f1e6', 'ink-2': '#cfd8cf', 'ink-3': '#9fb3a8', rule: '#4a6f60', accent: '#d9772f', 'accent-soft': '#3a5a4d', hl: '#7a6420' },
+    밤하늘: { paper: '#141b33', 'paper-2': '#1f2947', grid: '#1a2340', 'grid-strong': '#243055', ink: '#eef1fa', 'ink-2': '#c3cae0', 'ink-3': '#8e98b8', rule: '#3a4670', accent: '#4f7fe0', 'accent-soft': '#2a3760', hl: '#3d4f9a' } };
+  const isTone = (t) => typeof t === 'string' && Object.hasOwn(TONES, t), TONE_ERR = 'tone은 ' + Object.keys(TONES).join('·') + ' 가운데 하나';
+  const toneVars = (t, all) => Object.entries({ ...(all ? BASE : {}), ...TONES[t || '모눈'] }).map(([k, v]) => `--${k}:${v}`).join(';');
+  const toneProps = (t) => Object.fromEntries(Object.keys(BASE).map((k) => ['--' + k, TONES[t][k] || '']));
+  const toneOf = (m) => Object.keys(TONES).find((t) => (TONES[t].paper || '') === m.style.getPropertyValue('--paper').trim()) || '모눈';
+  const toned = (html, t) => (t && t !== '모눈' ? html.replace('<section', `<section style="${toneVars(t)}"`) : html);
+  // 꿈틀 꾸밈 묶음: AI가 짠 문서(움직이는 장·체험 칸·그림) 앞에 넣어 다른 장과 색·글꼴이 어울리게 한다. 문서의 제 꾸밈이 뒤에 와서 이긴다
+  const KIT = /<!--kit-->[\s\S]*?<!--\/kit-->/;
+  const kit = (doc, t) => { const m = /^\s*<!doctype[^>]*>/i.exec(doc = doc.replace(KIT, '')) || [''];
+    return '<!doctype html><!--kit--><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Pen+Script&display=swap">' +
+      `<style>:root{${toneVars(t, true)};--f-display:"Hahmlet","Apple SD Gothic Neo","Malgun Gothic",serif;--f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-pen:"Nanum Pen Script","Apple SD Gothic Neo",cursive}` +
+      'html,body{margin:0;height:100%}body{font:400 32px/1.5 var(--f-body);color:var(--ink);background:var(--paper-2);word-break:keep-all}body.paper{background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px}' +
+      'h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:1.2;margin:0}h1{font-size:68px}h2{font-size:48px}h3{font-size:36px}b,strong{font-weight:700}' +
+      '.eyebrow{font:700 24px var(--f-body);letter-spacing:.14em;color:var(--accent)}.pen{font:400 44px var(--f-pen);color:var(--ink-2)}.hl{background:linear-gradient(transparent 55%,var(--hl) 55%)}' +
+      '.card{background:var(--paper-2);border:2px solid var(--ink);border-radius:12px;padding:16px 22px;box-shadow:5px 5px 0 rgba(29,36,51,.12)}.tag{display:inline-block;font:800 24px/1.3 var(--f-body);color:#fff;background:var(--accent);border-radius:6px;padding:2px 12px}' +
+      '.btn{font:700 28px var(--f-body);color:var(--ink);background:var(--paper-2);border:2px solid var(--ink);border-radius:999px;padding:8px 24px;cursor:pointer}.btn.on{background:var(--accent);border-color:var(--accent);color:#fff}' +
+      '.row{display:flex;gap:24px;align-items:center}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.muted{color:var(--ink-2)}[data-q]>.n{display:inline-block;margin-left:12px;min-width:1.5em;padding:0 10px;border-radius:999px;background:var(--ink);color:var(--paper-2);font-size:.8em;text-align:center}</style>' +
+      // 수업방 잇기: 격리된 틀은 «문항·답»만 바깥(room.js fr)에 건네고, 선생님 화면에서는 고른 학생 수를 받아 단추에 붙인다
+      '<scr' + 'ipt>(()=>{const P=(m)=>parent.postMessage(Object.assign({kkumteul:1},m),"*"),B=(q)=>[...document.querySelectorAll("[data-q][data-v]")].filter((b)=>q==null||b.dataset.q===q);' +
+      'window.kkumteul={answer:(q,v)=>P({q:String(q),v:v==null?null:String(v)})};' +
+      'addEventListener("click",(e)=>{const b=e.target.closest&&e.target.closest("[data-q][data-v]");if(!b)return;B(b.dataset.q).forEach((x)=>x.classList.toggle("on",x===b));kkumteul.answer(b.dataset.q,b.dataset.v)});' +
+      'addEventListener("message",(e)=>{const d=e.data;if(e.source!==parent||!d||d.kkumteul!==1)return;if(d.clear)return B().forEach((b)=>{b.classList.remove("on");const n=b.querySelector(":scope>.n");if(n)n.remove()});' +
+      'if(d.counts)B(d.q).forEach((b)=>{let n=b.querySelector(":scope>.n");if(!n){n=document.createElement("span");n.className="n";b.append(n)}n.textContent=d.counts[b.dataset.v]||0})});' +
+      'addEventListener("DOMContentLoaded",()=>P({ready:1}))})()</scr' + 'ipt><!--/kit-->' + doc.slice(m[0].length); };
   const PAPERS = ['#ffffff', '#fff8dc', '#e8f1fb', '#e9f5ec', '#fdecef', '#f1f3f5'];
   const FONTS = [['기본', ''], ['고딕', 'var(--f-body)'], ['명조', 'var(--f-display)'], ['손글씨', 'var(--f-pen)']];   // 틀이 이미 불러오는 글씨체만
   const SHAPES = [['화살표', 360, 160, 'M0 35H60V10L100 50L60 90V65H0Z'], ['양쪽 화살표', 400, 160, 'M0 50L30 15V37H70V15L100 50L70 85V63H30V85Z'], ['세모', 260, 240, 'M50 0L100 100H0Z'],
@@ -57,6 +88,10 @@
     .ed-list > button { display: flex; gap: 8px; width: 100%; height: auto; min-height: 40px; padding: 8px 10px; margin-bottom: 4px; text-align: left; white-space: normal; border-color: transparent; background: none; align-items: baseline; }
     .ed-list button i { font-style: normal; color: #8a94a3; min-width: 1.4em; } .ed-list button em { font-style: normal; color: #2563eb; margin-left: auto; white-space: nowrap; }
     .ed-list button[aria-current="true"] { background: #fff; border-color: #2563eb; }
+    .ed-list > button { flex-wrap: wrap; cursor: grab; } .ed-list > button.drop { box-shadow: 0 -3px 0 #2563eb; }
+    .ed-thumb { flex: 0 0 192px; width: 192px; height: 108px; overflow: hidden; position: relative; border: 1px solid #d5dae1; border-radius: 4px; background: #fff; pointer-events: none; }
+    html.ed-on .ed-thumb > .reveal { position: absolute !important; inset: 0 auto auto 0 !important; width: 1920px !important; height: 1080px !important; transform: scale(.1); transform-origin: 0 0; }
+    .ed-thumb .slides { position: absolute; inset: 0; width: 1920px; height: 1080px; transform: none; zoom: 1; }
     .ed-frame { position: fixed; z-index: 990; pointer-events: none; border: 2px solid #2563eb; display: none; }
     .ed-frame.hover { border: 1.5px dashed #2563eb; opacity: .7; } .ed-frame.lock { border-color: #98a2b3; }
     .ed-frame.text-on { border-style: dashed; }
@@ -76,6 +111,8 @@
     .ed-notes label { width: 5.5em; padding-top: 6px; }
     .ed-notes textarea { flex: 1; resize: none; padding: 6px 10px; border: 1px solid #d5dae1; border-radius: 8px; color: #1b1f24; background: #fff; }
     .ed-pop input { width: 220px; height: 38px; padding: 0 10px; border: 1px solid #d5dae1; border-radius: 8px; color: #1b1f24; background: #fff; }
+    .ed-pop .scope { width: 100%; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; color: #1b1f24; } .ed-pop .scope label { display: flex; gap: 3px; align-items: center; cursor: pointer; } .ed-pop .scope input { width: auto; height: auto; }
+    html.ed-on [data-tpl="ox"] li[data-a="o"] button[data-v="o"], html.ed-on [data-tpl="ox"] li[data-a="x"] button[data-v="x"] { box-shadow: 0 0 0 6px #2563eb; }
     .ed-pop button.line { width: 100%; text-align: left; }
     .ed-frame.more { border-width: 1.5px; }
     .ed-band { position: fixed; z-index: 991; display: none; border: 1px solid #2563eb; background: rgba(37, 99, 235, .1); pointer-events: none; }
@@ -114,12 +151,15 @@
   // 되돌릴 수 없는 일은 단추 아래 작은 상자에서 한 번 더 묻는다
   const ask = (e, text, yes, fn) => pop(e, h('span', { className: 'ask', textContent: text }), btn(yes, yes, fn, 'warn'), btn('취소', '그만두기', () => {}));
   const icon = (d, title, fn, cls = '') => { const b = btn('', title, fn, cls); b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`; b.setAttribute('aria-label', title); return b; };
-  const resetB = btn('이 장 원래대로', '이 장에서 고친 것을 모두 버립니다', (e) => (src.slides[at()].src ? ask(e, '이 장에서 고친 것을 모두 버릴까요?', '원래대로', () => { localStorage.removeItem(key(at())); touch(); location.reload(); }) : tell('새로 만든 장은 돌아갈 원래 모습이 없습니다. 필요 없으면 왼쪽 휴지통으로 빼세요')), 'warn');   // 새로 만든 장은 저장분이 곧 장이라 지우면 빈 장이 된다
+  const resetB = btn('이 장 원래대로', '이 장에서 고친 것을 모두 버립니다', (e) => (e.stopPropagation(), src.slides[at()].src ? ask(e, '이 장에서 고친 것을 모두 버릴까요?', '원래대로', () => { localStorage.removeItem(key(at())); touch(); location.reload(); }) : tell('새로 만든 장은 돌아갈 원래 모습이 없습니다. 필요 없으면 왼쪽 휴지통으로 빼세요') || shut()), 'warn line');   // 새로 만든 장은 저장분이 곧 장이라 지우면 빈 장이 된다
   const top = h('div', { className: 'ed-ui ed-top' },
-    h('b', { textContent: '고치기 · ' + src.title }), btn('다른 차시 열기', '다른 단원·차시를 골라 편집기로 엽니다', (e) => openOther(e)), undoB, redoB, h('span', { className: 'sep' }),
+    h('b', { textContent: '고치기 · ' + src.title }), undoB, redoB, h('span', { className: 'sep' }),
     btn('＋ 글 상자', '글 상자 넣기', () => addBox('text')), btn('＋ 그림', '내 컴퓨터의 그림 넣기 (복사한 그림은 Ctrl+V, 파일은 끌어다 놓아도 됩니다)', () => { bgNext = false; file.click(); }),
-    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('AI로 고치기', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
-    say, h('span', { className: 'gap' }), resetB, btn('수업함에 저장', '고친 수업을 내 수업함에 저장합니다 · 선생님 페이지에서 어느 컴퓨터로든 엽니다', () => boxSave()), btn('내려받기', '고친 수업을 내 HTML 파일 하나로 내려받습니다(인터넷 없이 열립니다)', () => { endText(); window.open(`${location.pathname}?d=${src.d}&mine&save`); }), btn('수업 화면으로 보기', '고친 수업을 새 창에서 엽니다', () => window.open(`${location.pathname}?d=${src.d}&mine#/${Reveal.getIndices().h}`), 'go'), file);
+    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), h('span', { className: 'sep' }), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('색 조합', '이 장의 색·배경 조합 고르기', (e) => toneMenu(e)), h('span', { className: 'sep' }), btn('AI로 고치기', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
+    say, h('span', { className: 'gap' }), btn('쓰는 법', '편집기 쓰는 법을 짧게 봅니다', (e) => helpMenu(e)), btn('더 보기', '다른 차시 열기 · 이 장 원래대로 · 내려받기', (e) => moreMenu(e)), btn('수업함에 저장', '고친 수업을 내 수업함에 저장합니다 · 선생님 페이지에서 어느 컴퓨터로든 엽니다', () => boxSave()), btn('수업 화면으로 보기', '고친 수업을 새 창에서 엽니다', () => window.open(`${location.pathname}?d=${src.d}&mine#/${Reveal.getIndices().h}`), 'go'), file);
+  // 가끔 쓰는 것은 «더 보기»에 모은다
+  const moreMenu = (e) => pop(e, btn('다른 차시 열기', '다른 단원·차시를 골라 편집기로 엽니다', (ev) => { ev.stopPropagation(); openOther(ev); }, 'line'), resetB,
+    btn('내려받기', '고친 수업을 내 HTML 파일 하나로 내려받습니다(인터넷 없이 열립니다)', () => { endText(); window.open(`${location.pathname}?d=${src.d}&mine&save`); }, 'line'));
   const list = h('div', { className: 'ed-ui ed-list' });
   const frame = h('div', { className: 'ed-ui ed-frame' }), hov = h('div', { className: 'ed-ui ed-frame hover' });
   const bar = h('div', { className: 'ed-ui ed-bar' });
@@ -364,13 +404,35 @@
   const blankHtml = (title, body, memo) => '<section data-state="blank" class="std"><div class="sheet"></div><div class="frame"></div>' +
     ADD.text.replace('left:560px;top:470px;width:800px;font-size:40px', 'left:160px;top:120px;width:1600px;font-size:72px;font-weight:800').replace('글을 입력하세요', title) +
     ADD.text.replace('left:560px;top:470px;width:800px', 'left:160px;top:300px;width:1600px').replace('글을 입력하세요', body) + (memo ? `<aside class="notes">${memo}</aside>` : '') + '</section>';
+  // 꿈틀 기본 꼴 장(AI 창구의 add): 차시 틀(shell)의 CSS를 그대로 쓴다. 뒤집기·OX 동작은 deck.html이 data-tpl을 보고 붙인다
+  const tplHead = (c) => '<div class="sheet"></div><div class="frame"><div class="head split"><div class="titles">' + (c.eyebrow ? `<div data-edit="add" class="eyebrow">${rich(c.eyebrow)}</div>` : '') + `<h2 data-edit="add">${rich(c.title)}</h2></div>` + (c.pen ? `<p data-edit="add" class="pen">${rich(c.pen)}</p>` : '') + '</div>';
+  const tplEnd = (c) => '</div>' + (c.notes ? `<aside class="notes">${rich(c.notes)}</aside>` : '') + '</section>';
+  const STAMP = '<svg class="stamp" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="8"/><circle cx="100" cy="100" r="58" fill="none" stroke="currentColor" stroke-width="4"/><text x="100" y="116" text-anchor="middle" font-size="46" font-weight="800" fill="currentColor">완료</text></svg>';
+  const tplHtml = (c) => {
+    const fs = (px) => (px ? ` style="font-size:${px}px"` : '');
+    if (c.cards) {   // 정리 카드(.sbox): 카드가 적으면 글씨를 키운다. flip이면 앞면 제목만 보이고 누르면 뒤집힌다
+      const n = c.cards.length, cols = n <= 2 ? n : n === 4 ? 2 : 3, big = n === 1 ? [60, 50, 40] : n <= 4 ? [44, 38, 30] : [36, 31, 26];
+      return `<section data-state="blank" class="std l1t t-sumsec"${c.flip ? ' data-tpl="flip"' : ''}>` + tplHead(c) + `<div class="t-body t-sum" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${Math.ceil(n / cols)},minmax(0,1fr))">` +
+        c.cards.map((x, i) => `<div class="sbox"${c.flip ? '' : ' style="cursor:default"'}><h3${fs(big[0])}><span class="sn" data-edit="add">${i + 1}</span><span data-edit="add">${rich(x.title)}</span></h3>` + (x.text ? `<p data-edit="add"${fs(big[1])}>${rich(x.text)}</p>` : '') + (x.sub ? `<p data-edit="add" class="sx"${fs(big[2])}>${rich(x.sub)}</p>` : '') + '</div>').join('') + '</div>' + tplEnd(c);
+    }
+    if (c.points || c.sim) {   // 이론 장(.tcard): 왼쪽 개념 카드 + 오른쪽 그림(격리된 틀). 그림이 없으면 카드가 폭을 다 쓴다. 체험 장(sim): 움직이는 칸이 크고 카드는 오른쪽 좁은 단
+      const pts = c.points || [], n = pts.length, fig = c.sim || c.figure, two = !fig && n > 3, big = !fig && n <= 3, half = Math.ceil(n / 2);
+      const col = (a) => '<div class="t-col">' + a.map((x) => `<div class="tcard th-def"><span data-edit="add" class="t-tag"${fs(big && 32)}>${rich(x.tag)}</span>` + (x.text ? `<p data-edit="add"${fs(big && 40)}>${rich(x.text)}</p>` : '') + (x.sub ? `<p data-edit="add" class="t-sub"${fs(big && 31)}>${rich(x.sub)}</p>` : '') + '</div>').join('') + '</div>';
+      return '<section data-state="blank" class="std l1t">' + tplHead(c) + `<div class="t-body" style="grid-template-columns:${c.sim ? (n ? '1fr 520px' : '1fr') : fig ? '800px 1fr' : two ? '1fr 1fr' : '1fr'}">` + (two ? col(pts.slice(0, half)) + col(pts.slice(half)) : n && !c.sim ? col(pts) : '') +
+        (fig ? `<div data-prevent-swipe style="min-height:0;padding-bottom:40px"><iframe sandbox="allow-scripts" title="${c.sim ? '체험' : '그림'}" style="width:100%;height:100%;box-sizing:border-box;border:2px solid var(--ink);border-radius:12px;background:var(--paper-2)" srcdoc="${attr(kit(fig, c.tone))}"></iframe></div>` : '') + (c.sim && n ? col(pts) : '') + '</div>' + tplEnd(c);
+    }
+    const ox = c.ox || [], bl = c.blanks || [];   // 확인 장: ○× 문제(누르면 채점·까닭) + 빈칸(다음으로 넘기면 답이 나온다)
+    return `<section data-state="blank" class="std"${ox.length ? ' data-tpl="ox"' : ''}>` + tplHead(c) + `<div class="body two" style="grid-template-columns:${ox.length && bl.length ? '1000px 1fr' : '1fr'}">` +
+      (ox.length ? '<div class="quiz"><div class="row"><div class="panel-label">○ 또는 ×</div><button class="btn" type="button" id="quiz-show">정답 모두 보기</button></div><ol class="qs"' + (bl.length ? '' : ' style="font-size:36px;gap:26px"') + '>' + ox.map((q) => `<li data-a="${q.a}"><p data-edit="add">${rich(q.q)}</p><div class="ox"><button type="button" data-v="o" aria-label="○">○</button><button type="button" data-v="x" aria-label="×">×</button></div>` + (q.why ? `<p data-edit="add" class="why"${fs(!bl.length && 28)}>${rich(q.why)}</p>` : '') + '</li>').join('') + '</ol>' + STAMP + '</div>' : '') +
+      (bl.length ? '<div class="defs">' + bl.map((x, i) => `<div class="def"${fs(!ox.length && 40)}><p data-edit="add">${rich(x.q)}</p><span class="blank fragment custom" data-anim="blank" data-fragment-index="${i}">( <span class="bk" data-edit="add">${rich(x.a)}</span> )</span></div>`).join('') + '</div>' : '') + '</div>' + tplEnd(c);
+  };
   // 움직이는 장: AI가 짠 HTML 문서를 격리된 틀(sandbox, 같은 출처 아님)에 넣는다 — 이 사이트의 저장분·수업방·다른 장을 건드리지 못한다
   const attr = (t) => esc(t).replace(/"/g, '&quot;');
-  const liveHtml = (title, doc, memo) => `<section data-state="blank" class="std" data-ed-live="${attr(title)}"><iframe sandbox="allow-scripts" title="${attr(title)}" style="position:absolute;left:0;top:0;width:1920px;height:1080px;border:0" srcdoc="${attr(doc)}"></iframe>${memo ? `<aside class="notes">${memo}</aside>` : ''}</section>`;
+  const liveHtml = (title, doc, memo, tone) => `<section data-state="blank" class="std" data-ed-live="${attr(title)}"${tone && tone !== '모눈' ? ` style="${toneVars(tone)}"` : ''}><iframe sandbox="allow-scripts" title="${attr(title)}" style="position:absolute;left:0;top:0;width:1920px;height:1080px;border:0" srcdoc="${attr(kit(doc, tone))}"></iframe>${memo ? `<aside class="notes">${memo}</aside>` : ''}</section>`;
   const liveOf = (m) => m.dataset.edLive != null && m.querySelector('iframe[srcdoc]');
   function blankSlide() { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, blankHtml('제목', '내용을 입력하세요')); o.splice(i + 1, 0, { id }); reorder(o, i + 1); }
   function addMenu(e) {   // 빈 장, 또는 다른 차시의 장 가져오기
-    pop(e, btn('빈 장', '지금 장 뒤에 빈 장 넣기', blankSlide, 'line'), h('span', { className: 'cap', textContent: '다른 차시에서 가져오기' }), ...src.lessons.map((l) => btn(`${l.n}차시 · ${l.title}`, '이 차시의 장 보기', async (ev) => {
+    pop(e, btn('빈 장', '지금 장 뒤에 빈 장 넣기', blankSlide, 'line'), h('span', { className: 'cap', textContent: '꿈틀 꼴 (글은 넣은 뒤 눌러서 고칩니다)' }), ...Object.keys(TPLS).map((n) => btn(n, '지금 장 뒤에 이 꼴의 장 넣기', () => tplSlide(n), 'line')), h('span', { className: 'cap', textContent: '다른 차시에서 가져오기' }), ...src.lessons.map((l) => btn(`${l.n}차시 · ${l.title}`, '이 차시의 장 보기', async (ev) => {
       ev.stopPropagation();
       const got = await Promise.all(l.slides.map((id) => fetch(`장/${id}/t.json`).then((r) => r.json()).catch(() => null)));
       popup.replaceChildren(...l.slides.map((id, n) => {
@@ -382,6 +444,15 @@
       }));
     }, 'line')));
   }
+  // 장 미리보기 그림: 장을 베껴 1/10로 줄여 보인다(움직이는 부분·캔버스 그림은 비어 보인다)
+  let dragN = null;
+  function thumb(s) {
+    const c = s.cloneNode(true);
+    c.querySelectorAll('iframe, aside.notes, script, video, audio').forEach((x) => x.remove());
+    c.querySelectorAll('[id]').forEach((x) => x.removeAttribute('id'));
+    c.removeAttribute('id'); c.removeAttribute('hidden'); c.removeAttribute('aria-hidden'); c.classList.remove('past', 'future'); c.classList.add('present'); c.style.display = 'block';
+    return h('div', { className: 'ed-thumb', inert: true, ariaHidden: 'true' }, h('div', { className: 'reveal' }, h('div', { className: 'slides' }, c)));
+  }
   function marks() {
     const slides = Reveal.getSlides(), i = at(), off = (b, v) => { b.disabled = v; return b; };
     list.replaceChildren(h('div', { className: 'ed-tools', role: 'toolbar', ariaLabel: '장 다루기' },
@@ -392,8 +463,14 @@
       off(icon('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3', '이 장 빼기', (e) => ask(e, `${i + 1}번 장을 수업에서 뺄까요?`, '빼기', dropSlide), 'warn'), slides.length < 2)),
     ...slides.map((s, n) => {
       const t = s.querySelector('h1, h2, [data-ed-add="text"]');
-      const b = h('button', { type: 'button', onclick: () => Reveal.slide(n) }, h('i', { textContent: n + 1 }), h('span', { textContent: s.dataset.edLive || (t && t.textContent.trim()) || s.dataset.state || '장' }), h('em', { textContent: localStorage.getItem(key(n)) ? '고침' : '' }));
+      const b = h('button', { type: 'button', draggable: true, onclick: () => Reveal.slide(n) }, h('i', { textContent: n + 1 }), h('span', { textContent: s.dataset.edLive || (t && t.textContent.trim()) || s.dataset.state || '장' }), h('em', { textContent: localStorage.getItem(key(n)) ? '고침' : '' }), thumb(s));
       b.setAttribute('aria-current', n === i);
+      // 끌어서 순서 바꾸기: 놓은 자리로 옮긴다(화살표 단추와 같은 reorder)
+      b.ondragstart = (e) => { dragN = n; e.dataTransfer.effectAllowed = 'move'; };
+      b.ondragover = (e) => { if (dragN !== null && dragN !== n) { e.preventDefault(); b.classList.add('drop'); } };
+      b.ondragleave = () => b.classList.remove('drop');
+      b.ondrop = (e) => { e.preventDefault(); if (dragN === null || dragN === n) return; const o = order(); o.splice(n, 0, o.splice(dragN, 1)[0]); dragN = null; reorder(o, n); };
+      b.ondragend = () => { dragN = null; };
       return b;
     }));
   }
@@ -427,6 +504,14 @@
 명령 (글에서 **굵게**, 줄 바꿈은 \\n):
 {"do":"text","at":"3.2","text":"새 글"}  글 칸 바꾸기
 {"do":"add","after":3,"title":"제목","body":"내용","notes":"발표자 메모"}  3번 장 뒤에 새 장 (after 0 = 맨 앞)
+{"do":"tone","slide":"all","tone":"하늘"}  색·배경 조합 바꾸기(slide는 장 번호, [2,3,5]처럼 여러 장, 또는 "all"). tone: 모눈(기본)·백지·크림·하늘·벚꽃·칠판(어두운 초록)·밤하늘(어두운 남색). add·live에도 "tone"을 붙일 수 있습니다. 한 수업은 한두 가지 조합으로 통일하세요
+자유롭게 짜는 장: live(화면 전체 1920×1080)와 sim(틀 안 칸)·figure의 HTML 문서에는 꿈틀 꾸밈이 미리 들어 있습니다. 색은 var(--paper)·var(--paper-2)·var(--ink)·var(--ink-2)·var(--accent)·var(--accent-soft)·var(--hl), 글꼴은 var(--f-display)(제목)·var(--f-body)·var(--f-pen)(손글씨), 클래스는 .card .tag .btn(.on) .hl .pen .eyebrow .row .grid2 .grid3 .muted, <body class="paper">는 모눈 배경, h1 68px·본문 32px. 색을 직접 적지 말고 이 변수를 쓰면 색 조합을 바꿔도 따라 바뀝니다. 꼴에 없는 배치(표·흐름도·견주기·연표 등)는 live로 자유롭게 짜세요(움직임이 없어도 됩니다)
+새 장은 아래 꿈틀 꼴 가운데 하나로 만드세요(body만 쓴 장은 밋밋합니다). eyebrow(제목 위 작은 줄)·pen(제목 옆 손글씨 한마디)·notes는 어느 꼴에나 붙일 수 있습니다:
+{"do":"add","after":3,"eyebrow":"이론 · 반응 속도","title":"제목","points":[{"tag":"개념 이름","text":"설명","sub":"덧붙임"}],"figure":"<!doctype html>…"}  이론 장: 개념 카드 1~6개. figure(그림·도식을 그린 HTML 문서, SVG 권장)를 주면 오른쪽에 놓입니다(카드 3개까지 권장)
+{"do":"add","after":3,"eyebrow":"체험 · 기울기 재기","title":"제목","pen":"점을 끌어 보세요","sim":"<!doctype html>…","points":[{"tag":"해 보기","text":"무엇을 움직여 무엇을 볼지"}]}  체험 장: 꿈틀 틀 안에 움직이는 칸(sim: 끌기·누르기로 직접 해 보는 HTML 문서, 가로 3 : 세로 2쯤의 칸에 꽉 차게, 글씨는 vh 단위로 크게). points(3개까지)는 오른쪽에 좁게 놓입니다. 고치려면 그 장을 remove하고 다시 add 하세요(지금 장의 sim 원문은 아래 [지금 장의 문서]에 보입니다)
+{"do":"add","after":3,"title":"제목","cards":[{"title":"카드 제목","text":"설명 한두 줄","sub":"보기·덧붙임"}],"flip":true}  정리 장: 번호 카드 1~6개. flip을 주면 제목만 보이다가 누르면 뒤집힙니다
+{"do":"add","after":3,"title":"제목","ox":[{"q":"문장","a":"x","why":"까닭"}],"blanks":[{"q":"순간 반응 속도는 무엇의 기울기와 같은가","a":"접선"}]}  확인 장: ○× 1~6개와 빈칸 1~5개(둘 중 하나만 써도 됩니다). 빈칸은 q 뒤에 따로 그려지니 q에 괄호를 넣지 마세요
+수업방 잇기(live·sim 속 문제): 보기 단추에 data-q(문항 이름, 영문·숫자 20자 안)와 data-v(답 값, 영문·숫자)를 붙이면 학생이 누른 답이 선생님 화면에 모이고, 선생님 화면에는 단추마다 고른 학생 수가 붙습니다. 예: <button class="btn" data-q="q1" data-v="a">접선</button><button class="btn" data-q="q1" data-v="b">할선</button>. 누르기 말고 끌기·입력 결과를 보낼 때는 kkumteul.answer("q2","7")(값은 영문·숫자·쉼표). 한 장에 문항 20개까지. 정답·해설 표시는 문서가 스스로 하세요
 {"do":"box","slide":3,"text":"글","x":160,"y":760,"w":1600,"size":40}  글 상자 넣기 (장 크기 1920×1080)
 {"do":"notes","slide":3,"text":"발표자 메모"}
 {"do":"move","slide":3,"to":1}  3번 장을 1번 자리로
@@ -475,7 +560,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
       const t = m.querySelector('h1, h2, [data-ed-add="text"]'), a = noteOf(m);
       return `[${i + 1}] ${cut(m.dataset.edLive || (t ? t.textContent : m.dataset.state || '장'))}${liveOf(m) ? ' (움직이는 장 — live로 고칠 수 있음)' : src.slides[i].src ? '' : ' (새로 만든 장)'}\n` + fields(i).map((f, k) => `  ${i + 1}.${k + 1} ${cut(f.textContent)}\n`).join('') + (a ? `  메모: ${cut(a.textContent)}\n` : '');
     }).join('');
-    const lv = liveOf(models[at()]); aiSrc.textContent = lv ? lv.getAttribute('srcdoc') : '(지금 장은 움직이는 장이 아닙니다)';
+    const lv = models[at()].querySelector('iframe[srcdoc]'); aiSrc.textContent = lv ? lv.getAttribute('srcdoc').replace(KIT, '').replace(/^<!doctype html>(?=\s*<!doctype)/i, '') : '(지금 장은 움직이는 장이 아닙니다)';
   }
   function aiOpen(on) { ai.style.display = on ? 'flex' : 'none'; on ? sessionStorage.setItem('ed-ai-open', '1') : sessionStorage.removeItem('ed-ai-open'); aiShow(); }
   const aiSay = (t) => { aiOut.textContent = aiOut2.textContent = t; aiOut.style.color = t.startsWith('오류') ? '#b42318' : '#15803d'; };
@@ -493,9 +578,18 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
       if (c.do === 'text') { need(field(c.at), '없는 칸입니다(at)'); need(str(c.text), 'text가 없거나 너무 깁니다'); }
       else if (c.do === 'notes') { need(sl(c.slide), '없는 장입니다'); need(str(c.text), 'text가 없거나 너무 깁니다'); }
       else if (c.do === 'box') { need(sl(c.slide), '없는 장입니다'); need(str(c.text) && c.text.trim(), 'text가 없거나 너무 깁니다'); need(num(c.x, 0, 1900) && num(c.y, 0, 1060) && num(c.w, 40, 1920) && num(c.size, 10, 300), 'x·y·w·size 값이 범위를 벗어났습니다'); }
-      else if (c.do === 'add') { need(Number.isInteger(c.after) && c.after >= 0 && c.after <= n, 'after는 0~' + n); need(str(c.title, 200) && c.title.trim(), 'title이 없거나 너무 깁니다'); need(opt(c.body) && opt(c.notes), 'body·notes가 너무 깁니다'); }
+      else if (c.do === 'add') { need(Number.isInteger(c.after) && c.after >= 0 && c.after <= n, 'after는 0~' + n); need(str(c.title, 200) && c.title.trim(), 'title이 없거나 너무 깁니다'); need(opt(c.body) && opt(c.notes), 'body·notes가 너무 깁니다'); const arr = (v, hi, fn) => v == null || (Array.isArray(v) && v.length >= 1 && v.length <= hi && v.every((x) => x && typeof x === 'object' && fn(x))), name = (v, max = 200) => str(v, max) && v.trim();
+        need(arr(c.cards, 6, (x) => name(x.title) && opt(x.text) && opt(x.sub)), 'cards는 1~6개, 카드마다 title(꼭)·text·sub');
+        need(arr(c.points, 6, (x) => name(x.tag) && opt(x.text) && opt(x.sub)), 'points는 1~6개, 하나마다 tag(꼭)·text·sub');
+        need(c.sim == null || (c.figure == null && (c.points || []).length <= 3 && str(c.sim, 300000) && /<\w/.test(c.sim)), 'sim은 HTML 문서로(30만 자까지), figure 없이, points는 3개까지');
+        need(c.figure == null || (c.points && str(c.figure, 300000) && /<\w/.test(c.figure)), 'figure는 points와 함께, HTML 문서로(30만 자까지)');
+        need(arr(c.ox, 6, (x) => name(x.q, 2000) && (x.a === 'o' || x.a === 'x') && opt(x.why)), 'ox는 1~6개, 문제마다 q·a("o" 또는 "x")·why');
+        need(arr(c.blanks, 5, (x) => name(x.q, 2000) && name(x.a, 60)), 'blanks는 1~5개, 하나마다 q·a(60자까지)');
+        need([c.cards, c.points || c.sim, c.ox || c.blanks].filter(Boolean).length <= 1, 'cards·points(sim)·ox(blanks) 가운데 한 꼴만 고르세요'); need(c.pen == null || str(c.pen, 60), 'pen이 너무 깁니다(60자까지)');
+        need(c.eyebrow == null || str(c.eyebrow, 200), 'eyebrow가 너무 깁니다'); need(c.tone == null || isTone(c.tone), TONE_ERR); }
+      else if (c.do === 'tone') { need(c.slide === 'all' || sl(c.slide) || (Array.isArray(c.slide) && c.slide.length && c.slide.every(sl)), '없는 장입니다(slide는 번호, [2,3]처럼 여러 장, 또는 "all")'); need(isTone(c.tone), TONE_ERR); }
       else if (c.do === 'live') {
-        need(str(c.html, 300000) && /<\w/.test(c.html), 'html이 없거나 너무 깁니다(30만 자까지)'); need(opt(c.notes), 'notes가 너무 깁니다');
+        need(str(c.html, 300000) && /<\w/.test(c.html), 'html이 없거나 너무 깁니다(30만 자까지)'); need(opt(c.notes), 'notes가 너무 깁니다'); need(c.tone == null || isTone(c.tone), TONE_ERR);
         if (c.slide != null) { need(sl(c.slide) && liveOf(models[c.slide - 1]), 'slide는 개요에 «움직이는 장»이라 적힌 장만 됩니다'); need(c.title == null || (str(c.title, 200) && c.title.trim()), 'title이 너무 깁니다'); }
         else { need(Number.isInteger(c.after) && c.after >= 0 && c.after <= n, 'after는 0~' + n); need(str(c.title, 200) && c.title.trim(), 'title이 없거나 너무 깁니다'); }
       }
@@ -512,14 +606,15 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     for (const c of cmds) {
       if (c.do === 'text') { const f = field(c.at); commit(htmlOp(f.dataset.eid, rich(c.text)), +c.at.split('.')[0] - 1); }
       else if (c.do === 'notes') { const op = memoOp(c.slide - 1, rich(c.text)); if (op) commit(op, c.slide - 1); }
+      else if (c.do === 'tone') setTone(c.tone, c.slide === 'all' ? models.map((m, i) => i) : [].concat(c.slide).map((n) => n - 1));
       else if (c.do === 'box') {
         const html = ADD.text.replace('left:560px;top:470px;width:800px;font-size:40px', `left:${c.x ?? 160}px;top:${c.y ?? 760 + 70 * boxes++}px;width:${c.w ?? 1600}px;font-size:${c.size ?? 40}px`).replace('글을 입력하세요', rich(c.text));
         commit(addOp(make(html), { parent: models[c.slide - 1].dataset.eid, before: null }), c.slide - 1);
       } else {
         shape = true; const pos = (id) => o.findIndex((x) => x.id === id);
-        if (c.do === 'live' && c.slide != null) { const m = models[c.slide - 1], a = noteOf(m); localStorage.setItem('deck-edit:' + id0[c.slide - 1], liveHtml(c.title ? c.title.trim() : m.dataset.edLive, c.html, c.notes != null ? rich(c.notes) : a ? a.innerHTML : '')); }
-        else if (c.do === 'live') { const id = newId(), anchor = last[c.after] || id0[c.after - 1]; localStorage.setItem('deck-edit:' + id, liveHtml(c.title.trim(), c.html, rich(c.notes || ''))); o.splice(anchor ? pos(anchor) + 1 : 0, 0, { id }); last[c.after] = id; }
-        else if (c.do === 'add') { const id = newId(), anchor = last[c.after] || id0[c.after - 1]; localStorage.setItem('deck-edit:' + id, blankHtml(rich(c.title), rich(c.body || ''), rich(c.notes || ''))); o.splice(anchor ? pos(anchor) + 1 : 0, 0, { id }); last[c.after] = id; }
+        if (c.do === 'live' && c.slide != null) { const m = models[c.slide - 1], a = noteOf(m); localStorage.setItem('deck-edit:' + id0[c.slide - 1], liveHtml(c.title ? c.title.trim() : m.dataset.edLive, c.html, c.notes != null ? rich(c.notes) : a ? a.innerHTML : '', c.tone || toneOf(m))); }
+        else if (c.do === 'live') { const id = newId(), anchor = last[c.after] || id0[c.after - 1]; localStorage.setItem('deck-edit:' + id, liveHtml(c.title.trim(), c.html, rich(c.notes || ''), c.tone)); o.splice(anchor ? pos(anchor) + 1 : 0, 0, { id }); last[c.after] = id; }
+        else if (c.do === 'add') { const id = newId(), anchor = last[c.after] || id0[c.after - 1]; localStorage.setItem('deck-edit:' + id, toned((c.cards || c.points || c.sim || c.ox || c.blanks) ? tplHtml(c) : blankHtml(rich(c.title), rich(c.body || ''), rich(c.notes || '')), c.tone)); o.splice(anchor ? pos(anchor) + 1 : 0, 0, { id }); last[c.after] = id; }
         else if (pos(id0[c.slide - 1]) >= 0) { const [x] = o.splice(pos(id0[c.slide - 1]), 1); if (c.do === 'move') o.splice(c.to - 1, 0, x); }
       }
     }
@@ -541,6 +636,30 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
       btn('그림…', '내 컴퓨터의 그림을 배경으로 씁니다', () => { bgNext = true; file.click(); }),
       btn('원래대로', '배경을 처음대로', () => set({ 'background-color': '', 'background-image': '', 'background-size': '', 'background-position': '' })));
   }
+  // 색 조합을 입힌다: 장의 색 변수와, 그 장 안 격리된 틀(움직이는 칸)의 꾸밈 묶음까지
+  function setTone(t, idx) {   // 여러 장이어도 되돌리기 한 번
+    const ops = [];
+    for (const i of idx) { const m = models[i]; ops.push(styleOp(m.dataset.eid, toneProps(t)));
+      for (const f of m.querySelectorAll('iframe[srcdoc]')) if (KIT.test(f.getAttribute('srcdoc'))) ops.push(attrOp(f.dataset.eid, 'srcdoc', kit(f.getAttribute('srcdoc'), t))); }
+    const o = multi(ops), save = () => idx.forEach(after);
+    commit({ redo: () => { o.redo(); save(); }, undo: () => { o.undo(); save(); } });
+  }
+  function toneMenu(e) {   // 입힐 장을 고르고(처음엔 지금 장) 색 조합을 누른다
+    const box = (n, on) => h('input', { type: 'checkbox', checked: on, title: n + '번 장' });
+    const one = models.map((m, i) => box(i + 1, i === at())), all = h('input', { type: 'checkbox', id: 'ed-tone-all', onchange: () => one.forEach((c) => { c.checked = all.checked; }) });
+    const where = h('div', { className: 'scope', onclick: (ev) => ev.stopPropagation() }, h('label', {}, all, h('b', { textContent: '모든 장' })), ...one.map((c, i) => h('label', {}, c, String(i + 1))));
+    pop(e, h('span', { className: 'cap', textContent: '입힐 장 (처음엔 지금 장만 골라져 있습니다)' }), where, h('span', { className: 'cap', textContent: '색 조합' }),
+      ...Object.keys(TONES).map((t) => { const b = btn(t, t + ' 색 조합을 고른 장에 입힙니다', () => { const idx = one.flatMap((c, i) => (c.checked ? [i] : [])); idx.length ? setTone(t, idx) : tell('입힐 장을 하나 이상 고르세요'); }), v = { ...BASE, ...TONES[t] }; b.style.cssText = `background:${v.paper};color:${v.ink};border-color:${v.accent}`; return b; }));
+  }
+  // 꿈틀 꼴 장을 손으로 넣는다: 자리만 잡힌 장을 넣고 글은 눌러서 고친다. 색 조합은 지금 장을 따른다
+  const TPLS = { '이론 장 (개념 카드 3)': { points: [1, 2, 3].map(() => ({ tag: '▣ 개념', text: '설명을 적으세요', sub: '덧붙이는 말' })) },
+    '정리 카드 (4)': { cards: [1, 2, 3, 4].map((i) => ({ title: '정리 ' + i, text: '내용을 적으세요', sub: '덧붙이는 말' })) },
+    '뒤집는 정리 카드 (3)': { flip: true, cards: [1, 2, 3].map((i) => ({ title: '앞면 ' + i, text: '뒷면 내용을 적으세요' })) },
+    '○× 확인 (3문제)': { ox: [1, 2, 3].map(() => ({ q: '문제를 적으세요', a: 'o', why: '까닭을 적으세요' })) },
+    '빈칸 확인 (3문제)': { blanks: [1, 2, 3].map(() => ({ q: '문제를 적으세요', a: '답' })) },
+    '○× + 빈칸': { ox: [1, 2].map(() => ({ q: '문제를 적으세요', a: 'o', why: '까닭을 적으세요' })), blanks: [1, 2].map(() => ({ q: '문제를 적으세요', a: '답' })) } };
+  function tplSlide(name) { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, toned(tplHtml({ eyebrow: '단원 · 차시', title: '제목', ...TPLS[name] }), toneOf(models[i]))); o.splice(i + 1, 0, { id }); reorder(o, i + 1); }
+  const helpMenu = (e) => pop(e, ...['글 고치기: 글을 두 번 누릅니다', '상자 넣기: 「＋ 도형」의 네모(글이 든 상자는 「＋ 글 상자」에 채움·테두리)', '옮기기·크기: 끌어서 옮기고, 모서리 점을 끌어 크기를 바꿉니다(위 동그란 점은 돌리기)', '새 장: 왼쪽 위 ＋ 를 누르고 꿈틀 꼴(이론·정리·확인)을 고릅니다', '카드·문제 늘리기: 하나를 고르고 「복제」(카드 통째는 「바깥 상자」로 고릅니다), 줄이기는 「지우기」', '○× 정답 바꾸기: 문제 옆 ○나 ×를 누르면 그것이 정답이 됩니다', '색 조합: 입힐 장을 고르고 조합을 누릅니다', '잘못했으면 ↶ (Ctrl+Z)'].map((t) => h('span', { className: 'ask', textContent: '· ' + t })));
   const setBg = (f) => readImage(f, (url) => commit(styleOp(sheetId(), { 'background-image': `url("${url}")`, 'background-size': 'cover', 'background-position': 'center' })));
   function shapeMenu(e) {
     const ic = (title, inner, fn) => { const b = btn('', title, fn); b.innerHTML = `<svg viewBox="0 0 100 100" width="24" height="24" aria-hidden="true">${inner}</svg>`; b.setAttribute('aria-label', title); return b; };
@@ -756,6 +875,8 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     if (ours(e.target)) return;
     if (editing) { if (L(editing).contains(e.target)) return; endText(); }
     const hit = pick(e.target);
+    const q = hit.lock && hit.lock.matches('button[data-v]') && hit.lock.closest('[data-tpl="ox"] li[data-a]');   // 새 확인 장: ○×를 누르면 정답이 된다
+    if (q) { select(null); commit(attrOp(q.dataset.eid, 'data-a', hit.lock.dataset.v)); return tell(`정답을 ${hit.lock.dataset.v === 'o' ? '○' : '×'}로 정했습니다`); }
     if (hit.lock) { select(null); return tell('움직이는 부분은 고칠 수 없습니다 · 그대로 눌러 볼 수 있어요'); }
     if (!hit.id) {   // 빈 곳을 끌면 범위로 고른다
       select(null);
@@ -828,7 +949,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     marks(); select(null); showMemo(); tick();
     if (sessionStorage.getItem('ed-ai-open') || new URLSearchParams(location.search).has('ai')) aiOpen(true);
     if (sessionStorage.getItem('ed-ai-msg')) { aiSay(sessionStorage.getItem('ed-ai-msg')); sessionStorage.removeItem('ed-ai-msg'); }
-    window.__ed = { M, L, hist, pick, ids, choose2 };   // 시험에서 들여다보는 창
+    window.__ed = { M, L, hist, pick, ids, choose2, kit };   // 시험에서 들여다보는 창
   }
   const wait = setInterval(() => { if (window.Reveal && Reveal.isReady()) { clearInterval(wait); start(); } }, 100);
 })();
