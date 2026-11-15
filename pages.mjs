@@ -1217,7 +1217,9 @@ ${STATS_JS}
 //   board.html?lesson=tongsci2/2-2-2/1&slide=3 → 그 차시·장이 붙은 새 글 쓰기 · board.html#p12 → 12번 글
 //   글은 마크다운. 화면에 띄울 때 marked(MIT)로 바꾸고 DOMPurify(Apache-2.0/MPL)로 위험한 태그를 걸러 낸다
 const BOARD_JS = String.raw`
+  // 선생님 게시판 화면(2026-11-16 스레드 형태로 새로 짬): 글이 그대로 이어 보이고, 그 자리에서 공감, 글을 열면 답글(한 단계)·사진
   var S = { board: qs.get('lesson') ? 'help' : 'talk', sort: 'new', q: '', page: 0, lesson: qs.get('lesson') || '' };
+  var POSTS = {}, MEM = {}, CUR = 0, TO = 0, ME = '';
   function first(t) { return String(t || '').trim().split('\n')[0].slice(0, 80); }   // 제목 칸이 없다: 첫 줄이 제목 구실
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -1226,9 +1228,80 @@ const BOARD_JS = String.raw`
   function lessonName(p) { var l = LESSONS.filter(function (x) { return x.path === p; })[0]; return l ? l.unit + ' ' + l.n + '차시 ' + l.title : p; }
   function lessonLink(p, slide) { var l = LESSONS.filter(function (x) { return x.path === p; })[0]; return l ? '<a href="' + esc(l.teacher) + (slide ? '#/' + (slide - 1) : '') + '" target="_blank" rel="noopener">' + esc(lessonName(p)) + (slide ? ' · ' + slide + '장' : '') + '</a>' : esc(p || ''); }
   function call(op, body) { var s = sess(); body = body || {}; body.session = s && s.token; return api('/board/' + op, body).then(function (j) { if (j.login) { signedOut(); gate(); throw new Error(j.error); } if (j.error) throw new Error(j.error); return j; }); }
-  function say(t) { $('bmsg').textContent = t || ''; }
-  // 마크다운 도구는 목록을 막지 않게 늦게 받는다(defer). 글을 열 때만 다 받았는지 기다린다
+  function say(t) { $('bmsg').textContent = t || ''; if (t) $('bmsg').scrollIntoView({ block: 'nearest' }); }
+  // 마크다운 도구는 늦게 받는다(defer). 글을 그리기 전에 다 받았는지 기다린다
   var mdReady = new Promise(function (ok) { if (document.readyState !== 'loading') ok(); else addEventListener('DOMContentLoaded', ok); });
+
+  // ---- 그리는 조각: 이름 첫 글자 동그라미 · 사진 · 아이콘 줄 · «⋯» 메뉴 ----
+  var SV = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  var IC = {
+    heart: SV + '<path d="M12 20.5l-1.3-1.2C5.6 14.700 3 12.200 3 8.900 3 6.400 5 4.500 7.400 4.500c1.800 0 3.500.9 4.600 2.500 1.100-1.600 2.800-2.500 4.600-2.500C19 4.500 21 6.400 21 8.900c0 3.300-2.600 5.800-7.700 10.400L12 20.500z"/></svg>',
+    talk: SV + '<path d="M5 4.500h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8.500L6 21v-3.500H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg>',
+    share: SV + '<path d="M5 12.500V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6.500M12 15V4m0 0L8 8m4-4l4 4"/></svg>',
+    photo: SV + '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.500" cy="10" r="1.500"/><path d="M21 15.500l-5-5L6 19"/></svg>'
+  };
+  function hue(n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 360; return h; }
+  function av(n) { n = String(n || '?'); var h = hue(n); return '<span class="av" aria-hidden="true" style="background:hsl(' + h + ' 45% 88%);color:hsl(' + h + ' 45% 26%)">' + esc(n.charAt(0)) + '</span>'; }
+  function pics(ks) { return ks && ks.length ? '<div class="pics n' + ks.length + '">' + ks.map(function (k) { return '<img data-k="' + esc(k) + '" alt="첨부 사진">'; }).join('') + '</div>' : ''; }
+  // 사진은 승인된 선생님만 받는다: 로그인 표를 머리말에 실어 받아 이 화면 안 주소(blob)로 건다
+  var BLOB = {};
+  function loadPics(root) {
+    root.querySelectorAll('img[data-k]').forEach(function (im) {
+      var k = im.dataset.k;
+      if (!BLOB[k]) BLOB[k] = fetch(API + '/board/img/' + k, { headers: { Authorization: 'Bearer ' + (sess() || {}).token } }).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) { return URL.createObjectURL(b); });
+      BLOB[k].then(function (u) { im.src = u; }).catch(function () { delete BLOB[k]; im.alt = '사진을 불러오지 못했어요'; });
+    });
+  }
+  function acts(k, r) {
+    return '<div class="acts"><button type="button" class="ab lk" data-like="' + k + r.id + '" aria-pressed="' + !!r.liked + '" aria-label="공감">' + IC.heart + '<span>' + (r.likes || '') + '</span></button>'
+      + (k === 'p' ? '<a class="ab" href="#p' + r.id + '" aria-label="답글">' + IC.talk + '<span>' + (r.comments || '') + '</span></a><button type="button" class="ab" data-share="' + r.id + '" aria-label="공유">' + IC.share + '</button>'
+        : '<button type="button" class="ab" data-reply="' + r.id + '">' + IC.talk + '<span>답글</span></button>') + '</div>';
+  }
+  function menu(k, r, admin) {
+    if (!(r.mine || admin)) return '';
+    var back = k === 'p' && r.hidden && admin && r.kind === 'share';   // 숨긴 자료 나눔 글만 되살릴 수 있다(나머지는 정말 지워진다)
+    return '<details class="menu"><summary aria-label="수정·삭제">⋯</summary><div>' + (k === 'p' ? '<button type="button" data-edit="' + r.id + '">수정</button>' : '')
+      + '<button type="button" class="warn" data-del="' + k + r.id + '"' + (back ? ' data-back="1">다시 보이기' : '>삭제') + '</button></div></details>';
+  }
+  function head(r, extra, k, admin) { return '<div class="hd"><b>' + esc(r.author_name) + '</b><span class="meta">' + when(r.created_at) + (extra || '') + '</span>' + menu(k, r, admin) + '</div>'; }
+  function postHtml(p, admin, full) {
+    var body = (p.body.indexOf(p.title) === 0 || p.title === '사진' ? '' : '<p><b>' + esc(p.title) + '</b></p>') + md(p.body);
+    return av(p.author_name) + '<div class="tb">' + head(p, (p.kind === 'share' ? ' · 자료 나눔' : '') + (p.hidden ? ' · 숨김' : ''), 'p', admin)
+      + '<div class="mdb' + (full ? '' : ' clamp" data-open="' + p.id + (p.long ? '" data-long="1' : '')) + '">' + body + '</div>'
+      + pics(p.images)
+      + (p.lesson && p.kind !== 'share' ? '<p class="meta ltag">' + lessonLink(p.lesson, p.slide) + '</p>' : '')
+      + acts('p', p) + '</div>';
+  }
+  // 그린 뒤: 사진을 받고, 잘린 긴 글에 «더 보기»를 단다
+  function after(root) {
+    loadPics(root);
+    root.querySelectorAll('.mdb.clamp').forEach(function (m) { if (m.dataset.long || m.scrollHeight > m.clientHeight + 4) m.insertAdjacentHTML('afterend', '<a class="morel" href="#p' + m.dataset.open + '">더 보기</a>'); });
+  }
+
+  // ---- 사진 고르기: 화면에서 긴 변 1600으로 줄인 JPEG로 바꿔 둔다(4장까지) ----
+  function shrink(f) {
+    return createImageBitmap(f).then(function (bm) {
+      var k = Math.min(1, 1600 / Math.max(bm.width, bm.height)), c = document.createElement('canvas'), x;
+      c.width = Math.round(bm.width * k); c.height = Math.round(bm.height * k);
+      x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bm, 0, 0, c.width, c.height);
+      var q = 0.82, u; do { u = c.toDataURL('image/jpeg', q); q -= 0.12; } while (u.length > 1.15e6 && q > 0.3);   // 서버 한도 900kB
+      if (u.length > 1.15e6) throw 0;
+      return u;
+    });
+  }
+  function picker(inp, pv, msg) {
+    var P = { list: [] };
+    function show() { pv.innerHTML = P.list.map(function (u, i) { return '<span class="pvi"><img src="' + u + '" alt="올릴 사진 ' + (i + 1) + '"><button type="button" data-i="' + i + '" aria-label="사진 빼기">×</button></span>'; }).join(''); }
+    pv.onclick = function (e) { var b = e.target.closest('[data-i]'); if (b) { P.list.splice(+b.dataset.i, 1); show(); } };
+    inp.onchange = function () {
+      var fs = [].slice.call(inp.files, 0, 4 - P.list.length); msg(inp.files.length > fs.length ? '사진은 4장까지 올릴 수 있어요.' : '');
+      Promise.all(fs.map(shrink)).then(function (us) { P.list = P.list.concat(us); show(); }).catch(function () { msg('사진을 읽지 못했어요.'); });
+      inp.value = '';
+    };
+    P.clear = function () { P.list = []; show(); };
+    return P;
+  }
+  function grow(t) { t.oninput = function () { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }; }
 
   // ---- 들어오기: 로그인 → 승인 확인 ----
   function gate() {
@@ -1246,38 +1319,36 @@ const BOARD_JS = String.raw`
       return;
     }
     $('gate').hidden = true; $('board').hidden = false;
-    $('who').innerHTML = esc(s.name || s.email) + (s.admin ? ' · 관리' : '');
+    ME = s.name || s.email;
+    $('who').innerHTML = esc(ME) + (s.admin ? ' · 관리' : ''); $('wav').innerHTML = av(ME);
     route();
   }
-  function route() { var m = /^#p(\d+)$/.exec(location.hash); if (m) openPost(+m[1]); else { $('detail').hidden = true; $('listv').hidden = false; compose(); list(); } }
+  function route() { var m = /^#p(\d+)$/.exec(location.hash); if (m) openPost(+m[1]); else { CUR = 0; $('detail').hidden = true; $('listv').hidden = false; compose(); list(); } }
   addEventListener('hashchange', function () { if (sess()) route(); });
 
-  // ---- 목록: 글이 그대로 이어 보인다 ----
+  // ---- 목록 ----
+  var CACHE = 'science-slides:board:';
+  function keep() { try { Object.keys(MEM).forEach(function (k) { sessionStorage.setItem(k, JSON.stringify(MEM[k])); }); } catch (e) {} }
+  function forget() { MEM = {}; try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf(CACHE) === 0) sessionStorage.removeItem(k); }); } catch (e) {} }
   function list(more) {
     if (!more) S.page = 0;
     // 서버가 멀어 왕복이 느리다: 이 탭에서 지난번에 받은 첫 쪽을 먼저 그리고, 새로 받으면 바꾼다(로그아웃하면 지운다)
     var ck = S.q || S.lesson || more ? '' : CACHE + S.board + S.sort, old = null;
-    if (ck) try { old = JSON.parse(sessionStorage.getItem(ck)); } catch (e) {}
-    if (old) draw(old); else if (!more) $('plist').innerHTML = '<li class="empty">불러오는 중…</li>';
+    if (ck) try { old = MEM[ck] || JSON.parse(sessionStorage.getItem(ck)); } catch (e) {}
+    if (old) mdReady.then(function () { draw(old); }); else if (!more) $('plist').innerHTML = '<li class="empty">불러오는 중…</li>';
     call('list', { board: S.board, sort: S.sort, q: S.q, lesson: S.lesson, page: S.page }).then(function (j) {
-      if (ck) try { sessionStorage.setItem(ck, JSON.stringify(j)); } catch (e) {}
-      draw(j);
+      if (ck) { MEM[ck] = j; keep(); }
+      return mdReady.then(function () { draw(j); });
     }).catch(function (e) { say(e.message); });
     function draw(j) {
       $('lessonf').hidden = !S.lesson; $('lessonf').innerHTML = S.lesson ? esc(lessonName(S.lesson)) + ' 글만 보는 중 · <a href="#" id="alll">모두 보기</a>' : '';
       if (S.lesson) $('alll').onclick = function (e) { e.preventDefault(); S.lesson = ''; list(); };
-      var html = j.posts.map(function (p) {
-        return '<li class="bp' + (p.hidden ? ' hid' : '') + '"><a href="#p' + p.id + '"><span class="meta"><b>' + esc(p.author_name) + '</b> · ' + when(p.created_at) + (p.kind === 'share' ? ' · 자료 나눔' : '') + (p.hidden ? ' · 숨김' : '') + '</span>'
-          + (p.preview.indexOf(p.title) === 0 ? '' : '<b class="bt">' + esc(p.title) + '</b>') + '<span class="pv">' + esc(p.preview) + '</span>'
-          + (p.lesson && p.kind !== 'share' ? '<span class="meta">' + esc(lessonName(p.lesson)) + (p.slide ? ' · ' + p.slide + '장' : '') + '</span>' : '')
-          + '<span class="meta rx">♡ ' + p.likes + '<i></i>💬 ' + p.comments + '</span></a></li>';
-      }).join('');
+      var html = j.posts.map(function (p) { POSTS[p.id] = p; return '<li class="bp th' + (p.hidden ? ' hid' : '') + '">' + postHtml(p, j.admin) + '</li>'; }).join('');
       if (more) $('plist').insertAdjacentHTML('beforeend', html); else $('plist').innerHTML = html || '<li class="empty">' + (S.board === 'help' ? '아직 들어온 오류·요청이 없어요.' : '아직 글이 없어요. 첫 이야기를 남겨 주세요.') + '</li>';
+      after($('plist'));
       $('more').hidden = !j.more;
     }
   }
-  var CACHE = 'science-slides:board:';
-  function forget() { try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf(CACHE) === 0) sessionStorage.removeItem(k); }); } catch (e) {} }
   function filters() {
     document.querySelectorAll('[data-b]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.b === S.board)); b.onclick = function () { S.board = b.dataset.b; S.lesson = ''; filters(); if (location.hash) location.hash = ''; else route(); }; });
     $('fsort').onchange = function () { S.sort = this.value; list(); };
@@ -1286,65 +1357,107 @@ const BOARD_JS = String.raw`
     $('wlesson').innerHTML = '<option value="">차시 없음</option>' + LESSONS.map(function (l) { return '<option value="' + esc(l.path) + '">' + esc(l.unit + ' ' + l.n + '차시 ' + l.title) + '</option>'; }).join('');
   }
 
-  // ---- 글 쓰기: 목록 위 칸에 바로 쓴다(제목·종류 없음). 오류·요청에서만 차시·장을 붙일 수 있다. edit 이면 그 글 수정 ----
+  // ---- 글 쓰기: 목록 위 칸에 바로 쓴다(제목·종류 없음). 오류·요청에서만 차시·장을 붙인다. edit 이면 그 글 수정(사진은 그대로) ----
+  var WP = picker($('wfile'), $('wpv'), function (t) { $('wmsg').textContent = t; });
+  grow($('wbody'));
   function compose(edit) {
     var help = edit ? edit.kind === 'bug' || edit.kind === 'ask' : S.board === 'help';
-    $('write').hidden = false; $('wl').hidden = !help || !!edit; $('wcancel').hidden = !edit; $('wmsg').textContent = '';
-    $('wbody').placeholder = help ? '어느 차시 몇 장에서 무엇이 어떻게 보였는지, 어떻게 바뀌면 좋을지 적어 주세요.' : '수업 이야기, 써 본 느낌, 궁금한 것. 무엇이든 편하게 남겨 주세요.';
-    $('wbody').value = edit ? edit.body : ''; $('wsend').textContent = edit ? '수정' : '올리기';
+    $('write').hidden = false; $('wl').hidden = !help || !!edit; $('wcancel').hidden = !edit; $('wpick').hidden = !!edit; $('wmsg').textContent = ''; WP.clear();
+    $('wbody').placeholder = help ? '어느 차시 몇 장에서 무엇이 어떻게 보였는지 적어 주세요.' : '수업 이야기, 궁금한 것. 편하게 남겨 주세요.';
+    $('wbody').value = edit ? edit.body : ''; $('wsend').textContent = edit ? '수정' : '올리기'; $('wbody').oninput();
     if (edit) { $('detail').hidden = true; $('listv').hidden = true; $('wbody').focus(); }
     else { $('wlesson').value = S.lesson || ''; $('wslide').value = S.lesson ? parseInt(qs.get('slide'), 10) || '' : ''; }
     $('wform').onsubmit = function (e) {
       e.preventDefault();
       var body = $('wbody').value;
-      $('wsend').disabled = true;
-      (edit ? call('edit', { id: edit.id, title: edit.body.indexOf(edit.title) === 0 ? first(body) : edit.title, body: body })
-        : call('post', { kind: help ? 'bug' : 'idea', body: body, lesson: help ? $('wlesson').value || null : null, slide: help ? parseInt($('wslide').value, 10) || null : null }))
+      if (!body.trim() && !WP.list.length) return;
+      $('wsend').disabled = true; $('wsend').textContent = edit ? '수정하는 중…' : '올리는 중…';
+      (edit ? call('edit', { id: edit.id, title: edit.body.indexOf(edit.title) === 0 ? first(body) || edit.title : edit.title, body: body })
+        : call('post', { kind: help ? 'bug' : 'idea', body: body, images: WP.list, lesson: help ? $('wlesson').value || null : null, slide: help ? parseInt($('wslide').value, 10) || null : null }))
         .then(function () { $('wsend').disabled = false; route(); })
-        .catch(function (err) { $('wsend').disabled = false; $('wmsg').textContent = err.message; });
+        .catch(function (err) { $('wsend').disabled = false; $('wsend').textContent = edit ? '수정' : '올리기'; $('wmsg').textContent = err.message; });
     };
     $('wcancel').onclick = function () { route(); };
   }
 
-  // ---- 글 보기 ----
+  // ---- 글 보기: 글 → 답글 칸 → 답글(답글의 답글은 한 단계, 세로 선 아래) ----
+  var CP;
   function openPost(id, again) {
-    $('listv').hidden = true; $('write').hidden = true;
+    CUR = id; $('listv').hidden = true; $('write').hidden = true;
     if (!again) { $('detail').hidden = false; $('detail').innerHTML = '<p class="muted">불러오는 중…</p>'; }
     call('get', { id: id }).then(function (j) { return mdReady.then(function () { return j; }); }).then(function (j) {
-      var p = j.post, d = $('detail'); d.hidden = false;
-      var h = '<p><a href="#" id="back">← 목록</a></p>'
-        + '<p class="meta"><b>' + esc(p.author_name) + '</b> · ' + when(p.created_at) + (p.kind === 'share' ? ' · 자료 나눔' : '') + (p.lesson ? ' · ' + lessonLink(p.lesson, p.slide) : '') + (p.hidden ? ' · 숨김' : '') + '</p>'
-        + (p.body.indexOf(p.title) === 0 ? '' : '<h2>' + esc(p.title) + '</h2>')
-        + '<div class="mdb">' + md(p.body) + '</div>'
-        + (j.deck ? '<p class="row"><a class="btn main" target="_blank" rel="noopener" href="deck.html?d=' + esc(p.lesson) + '&share=' + j.deck + (qs.get('roomapi') ? '&roomapi=' + encodeURIComponent(qs.get('roomapi')) : '') + '">수업 미리 보기</a><a class="btn" href="teach.html' + (qs.get('roomapi') ? '?roomapi=' + encodeURIComponent(qs.get('roomapi')) : '') + '">내 수업함에 담으러 가기</a></p>' : p.kind === 'share' ? '<p class="small">지금은 공유를 그만둔 수업이에요.</p>' : '')
-        + '<div class="row"><button class="btn" type="button" id="like" aria-pressed="' + j.liked + '">❤️ 공감 ' + p.likes + '</button>'
-        + (p.mine || j.admin ? '<button class="btn" type="button" id="edit">수정</button><button class="btn warn" type="button" id="del">' + (p.hidden && j.admin ? '다시 보이기' : '삭제') + '</button>' : '') + '</div>';
-      if (p.reply) h += '<div class="reply"><b>관리자 답</b>' + md(p.reply) + '</div>';
-      h += '<h3>댓글 ' + j.comments.filter(function (c) { return !c.hidden; }).length + '</h3><ul class="cl">' + j.comments.map(function (c) {
-        return '<li' + (c.hidden ? ' class="hid"' : '') + '><p class="meta">' + esc(c.author_name) + ' · ' + when(c.created_at) + (c.mine || j.admin ? ' · <a href="#" data-c="' + c.id + '" data-on="' + (c.hidden ? 0 : 1) + '">' + (c.hidden ? '다시 보이기' : '삭제') + '</a>' : '') + '</p>' + md(c.body) + '</li>';
-      }).join('') + '</ul><form id="cform" class="cform"><textarea id="cbody" rows="3" placeholder="댓글 쓰기"></textarea><button class="btn main" type="submit">댓글 달기</button></form><p class="small" id="dmsg"></p>';
-      d.innerHTML = h;
-      var dm = function (t) { $('dmsg').textContent = t; };
-      $('back').onclick = function (e) { e.preventDefault(); location.hash = ''; };
-      // 공감은 누르는 즉시 바꾸고 서버 답으로 맞춘다. 실패하면 되돌린다
-      $('like').onclick = function () {
-        var on = this.getAttribute('aria-pressed') !== 'true', b = this, n = p.likes, paint = function (o, k) { b.setAttribute('aria-pressed', String(o)); b.textContent = '❤️ 공감 ' + k; };
-        paint(on, Math.max(0, n + (on ? 1 : -1))); b.disabled = true;
-        call('like', { id: id, on: on }).then(function (r) { p.likes = r.likes; paint(on, r.likes); }).catch(function (e) { paint(!on, n); dm(e.message); }).then(function () { b.disabled = false; });
+      if (CUR !== id) return;
+      var p = j.post, d = $('detail'), rapi = qs.get('roomapi'); d.hidden = false; TO = 0;
+      if (POSTS[id]) { POSTS[id].likes = p.likes; POSTS[id].liked = p.liked; POSTS[id].comments = p.comments; keep(); } else POSTS[id] = p;
+      POSTS[id].body = p.body; POSTS[id].long = 0;   // 목록은 긴 글을 잘라 받는다: 수정할 때는 온전한 글로
+      var item = function (c) {
+        return '<div role="listitem" class="th' + (c.parent_id ? ' sub' : '') + '" id="c' + c.id + '" data-top="' + (c.parent_id || c.id) + '" data-name="' + esc(c.author_name) + '">' + av(c.author_name) + '<div class="tb">' + head(c, '', 'c', j.admin) + '<div class="mdb">' + md(c.body) + '</div>' + pics(c.images) + acts('c', c) + '</div></div>';
       };
-      if ($('edit')) $('edit').onclick = function () { compose(p); };
-      if ($('del')) $('del').onclick = function () { var on = !(p.hidden && j.admin); if (on && !armed(this, '한 번 더 누르면 지워져요', '삭제')) return; call('hide', { id: id, on: on }).then(function () { location.hash = ''; }).catch(function (e) { dm(e.message); }); };
-      d.querySelectorAll('[data-c]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); call('hide', { comment: +a.dataset.c, on: a.dataset.on === '1' }).then(function () { openPost(id); }).catch(function (er) { dm(er.message); }); }; });
-      // 댓글은 쓴 글을 바로 붙여 보이고(보내는 중), 서버 답이 오면 다시 그린다. 실패하면 떼고 글 칸에 되돌린다
+      d.innerHTML = '<p class="backp"><a href="#" id="back">← 목록</a></p><div class="th main' + (p.hidden ? ' hid' : '') + '">' + postHtml(p, j.admin, true) + '</div>'
+        + (j.deck ? '<p class="row"><a class="btn main" target="_blank" rel="noopener" href="deck.html?d=' + esc(p.lesson) + '&share=' + j.deck + (rapi ? '&roomapi=' + encodeURIComponent(rapi) : '') + '">수업 미리 보기</a><a class="btn" href="teach.html' + (rapi ? '?roomapi=' + encodeURIComponent(rapi) : '') + '">내 수업함에 담으러 가기</a></p>' : p.kind === 'share' ? '<p class="small">지금은 공유를 그만둔 수업이에요.</p>' : '')
+        + '<form id="cform" class="th cform">' + av(ME) + '<div class="tb"><p class="meta" id="cto" hidden></p><textarea id="cbody" rows="1" maxlength="3000" aria-label="답글 쓰기"></textarea><div class="pvs" id="cpv"></div>'
+        + '<div class="wrow"><label class="ab pick" aria-label="사진 넣기"><input type="file" id="cfile" accept="image/*" multiple>' + IC.photo + '</label><i class="sp"></i><button class="btn main small" type="submit" id="csend">답글</button></div><p class="small" id="dmsg" aria-live="polite"></p></div></form>'
+        + '<div class="cl" id="cl" role="list">' + j.comments.filter(function (c) { return !c.parent_id; }).map(function (c) { return item(c) + j.comments.filter(function (x) { return x.parent_id === c.id; }).map(item).join(''); }).join('') + '</div>';
+      after(d);
+      var dm = function (t) { $('dmsg').textContent = t; }, nm = function (n) { return String(n).split(' · ')[0]; }, ph = function (n) { $('cbody').placeholder = nm(n) + ' 선생님에게 답글 남기기'; };
+      CP = picker($('cfile'), $('cpv'), dm); grow($('cbody')); ph(p.author_name);
+      $('back').onclick = function (e) { e.preventDefault(); location.hash = ''; };
+      // 답글의 «답글»을 누르면 답글 칸이 그 답글 묶음 아래로 간다
+      d.replyTo = function (cid) {
+        var el = $('c' + cid), all = cid && el ? d.querySelectorAll('#cl [data-top="' + el.dataset.top + '"]') : [];
+        TO = all.length ? cid : 0;
+        if (TO) { all[all.length - 1].after($('cform')); ph(el.dataset.name); $('cto').innerHTML = esc(nm(el.dataset.name)) + ' 선생님에게 답글 · <a href="#" id="cno">그만두기</a>'; $('cno').onclick = function (e) { e.preventDefault(); d.replyTo(0); }; $('cbody').focus(); }
+        else { $('cl').before($('cform')); ph(p.author_name); }
+        $('cto').hidden = !TO; $('cform').classList.toggle('sub', !!TO);
+      };
+      // 답글은 쓴 글을 바로 붙여 보이고(보내는 중), 서버 답이 오면 다시 그린다. 실패하면 떼고 글 칸에 되돌린다
       $('cform').onsubmit = function (e) {
         e.preventDefault();
-        var t = $('cbody').value, li = document.createElement('li'); if (!t.trim()) return;
-        li.className = 'hid'; li.innerHTML = '<p class="meta">보내는 중…</p>' + md(t); d.querySelector('.cl').appendChild(li); $('cbody').value = '';
-        call('comment', { id: id, body: t }).then(function () { openPost(id, true); }).catch(function (er) { li.remove(); $('cbody').value = t; dm(er.message); });
+        var t = $('cbody').value, im = CP.list.slice(), li = document.createElement('div'); if (!t.trim() && !im.length) return;
+        li.className = 'th hid' + (TO ? ' sub' : ''); li.innerHTML = av(ME) + '<div class="tb"><p class="meta">보내는 중…</p><div class="mdb">' + md(t) + '</div></div>';
+        if (TO) $('cform').before(li); else $('cl').appendChild(li);
+        $('cbody').value = ''; CP.clear(); $('csend').disabled = true;
+        call('comment', { id: id, body: t, images: im, parent: TO || undefined }).then(function () { openPost(id, true); }).catch(function (er) { li.remove(); $('cbody').value = t; CP.list = im; $('csend').disabled = false; dm(er.message); });
       };
     }).catch(function (e) { say(e.message); location.hash = ''; });
   }
   function armed(b, text, idle) { if (b.dataset.armed) return true; b.dataset.armed = '1'; b.textContent = text; setTimeout(function () { if (b.isConnected) { delete b.dataset.armed; b.textContent = idle; } }, 3000); return false; }
+
+  // ---- 누르기: 공감 · 공유 · 답글 · 수정 · 삭제 · 사진 크게 · 글 열기 ----
+  function likeIt(b) {
+    // 누르는 즉시 바꾸고 서버 답으로 맞춘다. 실패하면 되돌린다
+    var k = b.dataset.like.charAt(0), id = +b.dataset.like.slice(1), on = b.getAttribute('aria-pressed') !== 'true', sp = b.querySelector('span'), n = +sp.textContent || 0;
+    var paint = function (o, c) { b.setAttribute('aria-pressed', String(o)); sp.textContent = c || ''; if (k === 'p' && POSTS[id]) { POSTS[id].liked = o; POSTS[id].likes = c; keep(); } };
+    paint(on, Math.max(0, n + (on ? 1 : -1))); b.disabled = true;
+    call('like', k === 'p' ? { id: id, on: on } : { comment: id, on: on }).then(function (r) { paint(on, r.likes); }).catch(function (e) { paint(!on, n); say(e.message); }).then(function () { b.disabled = false; });
+  }
+  function shareIt(b) {
+    var u = new URL((qs.has('embed') ? 'teach.html' : 'board.html') + '#p' + b.dataset.share, location.href.split(/[?#]/)[0]).href;
+    if (navigator.share) return navigator.share({ url: u }).catch(function () {});
+    navigator.clipboard.writeText(u).then(function () { var s = document.createElement('span'); s.textContent = '주소를 복사했어요'; b.appendChild(s); setTimeout(function () { s.remove(); }, 2000); }).catch(function () { say('주소를 복사하지 못했어요: ' + u); });
+  }
+  function delIt(b) {
+    var k = b.dataset.del.charAt(0), id = +b.dataset.del.slice(1), back = !!b.dataset.back;
+    if (!back && !armed(b, '한 번 더 누르면 지워져요', '삭제')) return;
+    call('hide', k === 'p' ? { id: id, on: !back } : { comment: id, on: true }).then(function () {
+      if (k === 'c') return openPost(CUR, true);
+      Object.keys(MEM).forEach(function (m) { MEM[m].posts = MEM[m].posts.filter(function (p) { return p.id !== id; }); }); keep();
+      if (location.hash) location.hash = ''; else list();
+    }).catch(function (e) { say(e.message); });
+  }
+  $('board').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-like],[data-share],[data-reply],[data-edit],[data-del],[data-open],.pics'); if (!t) return;
+    var d = t.dataset;
+    if (d.like) likeIt(t);
+    else if (d.share) shareIt(t);
+    else if (d.reply) $('detail').replyTo(+d.reply);
+    else if (d.edit) { if (POSTS[d.edit].long) call('get', { id: +d.edit }).then(function (j) { compose(j.post); }).catch(function (er) { say(er.message); }); else compose(POSTS[d.edit]); }
+    else if (d.del) delIt(t);
+    else if (d.open) { if (!e.target.closest('a,button,summary') && !String(getSelection())) location.hash = 'p' + d.open; }
+    else t.classList.toggle('open');   // 사진: 누르면 잘리지 않은 크기로, 다시 누르면 접힌다
+  });
+  // «⋯» 메뉴는 바깥을 누르면 닫힌다
+  document.addEventListener('click', function (e) { document.querySelectorAll('details.menu[open]').forEach(function (m) { if (!m.contains(e.target)) m.open = false; }); });
 
   filters();
   $('out').onclick = function (e) { e.preventDefault(); forget(); logout().then(gate); };
@@ -1362,25 +1475,44 @@ export function boardPage(site, units) {
 .kinds { display: flex; flex-wrap: wrap; gap: 6px; }
 .bfil { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .bfil input { flex: 1 1 200px; }
-.counts { display: flex; flex-wrap: wrap; gap: 6px; }
-.st, .kd, .tagr { font: 700 13px/1 var(--f-body); padding: 5px 9px; border-radius: 999px; border: 1.5px solid var(--ink-3); color: var(--ink-2); background: var(--paper); }
-.compose { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); } .compose .wrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; } .compose .wl { display: flex; gap: 8px; flex: 1 1 240px; min-width: 0; } .compose .wl[hidden] { display: none; } .compose .wl select { flex: 1 1 0; min-width: 0; } .compose .wl input { flex: 0 0 72px; width: 72px; }
-ul.plist, ul.cl { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.bp a { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--paper-2); color: var(--ink); text-decoration: none; }
-.bp a:hover { border-color: var(--accent); }
-.bp.hid a, .cl li.hid { opacity: .5; }
-.bt { font: 700 18px/1.35 var(--f-body); } .pv { color: var(--ink); font-size: 16px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; }
-.meta.rx { display: flex; align-items: center; gap: 4px; } .meta.rx i { width: 10px; }
-.meta { font-size: 13px; color: var(--ink-3); margin: 0; }
-.empty { color: var(--ink-3); padding: 12px; }
-.mdb { line-height: 1.7; overflow-wrap: anywhere; min-width: 0; } .mdb img { max-width: 100%; } .mdb pre, .mdb table { display: block; max-width: 100%; overflow-x: auto; }
-#detail { grid-template-columns: minmax(0, 1fr); }
-.reply { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 6px; }
-textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box; }
-.cl li { border-top: 1px dashed var(--rule); padding-top: 8px; }
-.cform { display: grid; gap: 8px; justify-items: start; }
+/* 스레드 한 줄: 왼쪽 이름 동그라미, 오른쪽 이름·글·사진·아이콘 줄 */
+.th { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--rule); margin: 0; }
+.th.hid { opacity: .5; }
+.av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 700 17px/1 var(--f-body); }
+.tb { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+.hd { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 15px; line-height: 1.3; } .hd b { overflow-wrap: anywhere; }
+.meta { font-size: 13px; color: var(--ink-3); margin: 0; } .hd .meta { flex: 0 0 auto; } .meta.ltag a { color: var(--ink-3); }
+ul.plist { list-style: none; margin: 0; padding: 0 16px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; }
+ul.plist > li:last-child, .cl > :last-child { border-bottom: 0; }
+#write { padding: 6px 16px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; border-bottom-width: 2px; } #write[hidden] { display: none; }
+#detail { display: block; padding: 4px 16px 8px; } #detail[hidden] { display: none; } .backp { margin: 10px 0 0; font-size: 14px; }
+.empty { color: var(--ink-3); padding: 14px 0; }
+.mdb { font-size: 16px; line-height: 1.65; overflow-wrap: anywhere; min-width: 0; } .mdb > :first-child { margin-top: 0; } .mdb > :last-child { margin-bottom: 0; } .mdb img { max-width: 100%; } .mdb pre, .mdb table { display: block; max-width: 100%; overflow-x: auto; }
+.mdb.clamp { max-height: 15em; overflow: hidden; cursor: pointer; } .morel { font-size: 14px; color: var(--ink-3); }
+.pics { display: grid; gap: 4px; grid-template-columns: 1fr 1fr; margin-top: 6px; border-radius: 12px; overflow: hidden; cursor: zoom-in; max-width: 520px; }
+.pics img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--grid); min-height: 80px; }
+.pics.n1 { grid-template-columns: 1fr; } .pics.n1 img { aspect-ratio: auto; max-height: 420px; } .pics.n3 img:first-child { grid-column: span 2; aspect-ratio: 2; }
+.pics.open { display: block; cursor: zoom-out; max-width: none; } .pics.open img { aspect-ratio: auto; max-height: none; object-fit: contain; margin-bottom: 4px; }
+.acts { display: flex; align-items: center; gap: 2px; margin: 2px 0 -6px -10px; }
+.ab { display: inline-flex; align-items: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font: 400 14px/1 var(--f-body); text-decoration: none; cursor: pointer; }
+.ab:hover { background: var(--accent-soft); } .ab:focus-visible, .pick:focus-within, .menu summary:focus-visible, textarea:focus-visible { outline: 3px solid var(--hl); outline-offset: 1px; }
+.lk[aria-pressed="true"] { color: var(--stamp); } .lk[aria-pressed="true"] svg { fill: currentColor; }
+.menu { margin: 0 0 0 auto; padding: 0; border: 0; position: relative; } .menu summary { list-style: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; font-size: 20px; line-height: 1; color: var(--ink-3); cursor: pointer; } .menu summary::-webkit-details-marker { display: none; } .menu summary:hover { background: var(--accent-soft); }
+.menu div { position: absolute; right: 0; top: 38px; z-index: 5; display: grid; min-width: 132px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
+.menu div button { min-height: 44px; padding: 0 14px; border: 0; background: none; text-align: left; font: 700 15px/1.2 var(--f-body); color: var(--ink); white-space: nowrap; cursor: pointer; } .menu div button:hover { background: var(--accent-soft); }
+.menu .warn { color: var(--stamp); } .menu .warn[data-armed] { background: var(--stamp); color: var(--paper-2); }
+/* 글·답글 쓰는 칸 */
+.th textarea { font: 400 16px/1.5 var(--f-body); padding: 7px 0; border: 0; border-radius: 0; background: none; color: var(--ink); width: 100%; box-sizing: border-box; resize: none; overflow: hidden; min-height: 38px; display: block; }
+.wrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-left: -10px; } .wrow .sp { flex: 1 1 0; }
+.wl { display: flex; gap: 8px; flex: 1 1 220px; min-width: 0; } .wl[hidden], .pick[hidden] { display: none; } .wl select { flex: 1 1 0; min-width: 0; } .wl input { flex: 0 0 72px; width: 72px; }
+.pick { position: relative; justify-content: center; } .pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.pvs { display: flex; flex-wrap: wrap; gap: 10px; } .pvs:empty { display: none; } .pvi { position: relative; } .pvi img { width: 76px; height: 76px; object-fit: cover; border-radius: 8px; display: block; }
+.pvi button { position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--paper-2); background: var(--ink); color: var(--paper-2); font: 700 15px/1 var(--f-body); cursor: pointer; }
+/* 답글의 답글: 위 답글 동그라미 가운데에서 내려오는 세로 선 아래 */
+.th.sub { margin-left: 19px; padding-left: 21px; border-left: 2px solid var(--rule); border-bottom: 0; grid-template-columns: 32px minmax(0, 1fr); } .th.sub .av { width: 32px; height: 32px; font-size: 14px; }
+.th.main { padding-top: 8px; } .cform .av { opacity: .85; }
 .embed .topnav, .embed .pagehead { display: none; } .embed body { background: none; } .embed .wrap { padding: 0; max-width: none; }
-.btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+.btn.small { min-height: 36px; padding: 0 14px; font-size: 14px; }
 </style>
 <body>
 <div class="wrap">
@@ -1393,11 +1525,15 @@ textarea { font: 400 16px/1.5 var(--f-body); padding: 10px 12px; border: 2px sol
   <div id="board" hidden class="stack">
     <div class="row between"><div class="kinds" role="group" aria-label="게시판"><button class="btn small" type="button" data-b="talk">이야기</button><button class="btn small" type="button" data-b="help">오류·요청</button></div><span class="small"><b id="who"></b> · <a href="#" id="out">로그아웃</a></span></div>
     <p class="small" id="bmsg" aria-live="polite"></p>
-    <form id="wform" class="compose">
-      <div id="write" class="compose" hidden>
-        <textarea id="wbody" rows="3" maxlength="6000" aria-label="글 쓰기"></textarea>
-        <div class="wrow"><span class="wl" id="wl" hidden><select id="wlesson" aria-label="차시"></select><input type="text" inputmode="numeric" id="wslide" placeholder="몇 장" aria-label="장"></span><button class="btn" type="button" id="wcancel" hidden>그만두기</button><button class="btn main" type="submit" id="wsend">올리기</button></div>
-        <p class="small" id="wmsg" aria-live="polite"></p>
+    <form id="wform">
+      <div id="write" class="th" hidden>
+        <span id="wav"></span>
+        <div class="tb">
+          <textarea id="wbody" rows="1" maxlength="6000" aria-label="글 쓰기"></textarea>
+          <div class="pvs" id="wpv"></div>
+          <div class="wrow"><label class="ab pick" id="wpick" aria-label="사진 넣기"><input type="file" id="wfile" accept="image/*" multiple><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15.5l-5-5L6 19"/></svg></label><span class="wl" id="wl" hidden><select id="wlesson" aria-label="차시"></select><input type="text" inputmode="numeric" id="wslide" placeholder="몇 장" aria-label="장"></span><i class="sp"></i><button class="btn small" type="button" id="wcancel" hidden>그만두기</button><button class="btn main small" type="submit" id="wsend">올리기</button></div>
+          <p class="small" id="wmsg" aria-live="polite"></p>
+        </div>
       </div>
     </form>
     <div id="listv" class="stack">
