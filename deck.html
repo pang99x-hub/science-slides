@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <meta charset="utf-8">
+<script>if (!/^(localhost|127\.0\.0\.1|)$/.test(location.hostname) && /[?&]roomapi=/.test(location.search)) { var u = new URL(location.href); u.searchParams.delete('roomapi'); history.replaceState(null, '', u); }</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>수업 여는 중</title>
 <body style="font:16px/1.6 system-ui,sans-serif;padding:2em">
@@ -11,7 +12,7 @@
 //   &role=student  학생용(발표자 메모 없는 묶음)      &save  그림·영상까지 넣은 한 파일로 내려받기(인터넷 없이 열림)
 //   &edit  손 편집기(edit.js)를 붙여 연다      &mine  이 브라우저에서 고친 장을 반영해 연다
 //   &share=<번호>  다른 선생님이 공유한 수업을 미리 본다(워커가 실행되는 것을 걸러서 준다). 보고 있는 장만 내 수업에 담는 단추가 붙는다
-//   &box   선생님 수업함(수업방 워커 /decks)에 저장한 내 수업으로 연다. &box&edit 는 수업함 것을 이 브라우저로 가져와 고친다
+//   &box   선생님 내 수업(수업방 워커 /decks)에 저장한 내 수업으로 연다. &box&edit 는 내 수업 것을 이 브라우저로 가져와 고친다
 // 엔진/deck.html이 원본이다(node tools/slides.mjs가 자료실로 복사).
 (async () => {
   const q = new URLSearchParams(location.search), d = q.get('d') || '', edit = q.has('edit'), share = q.get('share'), box = q.has('box') || !!share, mine = edit || box || q.has('mine'), f = !edit && q.get('role') === 'student' ? 's' : 't', save = q.has('save');
@@ -19,7 +20,7 @@
   // shortcut: 수업은 자료실 차시(d = tongsci1/3-3/1 → 단원 index.json의 장 순서)만 연다, 선생님이 만든 수업은 3단계에서 워커가 주는 목록으로 넓힌다
   const m = d.match(/^(\w+)\/([\w-]+)\/(\d+)$/);
   if (!m) throw new Error('수업 번호(d)가 없거나 모양이 다릅니다');
-  // 새로 만든 수업(d = my/<번호>/1): 자료실 차시 없이 빈 장 하나에서 시작한다. 장과 이름은 수업함·이 브라우저에만 있다
+  // 새로 만든 수업(d = my/<번호>/1): 자료실 차시 없이 빈 장 하나에서 시작한다. 장과 이름은 내 수업·이 브라우저에만 있다
   // shortcut: 틀·꾸밈은 한 단원(tongsci1.3-3-1) 것을 빌린다, 그 단원 번호가 바뀌면 여기도 고친다(전용 틀을 만들면 푼다)
   const own = m[1] === 'my'; let U = own ? 'tongsci1.3-3-1' : `${m[1]}.${m[2]}`, unit = `장/${U}/`;
   const index = own ? { unit: { unitTitle: '' }, lessons: [{ n: 1, title: '', slides: [] }] } : await get(unit + 'index.json', 'json').catch(async (e) => {
@@ -43,24 +44,24 @@
   if (!lesson) throw new Error('없는 차시입니다');
   // 내 순서(편집기가 장을 넣고 빼고 옮긴 것): [{ id, src }] — src는 받아 올 자료실 장, 없으면 빈 장(글은 deck-edit:<id>에만 있다)
   let order = lesson.slides.map((id) => ({ id, src: id }));
-  let boxed = null;   // 수업함에서 받은 내 수업 { order, edits }
+  let boxed = null;   // 내 수업에서 받은 내 수업 { order, edits }
   const api = (q.get('roomapi') || 'https://science-room.pang99x.workers.dev').replace(/\/$/, '');
   if (box && f === 't') {
     let s = null; try { s = JSON.parse(localStorage.getItem('science-room:session')); } catch (e) { /* 로그인 안 됨 */ }
     if (!s || !s.token) throw new Error('선생님 페이지에서 로그인한 뒤 열어 주세요');
     const r = await fetch(api + (share ? '/decks/open' : '/decks/get'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(share ? { session: s.token, id: share } : { session: s.token, base: d }) }), j = await r.json();
     if (j.error) throw new Error(j.error);
-    if (share && (edit || j.base !== d)) throw new Error('공유된 수업은 내 수업함에 담은 뒤 고칠 수 있어요');
-    if (edit) {   // 고치기: 수업함 것으로 이 브라우저의 작업본을 바꾸고, 새로 고쳐도 다시 덮지 않게 주소에서 box를 뺀다
+    if (share && (edit || j.base !== d)) throw new Error('공유된 수업은 내 수업에 담은 뒤 고칠 수 있어요');
+    if (edit) {   // 고치기: 내 수업 것으로 이 브라우저의 작업본을 바꾸고, 새로 고쳐도 다시 덮지 않게 주소에서 box를 뺀다
       localStorage.setItem('deck-order:' + d, JSON.stringify(j.order));
       for (const x of j.order) if (j.edits[x.id]) localStorage.setItem('deck-edit:' + x.id, j.edits[x.id]); else localStorage.removeItem('deck-edit:' + x.id);
       if (own) localStorage.setItem('deck-title:' + d, j.title);
-      localStorage.setItem('deck-box:' + d, '1');   // 수업함에 있는 수업: 편집기가 자동 저장한다
-      localStorage.removeItem('deck-dirty:' + d);   // 수업함 것과 같아졌다(편집기가 다른 차시로 갈 때 저장할지 묻는 표시)
+      localStorage.setItem('deck-box:' + d, '1');   // 내 수업에 있는 수업: 편집기가 자동 저장한다
+      localStorage.removeItem('deck-dirty:' + d);   // 내 수업 것과 같아졌다(편집기가 다른 차시로 갈 때 저장할지 묻는 표시)
       q.delete('box'); history.replaceState(null, '', location.pathname + '?' + q.toString().replace(/=(?=&|$)/g, '').replace(/%2F/g, '/'));
     } else boxed = j;
   }
-  // 학생 화면: 방에서 선생님이 수업함의 내 수업으로 수업 중이면 그 수업(걸러진 것)을 받는다. 아니면(404) 원래 차시
+  // 학생 화면: 방에서 선생님이 내 수업의 내 수업으로 수업 중이면 그 수업(걸러진 것)을 받는다. 아니면(404) 원래 차시
   if (f === 's' && /^\d{4}(\d\d)?$/.test(q.get('room') || '')) try { const j = await (await fetch(`${api}/rooms/${q.get('room')}/deck?base=${encodeURIComponent(d)}`)).json(); if (Array.isArray(j.order) && j.edits) boxed = j; } catch (e) { /* 못 받으면 원래 차시 */ }
   if ((mine && f === 't') || boxed) try {
     const o = boxed ? boxed.order : JSON.parse(localStorage.getItem('deck-order:' + d));

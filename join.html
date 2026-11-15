@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>if (!/^(localhost|127\.0\.0\.1|)$/.test(location.hostname) && /[?&]roomapi=/.test(location.search)) { var u = new URL(location.href); u.searchParams.delete('roomapi'); history.replaceState(null, '', u); }</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>꿈틀 · 수업방</title>
@@ -81,6 +82,11 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 /* 선생님 페이지 */
 .topnav { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
 .topnav .brand { margin-left: auto; }   /* 단추는 왼쪽에 모으고 이름만 오른쪽 */
+.pmenu { position: relative; border: 0; padding: 0; } .pmenu summary { list-style: none; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper-2); color: var(--ink); cursor: pointer; } .pmenu summary::-webkit-details-marker { display: none; }
+.pdot { font-style: normal; padding: 2px 7px; border-radius: 99px; background: var(--stamp); color: var(--paper-2); font: 700 12px/1.2 var(--f-body); } .pmenu summary .pdot { position: absolute; top: -8px; right: -8px; }
+.pmenu .pwho { min-height: 36px; font-size: 13px; color: var(--ink-3); border-bottom: 1px solid var(--rule); cursor: default; } .pmenu .pwho:hover { background: none; }
+.pmenu > div { position: absolute; right: 0; top: 50px; z-index: 9; display: grid; min-width: 168px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
+.pmenu > div > * { min-height: 44px; padding: 0 16px; border: 0; background: none; display: flex; align-items: center; gap: 8px; font: 700 15px/1.2 var(--f-body); color: var(--ink); text-decoration: none; text-align: left; cursor: pointer; } .pmenu > div > *:hover { background: var(--accent-soft); }
 .pagehead { display: grid; gap: 8px; }
 .stack { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }   /* 안의 긴 글·표·고르기 칸이 화면 밖으로 밀지 않게 */
 .h2 { font: 700 22px/1.3 var(--f-display); }
@@ -176,7 +182,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   // 로그인·맞추기 결과를 이 기기에 둔다(승인된 선생님이면 내 수업방과 이 기기용 진행 열쇠까지)
   function keep(j, token) {
     var s = sess() || {};
-    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0, school: j.school || s.school || '' });
+    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0, notes: j.notes || 0, talk: j.talk || 0, mine: j.mine || 0, school: j.school || s.school || '' });
     if (j.rooms) store(ROOMS, j.rooms.map(function (r) { return { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; }));
     return sess();
   }
@@ -191,6 +197,25 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     var s = sess(), done = function () { signedOut(); try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {} };
     return api('/auth/logout', { session: s && s.token, have: have() }).then(done, done);
   }
+  // ---- 짝대기 세 개 메뉴(오른쪽 위, 선생님 페이지·이야기 쪽 공통, 2026-11-16 «선생님 페이지랑 분리»): 수업 일은 선생님 페이지, 선생님끼리의 일(이야기·내 글·쪽지)은 이야기 쪽 ----
+  function profCard() {
+    var s = sess(), el = document.getElementById('prof'); if (!el) return;
+    if (!s) { el.innerHTML = ''; return; }
+    var n = String(s.name || s.email), ok = s.status === 'approved', tm = (s.talk || 0) + (s.mine || 0), all = (s.notes || 0) + tm;   // 새 소식: 쪽지 + 이야기 새 글 + 내 글 반응
+    function pd(n) { return n ? '<i class="pdot">' + n + '</i>' : ''; }
+    var dot = pd(s.notes);
+    var q = new URLSearchParams(location.search).get('roomapi'); q = q ? '?roomapi=' + encodeURIComponent(q) : '';
+    function a(go, page, t) { return '<a data-go="' + go + '" href="' + page + '.html' + q + '#' + go + '">' + t + '</a>'; }
+    el.innerHTML = '<details class="pmenu"><summary aria-label="내 메뉴' + (all ? ', 새 소식 ' + all + '개' : '') + '"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' + pd(all) + '</summary><div>'
+      + '<span class="pwho">' + esc(n.replace(/\s*선생님$/, '')) + ' 선생님</span>' + a('rooms', 'teach', '선생님 페이지')
+      + (ok ? a('talk', 'board', '이야기' + pd(tm)) + a('notes', 'board', '쪽지' + dot) : '') + a('me', 'teach', '내 정보')
+      + '<a href="policy.html">약관·개인정보</a><button type="button" data-go="out">로그아웃</button></div></details>';
+  }
+  document.addEventListener('click', function (e) {
+    var m = document.querySelector('.pmenu[open]'), b = m && e.target.closest('.pmenu [data-go]');
+    if (m && (b || !m.contains(e.target))) m.open = false;
+    if (b && b.dataset.go === 'out') { if (window.kkOut) kkOut(); logout().then(function () { location.reload(); }); }
+  });
   // 구글 로그인 단추. 구글 스크립트는 이 단추를 띄울 때만 불러온다(학생 화면은 구글에 연결하지 않는다)
   function googleButton(box, onDone) {
     if (!GID) { box.innerHTML = '<p class="small">구글 로그인을 준비하고 있어요. 조금 뒤에 다시 와 주세요.</p>'; return; }

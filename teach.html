@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>if (!/^(localhost|127\.0\.0\.1|)$/.test(location.hostname) && /[?&]roomapi=/.test(location.search)) { var u = new URL(location.href); u.searchParams.delete('roomapi'); history.replaceState(null, '', u); }</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>선생님 페이지 · 꿈틀</title>
@@ -81,6 +82,11 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 /* 선생님 페이지 */
 .topnav { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
 .topnav .brand { margin-left: auto; }   /* 단추는 왼쪽에 모으고 이름만 오른쪽 */
+.pmenu { position: relative; border: 0; padding: 0; } .pmenu summary { list-style: none; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper-2); color: var(--ink); cursor: pointer; } .pmenu summary::-webkit-details-marker { display: none; }
+.pdot { font-style: normal; padding: 2px 7px; border-radius: 99px; background: var(--stamp); color: var(--paper-2); font: 700 12px/1.2 var(--f-body); } .pmenu summary .pdot { position: absolute; top: -8px; right: -8px; }
+.pmenu .pwho { min-height: 36px; font-size: 13px; color: var(--ink-3); border-bottom: 1px solid var(--rule); cursor: default; } .pmenu .pwho:hover { background: none; }
+.pmenu > div { position: absolute; right: 0; top: 50px; z-index: 9; display: grid; min-width: 168px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
+.pmenu > div > * { min-height: 44px; padding: 0 16px; border: 0; background: none; display: flex; align-items: center; gap: 8px; font: 700 15px/1.2 var(--f-body); color: var(--ink); text-decoration: none; text-align: left; cursor: pointer; } .pmenu > div > *:hover { background: var(--accent-soft); }
 .pagehead { display: grid; gap: 8px; }
 .stack { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }   /* 안의 긴 글·표·고르기 칸이 화면 밖으로 밀지 않게 */
 .h2 { font: 700 22px/1.3 var(--f-display); }
@@ -138,13 +144,13 @@ select { height: 48px; max-width: 100%; min-width: 0; }
 </head>
 <body>
 <div class="wrap">
-  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><a class="btn small" href="board.html">선생님 게시판</a><img class="brand" src="brand/frame.svg" alt="꿈틀" style="height:78px;margin-block:-26px -10px"></nav>
+  <nav class="topnav"><a class="btn small" href="index.html">← 자료실 첫 화면</a><img class="brand" src="brand/frame.svg" alt="꿈틀" style="height:78px;margin-block:-26px -10px"><span id="prof"></span></nav>
   <header class="pagehead">
     <h1>선생님 페이지</h1>
     <p class="muted">과목마다 수업방을 하나 만들고, <b>과목 링크</b>를 반 클래스룸에 한 번 올려 두세요.</p>
   </header>
   <style>.tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 4px; padding-bottom: 4px; } .tabs .btn { flex: 0 0 auto; white-space: nowrap; } @media (max-width: 720px) { .tabs { gap: 5px; } .tabs .btn { min-height: 38px; padding: 0 11px; font-size: 14px; } } @media (max-width: 560px) { .tabs { gap: 2px; } .tabs .btn { flex: 1 1 auto; padding: 0 3px; font-size: min(13px, 2.9vw); letter-spacing: -.03em; } } .tabs[hidden], .tabp[hidden] { display: none; } .tabp { display: contents; } .tabs .btn[aria-selected="true"] { background: var(--ink); color: var(--paper-2); }</style>
-  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">내 수업방</button><button class="btn" type="button" role="tab" data-tab="box">내 수업함</button><button class="btn" type="button" role="tab" data-tab="browse">자료 둘러보기</button><button class="btn" type="button" role="tab" data-tab="board">게시판</button><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button><button class="btn" type="button" role="tab" data-tab="me">내 정보</button></div>
+  <div class="tabs" id="tabs" role="tablist" aria-label="선생님 페이지 메뉴" hidden><button class="btn" type="button" role="tab" data-tab="rooms">수업 열기</button><button class="btn" type="button" role="tab" data-tab="box">내 수업</button><button class="btn" type="button" role="tab" data-tab="stats">수업 통계</button></div>
   <div class="tabp" data-tab="me">
   <div class="card" id="me">
     <h2 id="mehead">선생님 로그인</h2>
@@ -213,23 +219,23 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   <div class="tabp" data-tab="box">
   <div class="card" id="newcard" hidden style="border-width:3px">
     <h2>새 수업 만들기</h2>
-    <p class="muted">빈 화면에서 시작해 글·그림·도형·표와 <b>움직이는 장</b>을 넣어 나만의 수업을 만들어요. 만든 수업은 아래 수업함에 담기고, 수업방에서 열면 학생 화면이 함께 움직여요.</p>
+    <p class="muted">빈 화면에서 시작해 글·그림·도형·표와 <b>움직이는 장</b>을 넣어 나만의 수업을 만들어요. 만든 수업은 아래 내 수업에 담기고, 수업방에서 열면 학생 화면이 함께 움직여요.</p>
     <div class="form"><label style="flex:1 1 240px">수업 이름<input type="text" id="newname" maxlength="80" placeholder="예: 산화와 환원 1차시" autocomplete="off"></label><button class="btn main" type="button" id="newgo" style="flex:0 0 auto;min-height:48px">새 수업 만들기</button></div>
     <p class="small" id="newmsg" aria-live="polite"></p>
   </div>
   <div class="card" id="boxcard" hidden>
-    <h2>내 수업함</h2>
-    <p class="muted">차시를 골라 <b>수업함에 담고</b>, 목록에서 <b>수정</b>을 눌러 내 수업에 맞게 고쳐요. 로그인하면 어느 컴퓨터에서든 열려요.</p>
+    <h2>내 수업</h2>
+    <p class="muted">차시를 골라 <b>내 수업에 담고</b>, 목록에서 <b>수정</b>을 눌러 내 수업에 맞게 고쳐요. 로그인하면 어느 컴퓨터에서든 열려요.</p>
     <style>#boxpick .grow { flex: 1 1 240px; } #boxpick .subj { flex: 0 1 170px; } #boxpick .btn { flex: 0 0 auto; min-height: 48px; } #boxlist .acts { flex: 1 1 100%; display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; } #boxlist .acts .btn { flex: 0 0 auto; white-space: nowrap; } @media (max-width: 720px) { #boxlist .acts { gap: 4px; } #boxlist .acts .btn { padding: 0 9px; font-size: 13px; } } #boxlist .row.hit { outline: 3px solid var(--hl); outline-offset: 4px; border-radius: 6px; }</style>
-    <div class="form" id="boxpick"><label class="subj">과목<select id="boxsubj"></select></label><label class="grow">단원<select id="boxunit"></select></label><label class="grow">차시<select id="boxlesson"></select></label><button class="btn main" type="button" id="boxadd">수업함에 담기</button></div>
+    <div class="form" id="boxpick"><label class="subj">과목<select id="boxsubj"></select></label><label class="grow">단원<select id="boxunit"></select></label><label class="grow">차시<select id="boxlesson"></select></label><button class="btn main" type="button" id="boxadd">내 수업에 담기</button></div>
     <p class="small" id="boxmsg" aria-live="polite"></p>
     <div id="boxlist" class="stack"></div>
   </div>
   </div>
-  <div class="tabp" data-tab="browse">
+  <div class="tabp" data-tab="box">
   <div class="card" id="browsecard" hidden>
-    <h2>자료 둘러보기</h2>
-    <p class="muted">미리 보고, 마음에 들면 <b>내 수업함에 담아</b> 고쳐 쓰세요.</p>
+    <h2>자료 찾기</h2>
+    <p class="muted">미리 보고, 마음에 들면 <b>내 수업에 담아</b> 고쳐 쓰세요.</p>
     <div class="form" id="brpick"><label class="subj">과목<select id="brsubj"></select></label><label class="grow">대단원<select id="brbig"></select></label><label class="grow">단원<select id="brunit"></select></label></div>
     <style>#brpick .grow { flex: 1 1 240px; } #brpick .subj { flex: 0 1 170px; }</style>
     <h3>꿈틀 기본 자료</h3>
@@ -239,7 +245,6 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     <p class="small" id="browsemsg" aria-live="polite"></p>
   </div>
   </div>
-  <div class="tabp" data-tab="board"><iframe id="boardf" title="선생님 게시판" style="width:100%;height:70vh;border:0;display:block"></iframe></div>
   <div class="tabp" data-tab="rooms">
   <div id="classes" class="stack"></div>
   <div class="card" id="makecard" hidden>
@@ -263,7 +268,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
           <li>수업 때는 선생님도 같은 링크를 열고 반과 차시를 골라요. <b>그 반 학생만</b> 수업 차시로 옮겨 오고, 다른 반은 복습을 그대로 해요.</li>
           <li>다른 기기에서는 과목 링크 아래 «선생님이세요? 구글로 로그인»을 누르면 돼요. 휴대폰으로 같은 차시를 열면 리모컨처럼 함께 넘어가요.</li>
         </ol>
-        <p class="small note">여럿이 쓰는 교실 컴퓨터라면 수업 뒤 «내 정보»의 «로그아웃»을 눌러 주세요. 그 컴퓨터에 남은 진행 열쇠도 못 쓰게 돼요.</p>
+        <p class="small note">여럿이 쓰는 교실 컴퓨터라면 수업 뒤 오른쪽 위 이름을 누르고 «로그아웃»을 눌러 주세요. 그 컴퓨터에 남은 진행 열쇠도 못 쓰게 돼요.</p>
       </div>
     </details>
   </div>
@@ -274,17 +279,19 @@ select { height: 48px; max-width: 100%; min-width: 0; }
 (function () {
   var tabs = document.getElementById('tabs'), mk = document.getElementById('makecard'), ps = [].slice.call(document.querySelectorAll('.tabp')), bs = [].slice.call(tabs.querySelectorAll('button')), cur = 'rooms';
   try { cur = sessionStorage.getItem('science-room:tab') || cur; } catch (e) {}
-  // 게시판은 board.html을 이 탭 안에 그대로 넣는다(같은 출처라 로그인이 이어진다). 처음 열 때만 부르고, 높이는 속 내용에 맞춘다
-  var bf = document.getElementById('boardf'), api = new URLSearchParams(location.search).get('roomapi');
-  bf.onload = function () { var w = bf.contentDocument.querySelector('.wrap'); new ResizeObserver(function () { bf.style.height = w.offsetHeight + 'px'; }).observe(w); };
-  function boardTab(hash) { bf.src = 'board.html?embed' + (api ? '&roomapi=' + encodeURIComponent(api) : '') + (hash || ''); show('board'); }
-  // 수업함·둘러보기의 «이야기» 단추도 탭 안에서 그 글을 연다
-  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[data-post]'); if (a && !mk.hidden) { e.preventDefault(); boardTab('#p' + a.getAttribute('data-post')); window.scrollTo(0, 0); } });
-  var want = /^#p\d+$/.test(location.hash) ? location.hash : '';   // 첫 화면 차시 카드의 💬 로 온 글
-  function show(t) { var on = !mk.hidden; cur = t; if (on && want) { var h = want; want = ''; return boardTab(h); } if (on && t === 'board' && !bf.getAttribute('src')) return boardTab(); tabs.hidden = !on; ps.forEach(function (p) { p.hidden = on && p.dataset.tab !== t; }); bs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === t); }); try { sessionStorage.setItem('science-room:tab', t); } catch (e) {} }
+  if (cur === 'browse') cur = 'box';   // 옛 탭 이름
+  if (cur === 'board') cur = 'rooms';   // 이야기는 따로 있는 쪽(board.html)으로 옮겼다(2026-11-16)
+  // 메뉴의 «선생님 페이지»·«내 정보»는 주소 끝 #rooms·#me 로 온다. 옛 주소(#p12·#mine·#notes)는 이야기 쪽으로 넘긴다
+  function hash() {
+    var h = location.hash.slice(1);
+    if (/^(p\d+|mine|notes)$/.test(h)) return location.replace('board.html' + location.search + '#' + h);
+    if (h === 'rooms' || h === 'me') { history.replaceState(null, '', location.pathname + location.search); show(h); scrollTo(0, 0); }
+  }
+  addEventListener('hashchange', hash);
+  function show(t) { var on = !mk.hidden; cur = t; tabs.hidden = !on; ps.forEach(function (p) { p.hidden = on && p.dataset.tab !== t; }); bs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === t); }); try { sessionStorage.setItem('science-room:tab', t); } catch (e) {} }
   bs.forEach(function (b) { b.onclick = function () { show(b.dataset.tab); }; });
   new MutationObserver(function () { show(cur); }).observe(mk, { attributes: true, attributeFilter: ['hidden'] });
-  show(cur);
+  show(cur); hash();
 })();
 </script>
 <script>
@@ -319,7 +326,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   // 로그인·맞추기 결과를 이 기기에 둔다(승인된 선생님이면 내 수업방과 이 기기용 진행 열쇠까지)
   function keep(j, token) {
     var s = sess() || {};
-    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0, school: j.school || s.school || '' });
+    store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0, notes: j.notes || 0, talk: j.talk || 0, mine: j.mine || 0, school: j.school || s.school || '' });
     if (j.rooms) store(ROOMS, j.rooms.map(function (r) { return { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; }));
     return sess();
   }
@@ -334,6 +341,25 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     var s = sess(), done = function () { signedOut(); try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {} };
     return api('/auth/logout', { session: s && s.token, have: have() }).then(done, done);
   }
+  // ---- 짝대기 세 개 메뉴(오른쪽 위, 선생님 페이지·이야기 쪽 공통, 2026-11-16 «선생님 페이지랑 분리»): 수업 일은 선생님 페이지, 선생님끼리의 일(이야기·내 글·쪽지)은 이야기 쪽 ----
+  function profCard() {
+    var s = sess(), el = document.getElementById('prof'); if (!el) return;
+    if (!s) { el.innerHTML = ''; return; }
+    var n = String(s.name || s.email), ok = s.status === 'approved', tm = (s.talk || 0) + (s.mine || 0), all = (s.notes || 0) + tm;   // 새 소식: 쪽지 + 이야기 새 글 + 내 글 반응
+    function pd(n) { return n ? '<i class="pdot">' + n + '</i>' : ''; }
+    var dot = pd(s.notes);
+    var q = new URLSearchParams(location.search).get('roomapi'); q = q ? '?roomapi=' + encodeURIComponent(q) : '';
+    function a(go, page, t) { return '<a data-go="' + go + '" href="' + page + '.html' + q + '#' + go + '">' + t + '</a>'; }
+    el.innerHTML = '<details class="pmenu"><summary aria-label="내 메뉴' + (all ? ', 새 소식 ' + all + '개' : '') + '"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' + pd(all) + '</summary><div>'
+      + '<span class="pwho">' + esc(n.replace(/\s*선생님$/, '')) + ' 선생님</span>' + a('rooms', 'teach', '선생님 페이지')
+      + (ok ? a('talk', 'board', '이야기' + pd(tm)) + a('notes', 'board', '쪽지' + dot) : '') + a('me', 'teach', '내 정보')
+      + '<a href="policy.html">약관·개인정보</a><button type="button" data-go="out">로그아웃</button></div></details>';
+  }
+  document.addEventListener('click', function (e) {
+    var m = document.querySelector('.pmenu[open]'), b = m && e.target.closest('.pmenu [data-go]');
+    if (m && (b || !m.contains(e.target))) m.open = false;
+    if (b && b.dataset.go === 'out') { if (window.kkOut) kkOut(); logout().then(function () { location.reload(); }); }
+  });
   // 구글 로그인 단추. 구글 스크립트는 이 단추를 띄울 때만 불러온다(학생 화면은 구글에 연결하지 않는다)
   function googleButton(box, onDone) {
     if (!GID) { box.innerHTML = '<p class="small">구글 로그인을 준비하고 있어요. 조금 뒤에 다시 와 주세요.</p>'; return; }
@@ -526,7 +552,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
         + '<form class="form" id="signup"><label class="grow">이름<input type="text" id="su-name" maxlength="20" autocomplete="name" value="' + esc(s.name || '') + '"></label>'
         + '<label class="grow">학교<input type="text" id="su-school" maxlength="40" placeholder="예: 한민고등학교" autocomplete="organization"></label>'
         + '<label class="grow">가르치는 과목·한 마디(선택)<input type="text" id="su-note" maxlength="120" placeholder="예: 통합과학 2학년" autocomplete="off"></label>'
-        + '<p class="small">이 자료는 학교 수업 같은 교육 목적으로만 쓸 수 있어요. 출판사·교육 업체 등의 영리 목적 이용과 무단 복제·재배포는 안 돼요. 신청하면 이 조건에 동의한 것으로 봐요.</p>'
+        + '<p class="small">이 자료는 학교 수업 같은 교육 목적으로만 쓸 수 있어요. 출판사·교육 업체 등의 영리 목적 이용과 무단 복제·재배포는 안 돼요. 신청하면 이 조건과 <a href="policy.html" target="_blank" rel="noopener">약관·개인정보 처리 안내</a>에 동의한 것으로 봐요.</p>'
         + '<button class="btn main" type="submit">가입 신청</button></form><div class="row">' + out + '</div>';
       document.getElementById('signup').onsubmit = function (e) {
         e.preventDefault();
@@ -606,7 +632,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     }, function () { msg('만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   };
 
-  // 내 수업함: 편집기(deck.html?…&edit)에서 저장한 내 수업 목록. 수업함이 아직 없는 워커(404)면 카드를 숨긴다
+  // 내 수업: 편집기(deck.html?…&edit)에서 저장한 내 수업 목록. 내 수업이 아직 없는 워커(404)면 카드를 숨긴다
   var EDITABLE = ["tongsci1.1-1-1","tongsci1.1-1-2","tongsci1.1-2-1","tongsci1.1-2-2","tongsci1.2-1-1","tongsci1.2-1-2","tongsci1.2-1-3","tongsci1.2-1-4","tongsci1.2-2-1","tongsci1.2-2-2","tongsci1.3-1-1","tongsci1.3-1-2","tongsci1.3-2-1","tongsci1.3-2-2","tongsci1.3-3-1","tongsci1.3-3-2","tongsci1.3-3-3","tongsci2.1-1-1","tongsci2.1-1-2","tongsci2.1-1-3","tongsci2.1-2-1","tongsci2.1-2-2","tongsci2.1-2-3","tongsci2.2-1-1","tongsci2.2-1-2","tongsci2.2-1-3","tongsci2.2-2-1","tongsci2.2-2-2","tongsci2.2-2-3","tongsci2.3-1","tongsci2.3-2"], boxHave = {};
   function boxMsg(t) { document.getElementById('boxmsg').textContent = t; }
   function boxUrl(base, more) { return 'deck.html?d=' + base + more + pass; }
@@ -650,12 +676,12 @@ select { height: 48px; max-width: 100%; min-width: 0; }
           + '<a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&box&save') + '">내려받기</a>'
           + '<button class="btn small" type="button" data-share="' + (d.shared ? 0 : 1) + '">' + (d.shared ? '공유 끄기' : '공유하기') + '</button>'
           + '<button class="btn small" type="button" data-del>삭제</button></span></div>';
-      }).join('') : '<p class="small">아직 담은 수업이 없어요. 위에서 차시를 골라 수업함에 담아 보세요.</p>';
+      }).join('') : '<p class="small">아직 담은 수업이 없어요. 위에서 차시를 골라 내 수업에 담아 보세요.</p>';
       boxUnits().then(boxPick);
       if (focus) boxShow(focus, text);
-    }, function () { boxMsg('수업함을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+    }, function () { boxMsg('내 수업을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   }
-  // 새 수업 만들기: 빈 장 하나짜리 수업(my/<번호>/1)을 수업함에 두고 편집기로 연다(재생기 deck.html이 자료실 차시 없이 연다)
+  // 새 수업 만들기: 빈 장 하나짜리 수업(my/<번호>/1)을 내 수업에 두고 편집기로 연다(재생기 deck.html이 자료실 차시 없이 연다)
   document.getElementById('newgo').onclick = function () {
     var b = this, say = function (t) { document.getElementById('newmsg').textContent = t; }, name = document.getElementById('newname').value.replace(/s+/g, ' ').trim();
     if (!name) { say('수업 이름을 적어 주세요.'); document.getElementById('newname').focus(); return; }
@@ -667,13 +693,13 @@ select { height: 48px; max-width: 100%; min-width: 0; }
       say(''); location.href = boxUrl(base, '&box&edit');   // 뒤로 돌아왔을 때 «만드는 중…»이 남지 않게
     }, function () { b.disabled = false; say('만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   };
-  // 수업함에 담기: 고른 차시를 원래 장 순서 그대로 저장한다(워커 /decks/save). 이 브라우저에서 고쳐 둔 작업본이 있으면 그것을 담는다(수정을 누르면 수업함 것으로 덮이므로)
+  // 내 수업에 담기: 고른 차시를 원래 장 순서 그대로 저장한다(워커 /decks/save). 이 브라우저에서 고쳐 둔 작업본이 있으면 그것을 담는다(수정을 누르면 내 수업 것으로 덮이므로)
   document.getElementById('boxadd').onclick = function () { boxAdd(this, document.getElementById('boxlesson').value, boxMsg); };
-  // 자료실 차시를 내 수업함에 담는다(수업함 탭의 고르기와 둘러보기 탭의 기본 자료가 함께 쓴다). say: 안내를 적을 곳
+  // 자료실 차시를 내 수업에 담는다(내 수업 탭의 고르기와 둘러보기 탭의 기본 자료가 함께 쓴다). say: 안내를 적을 곳
   function boxAdd(b, p, say) {
     var m = p.split('/');
     if (!p) return;
-    if (boxHave[p]) { say('이미 수업함에 있는 차시예요. «내 수업함»에서 고치거나 수업하세요.'); boxShow(p, '이미 수업함에 있는 차시예요. 표시한 줄에서 고치거나 수업하세요.'); return; }
+    if (boxHave[p]) { say('이미 내 수업에 있는 차시예요. «내 수업»에서 고치거나 수업하세요.'); boxShow(p, '이미 내 수업에 있는 차시예요. 표시한 줄에서 고치거나 수업하세요.'); return; }
     b.disabled = true; say('담는 중…');
     fetch('장/' + m[0] + '.' + m[1] + '/index.json').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (ix) {
       var x = ix.lessons.filter(function (y) { return String(y.n) === m[2]; })[0];
@@ -689,8 +715,8 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     }).then(function (j) {
       b.disabled = false;
       if (j.error) { say(j.error); return; }
-      say('내 수업함에 담았어요. «내 수업함»에서 고치거나 수업할 수 있어요.');
-      boxCard(p, '수업함에 담았어요. 수정을 누르면 편집기가 열려요.');
+      say('내 수업에 담았어요. «내 수업»에서 고치거나 수업할 수 있어요.');
+      boxCard(p, '내 수업에 담았어요. 수정을 누르면 편집기가 열려요.');
     }, function () { b.disabled = false; say('담지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   }
   document.getElementById('boxlist').onclick = function (e) {
@@ -702,11 +728,11 @@ select { height: 48px; max-width: 100%; min-width: 0; }
       api('/decks/share', { session: sess().token, base: row.getAttribute('data-base'), on: on, note: note }).then(function (j) { boxMsg(j.error || (on ? '공유했어요. 다른 선생님의 «자료 둘러보기»에 보여요.' : '공유를 껐어요.')); boxCard(); browseCard(); }, function () { boxMsg('바꾸지 못했어요. 인터넷 연결을 확인해 주세요.'); });
       return;
     }
-    if (!row || !e.target.hasAttribute('data-del') || !confirm('«' + row.querySelector('b').textContent + '»을(를) 수업함에서 지울까요? 되돌릴 수 없어요.')) return;
+    if (!row || !e.target.hasAttribute('data-del') || !confirm('«' + row.querySelector('b').textContent + '»을(를) 내 수업에서 지울까요? 되돌릴 수 없어요.')) return;
     api('/decks/delete', { session: sess().token, base: row.getAttribute('data-base') }).then(function (j) { boxMsg(j.error || '지웠어요.'); boxCard(); }, function () { boxMsg('지우지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   };
 
-  // 자료 둘러보기: 다른 선생님이 공유한 수업(워커가 걸러서 준다). 미리 보기 · 내 수업함에 담기
+  // 자료 둘러보기: 다른 선생님이 공유한 수업(워커가 걸러서 준다). 미리 보기 · 내 수업에 담기
   function browseMsg(t) { document.getElementById('browsemsg').textContent = t; }
   // 꿈틀 기본 자료: 자료실의 모든 차시를 과목·단원별로 접어 보인다(이 페이지에 든 목록이라 서버 저장이 없다)
   // 과목 · 대단원 · 단원(중단원 - 소단원)으로 좁힌다. 비워 두면 전체. 기본 자료와 공유 수업에 함께 걸린다
@@ -728,7 +754,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
       var us = brUnits(), keys = us.map(ukey), narrowed = !!document.getElementById('brsubj').value;
       document.getElementById('baselist').innerHTML = us.map(function (u) {
         return '<details' + (us.length === 1 ? ' open' : '') + '><summary><b>' + esc(u.subject + ' ' + u.unit + ' ' + u.unitTitle) + '</b></summary>' + LESSONS.filter(function (l) { return ukey(l) === ukey(u); }).map(function (l) {
-          return '<div class="row"><span>' + esc(l.n + '차시 ' + l.title) + '</span><a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(l.path, '') + '">미리 보기</a><button class="btn small" type="button" data-add="' + esc(l.path) + '">내 수업함에 담기</button></div>';
+          return '<div class="row"><span>' + esc(l.n + '차시 ' + l.title) + '</span><a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(l.path, '') + '">미리 보기</a><button class="btn small" type="button" data-add="' + esc(l.path) + '">내 수업에 담기</button></div>';
         }).join('') + '</details>';
       }).join('');
       // 공유 수업: 고른 단원의 것 + 새로 만든 수업(my/, 단원이 없다)
@@ -740,8 +766,8 @@ select { height: 48px; max-width: 100%; min-width: 0; }
           + (d.post ? '<a class="talk" data-post="' + d.post + '" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '" aria-label="이야기: 공감 ' + d.likes + ', 댓글 ' + d.comments + '" title="이야기 보기">♡ ' + d.likes + '&ensp;💬 ' + d.comments + '</a>' : '<span></span>')
           + '<span class="small">' + esc(d.by || '선생님') + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + ' · ' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일' + (d.mine ? ' · 내가 공유' : '') + '</span>'
           + '<span class="acts"><a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&share=' + d.id) + '">미리 보기</a>'
-          + (d.mine ? '' : '<button class="btn small" type="button" data-copy>내 수업함에 담기</button>') + '</span></div>';
-      }).join('') : '<p class="small">' + (SHARED.length ? '이 단원에 공유된 수업은 아직 없어요.' : '아직 공유된 수업이 없어요. «내 수업함»에서 «공유하기»를 누르면 여기에 보여요.') + '</p>';
+          + (d.mine ? '' : '<button class="btn small" type="button" data-copy>내 수업에 담기</button>') + '</span></div>';
+      }).join('') : '<p class="small">' + (SHARED.length ? '이 단원에 공유된 수업은 아직 없어요.' : '아직 공유된 수업이 없어요. «내 수업»에서 «공유하기»를 누르면 여기에 보여요.') + '</p>';
     });
   }
   document.getElementById('brsubj').onchange = document.getElementById('brbig').onchange = document.getElementById('brunit').onchange = baseList;
@@ -759,8 +785,8 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     var row = e.target.closest('[data-id]'); if (!row || !e.target.hasAttribute('data-copy')) return;
     var go = function (over) {
       api('/decks/copy', { session: sess().token, id: Number(row.getAttribute('data-id')), over: over }).then(function (j) {
-        if (j.exists && !over) { if (confirm('이 차시의 내 수업이 이미 수업함에 있어요. 담아 온 수업으로 바꿀까요? 지금 내 수업은 사라져요.')) go(true); return; }
-        browseMsg(j.error || '내 수업함에 담았어요. «내 수업함»에서 고치거나 수업할 수 있어요.'); if (!j.error) boxCard();
+        if (j.exists && !over) { if (confirm('이 차시는 이미 내 수업에 있어요. 담아 온 수업으로 바꿀까요? 지금 내 수업은 사라져요.')) go(true); return; }
+        browseMsg(j.error || '내 수업에 담았어요. «내 수업»에서 고치거나 수업할 수 있어요.'); if (!j.error) boxCard();
       }, function () { browseMsg('담지 못했어요. 인터넷 연결을 확인해 주세요.'); });
     };
     go(false);
@@ -908,7 +934,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   // 화면 전체: 로그인 상태에 따라 카드를 보이고 숨긴다
   function renderAll() {
     var s = sess(), ok = !!(s && s.status === 'approved');
-    meCard(); adminCard();
+    meCard(); adminCard(); profCard();
     if (ok) { boxCard(); browseCard(); statsCard(); } else { document.getElementById('boxcard').hidden = document.getElementById('newcard').hidden = true; document.getElementById('browsecard').hidden = true; document.getElementById('statscard').hidden = true; }
     document.getElementById('makecard').hidden = !ok;
     document.getElementById('classes').hidden = !ok;

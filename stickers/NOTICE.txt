@@ -1,0 +1,74 @@
+이모티콘 그림의 출처와 라이선스
+
+이 폴더의 fluent/ 아래 그림은 Microsoft 의 「Fluent Emoji」 3D 판(PNG)을 고치지 않고 그대로 실은 것이다.
+
+  출처      https://github.com/microsoft/fluentui-emoji
+  받은 판   1ffb34c752ecf5d402f04cfb4b392c77f57c54bc (2026-08-24)
+  라이선스  MIT License — 아래 전문
+  저작권    Copyright (c) Microsoft Corporation.
+
+이 표기는 그림의 출처를 밝히는 것일 뿐이다. Microsoft 가 이 서비스를 만들었거나 보증한다는 뜻이 아니며,
+MIT 라이선스는 Microsoft 의 이름·로고 같은 상표를 쓸 권리를 주지 않는다.
+
+파일 목록 (우리 파일 이름 = 원본 파일 이름 · 원본 경로는 저장소의 assets/ 아래 · 크기는 바이트)
+
+  folded_hands_3d_default.png            Folded hands/Default/3D/            23407
+  red_heart_3d.png                       Red heart/3D/                       29389
+  heart_hands_3d_default.png             Heart hands/Default/3D/             30419
+  bouquet_3d.png                         Bouquet/3D/                         39985
+  smiling_face_with_hearts_3d.png        Smiling face with hearts/3D/        52432
+  thumbs_up_3d_default.png               Thumbs up/Default/3D/               29710
+  ok_hand_3d_default.png                 Ok hand/Default/3D/                 28089
+  check_mark_button_3d.png               Check mark button/3D/               34052
+  saluting_face_3d.png                   Saluting face/3D/                   40146
+  raised_hand_3d_default.png             Raised hand/Default/3D/             25559
+  clapping_hands_3d_default.png          Clapping hands/Default/3D/          34774
+  flexed_biceps_3d_default.png           Flexed biceps/Default/3D/           30206
+  hot_beverage_3d.png                    Hot beverage/3D/                    44337
+  sparkles_3d.png                        Sparkles/3D/                        21948
+  party_popper_3d.png                    Party popper/3D/                    42512
+  partying_face_3d.png                   Partying face/3D/                   50583
+  birthday_cake_3d.png                   Birthday cake/3D/                   41229
+  trophy_3d.png                          Trophy/3D/                          31910
+  smiling_face_with_smiling_eyes_3d.png  Smiling face with smiling eyes/3D/  39826
+  beaming_face_with_smiling_eyes_3d.png  Beaming face with smiling eyes/3D/  37802
+  face_with_tears_of_joy_3d.png          Face with tears of joy/3D/          44153
+  rolling_on_the_floor_laughing_3d.png   Rolling on the floor laughing/3D/   45925
+  winking_face_3d.png                    Winking face/3D/                    43638
+  person_bowing_3d_default.png           Person bowing/Default/3D/           40154
+  pleading_face_3d.png                   Pleading face/3D/                   44074
+  loudly_crying_face_3d.png              Loudly crying face/3D/              38405
+  grinning_face_with_sweat_3d.png        Grinning face with sweat/3D/        42538
+  downcast_face_with_sweat_3d.png        Downcast face with sweat/3D/        38805
+  raising_hands_3d_default.png           Raising hands/Default/3D/           32215
+  star-struck_3d.png                     Star-struck/3D/                     45284
+  fire_3d.png                            Fire/3D/                            26826
+  four_leaf_clover_3d.png                Four leaf clover/3D/                37574
+  thinking_face_3d.png                   Thinking face/3D/                   45573
+  waving_hand_3d_default.png             Waving hand/Default/3D/             34079
+  sleeping_face_3d.png                   Sleeping face/3D/                   44597
+  light_bulb_3d.png                      Light bulb/3D/                      22450
+
+----------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) Microsoft Corporation.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
