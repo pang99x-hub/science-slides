@@ -695,9 +695,10 @@ export function teachPage(site, units) {
   <div class="tabp" data-tab="browse">
   <div class="card" id="browsecard" hidden>
     <h2>자료 둘러보기</h2>
-    <p class="muted">꿈틀 자료실의 모든 차시와 선생님들이 공유한 수업이에요. 미리 보고, 마음에 들면 <b>내 수업함에 담아</b> 내 수업에 맞게 고쳐 쓰세요. <b>미리 보기</b> 화면에서는 필요한 장만 골라 내 수업(어느 차시든) 뒤에 붙일 수도 있어요. 궁금한 점이나 써 본 이야기는 <b>이야기</b>를 눌러 댓글로 나눠요.</p>
+    <p class="muted">미리 보고, 마음에 들면 <b>내 수업함에 담아</b> 고쳐 쓰세요.</p>
+    <div class="form" id="brpick"><label class="subj">과목<select id="brsubj"></select></label><label class="grow">대단원<select id="brbig"></select></label><label class="grow">단원<select id="brunit"></select></label></div>
+    <style>#brpick .grow { flex: 1 1 240px; } #brpick .subj { flex: 0 1 170px; }</style>
     <h3>꿈틀 기본 자료</h3>
-    <p class="small">단원을 눌러 차시를 펴 보세요. 담아도 장 번호만 적어 두어 저장 공간을 거의 쓰지 않아요. 새로 만든 수업에서는 편집기의 «장 넣기»로 필요한 장만 골라 넣을 수 있어요.</p>
     <div id="baselist" class="stack"></div>
     <h3>선생님들이 공유한 수업</h3>
     <div id="browselist" class="stack"></div>
@@ -752,6 +753,7 @@ export function teachPage(site, units) {
   var pass = qs.get('roomapi') ? '&roomapi=' + encodeURIComponent(qs.get('roomapi')) : '';
   var BASE = location.href.split(/[?#]/)[0].replace(/[^/]*$/, '');
   var LESSONS = ${lessonData(lessons)};
+  var AREA = ${JSON.stringify(Object.fromEntries(units.map((u) => [u.subjectSlug + '.' + u.unit, u.area || ''])))};   // 단원 → «대단원 › 중단원»(자료 둘러보기 고르기)
   var STDTXT = ${JSON.stringify(Object.fromEntries(units.filter((u) => u.standard).map((u) => [u.standard, u.standardText || ''])))};   // 성취기준 코드 → 설명(수업 통계)
   var GID = qs.get('gid') || ${JSON.stringify(site.googleClientId || '')};
   var KEY = 'science-room:classes';
@@ -1114,16 +1116,40 @@ ${AUTH_JS}
   // 자료 둘러보기: 다른 선생님이 공유한 수업(워커가 걸러서 준다). 미리 보기 · 내 수업함에 담기
   function browseMsg(t) { document.getElementById('browsemsg').textContent = t; }
   // 꿈틀 기본 자료: 자료실의 모든 차시를 과목·단원별로 접어 보인다(이 페이지에 든 목록이라 서버 저장이 없다)
+  // 과목 · 대단원 · 단원(중단원 - 소단원)으로 좁힌다. 비워 두면 전체. 기본 자료와 공유 수업에 함께 걸린다
+  var SHARED = [];
+  function brUnits() {
+    var g = function (id) { return document.getElementById(id); }, sb = g('brsubj'), bb = g('brbig'), ub = g('brunit'), all = [{ k: '', t: '전체' }];
+    var ar = function (l) { return (AREA[ukey(l)] || '').split(' › '); }, kv = function (x) { return x.k; }, tx = function (x) { return x.t; };
+    var us = once(LESSONS.filter(function (l) { return UNITS.indexOf(ukey(l)) >= 0; }), ukey);
+    opts(sb, all.concat(once(us, function (l) { return l.subject; }).map(function (l) { return { k: l.subject, t: l.subject }; })), kv, tx);
+    us = us.filter(function (l) { return !sb.value || l.subject === sb.value; });
+    opts(bb, all.concat(sb.value ? once(us, function (l) { return ar(l)[0]; }).map(function (l) { return { k: ar(l)[0], t: ar(l)[0] }; }) : []), kv, tx);
+    us = us.filter(function (l) { return !bb.value || ar(l)[0] === bb.value; });
+    opts(ub, all.concat(sb.value ? us.map(function (l) { return { k: ukey(l), t: (ar(l)[1] ? ar(l)[1] + ' - ' : '') + l.unit + ' ' + l.unitTitle }; }) : []), kv, tx);
+    bb.disabled = ub.disabled = !sb.value;
+    return us.filter(function (l) { return !ub.value || ukey(l) === ub.value; });
+  }
   function baseList() {
     boxUnits().then(function () {
-      var can = LESSONS.filter(function (l) { return UNITS.indexOf(ukey(l)) >= 0; });
-      document.getElementById('baselist').innerHTML = once(can, ukey).map(function (u) {
-        return '<details><summary><b>' + esc(u.subject + ' ' + u.unit + ' ' + u.unitTitle) + '</b></summary>' + can.filter(function (l) { return ukey(l) === ukey(u); }).map(function (l) {
+      var us = brUnits(), keys = us.map(ukey), narrowed = !!document.getElementById('brsubj').value;
+      document.getElementById('baselist').innerHTML = us.map(function (u) {
+        return '<details' + (us.length === 1 ? ' open' : '') + '><summary><b>' + esc(u.subject + ' ' + u.unit + ' ' + u.unitTitle) + '</b></summary>' + LESSONS.filter(function (l) { return ukey(l) === ukey(u); }).map(function (l) {
           return '<div class="row"><span>' + esc(l.n + '차시 ' + l.title) + '</span><a class="btn small" target="_blank" rel="noopener" href="' + boxUrl(l.path, '') + '">미리 보기</a><button class="btn small" type="button" data-add="' + esc(l.path) + '">내 수업함에 담기</button></div>';
         }).join('') + '</details>';
       }).join('');
+      // 공유 수업: 고른 단원의 것 + 새로 만든 수업(my/, 단원이 없다)
+      var list = SHARED.filter(function (d) { return !narrowed || d.base.indexOf('my/') === 0 || keys.indexOf(d.base.split('/').slice(0, 2).join('.')) >= 0; });
+      document.getElementById('browselist').innerHTML = list.length ? list.map(function (d) {
+        var day = new Date(d.updated_at);
+        return '<div class="row" data-id="' + d.id + '"><b>' + esc(d.title) + '</b><span class="small">' + esc(d.by || '선생님') + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + ' · ' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일</span>'
+          + '<a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&share=' + d.id) + '">미리 보기</a>'
+          + (d.post ? '<a class="btn small" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
+          + (d.mine ? '<span class="small">내가 공유한 수업</span>' : '<button class="btn small" type="button" data-copy>내 수업함에 담기</button>') + '</div>';
+      }).join('') : '<p class="small">' + (SHARED.length ? '이 단원에 공유된 수업은 아직 없어요.' : '아직 공유된 수업이 없어요. «내 수업함»에서 «공유하기»를 누르면 여기에 보여요.') + '</p>';
     });
   }
+  document.getElementById('brsubj').onchange = document.getElementById('brbig').onchange = document.getElementById('brunit').onchange = baseList;
   document.getElementById('baselist').onclick = function (e) { var p = e.target.getAttribute('data-add'); if (p) boxAdd(e.target, p, browseMsg); };
   function browseCard() {
     var card = document.getElementById('browsecard'); baseList();
@@ -1131,13 +1157,7 @@ ${AUTH_JS}
       if (j.http === 404) { card.hidden = true; return; }
       card.hidden = false;
       if (j.error) { browseMsg(j.error); return; }
-      document.getElementById('browselist').innerHTML = j.decks.length ? j.decks.map(function (d) {
-        var day = new Date(d.updated_at);
-        return '<div class="row" data-id="' + d.id + '"><b>' + esc(d.title) + '</b><span class="small">' + esc(d.by || '선생님') + (d.origin ? ' · 원작 ' + esc(d.origin) : '') + ' · ' + d.slides + '장 · ' + (day.getMonth() + 1) + '월 ' + day.getDate() + '일</span>'
-          + '<a class="btn small main" target="_blank" rel="noopener" href="' + boxUrl(d.base, '&share=' + d.id) + '">미리 보기</a>'
-          + (d.post ? '<a class="btn small" href="board.html' + (pass ? '?' + pass.slice(1) : '') + '#p' + d.post + '">이야기 ❤️ ' + d.likes + ' · 💬 ' + d.comments + '</a>' : '')
-          + (d.mine ? '<span class="small">내가 공유한 수업</span>' : '<button class="btn small" type="button" data-copy>내 수업함에 담기</button>') + '</div>';
-      }).join('') : '<p class="small">아직 공유된 수업이 없어요. «내 수업함»에서 «공유하기»를 누르면 여기에 보여요.</p>';
+      SHARED = j.decks; baseList();
     }, function () { browseMsg('불러오지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   }
   document.getElementById('browselist').onclick = function (e) {
