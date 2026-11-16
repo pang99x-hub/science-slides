@@ -1386,7 +1386,8 @@ const BOARD_JS = String.raw`
     $('wav').innerHTML = av(ME);
     route();
   }
-  function press() { document.querySelectorAll('[data-b]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.b === S.board)); }); $('bfil').hidden = S.board === 'notes'; $('nnew').hidden = S.board !== 'notes'; $('nnew').onclick = finder; }   // ✏️(새 쪽지)는 쪽지일 때만, 단추 줄 오른쪽에
+  function press() { document.querySelectorAll('[data-b]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.b === S.board)); }); var nt = S.board === 'notes', nb = $('nnew'), my = S.board === 'mine'; nb.hidden = my; $('fq').hidden = !my; if (!my && S.q) { S.q = ''; $('fq').value = ''; }   // 내 글: 글쓰기 대신 찾기
+     nb.title = nt ? '새 쪽지' : '글 쓰기'; nb.setAttribute('aria-label', nb.title); nb.onclick = nt ? finder : function () { compose(null, true); }; }   // ✏️(새 쪽지)는 쪽지일 때만, 단추 줄 오른쪽에
   function route() {
     var m = /^#p(\d+)$/.exec(location.hash), r = /^#r([pcn]\d+|u[0-9a-f]{24}|bot)$/.exec(location.hash), h = location.hash.slice(1);
     clearInterval(RT); $('detail').className = 'card'; document.body.classList.remove('inroom');
@@ -1423,22 +1424,23 @@ const BOARD_JS = String.raw`
   }
   function filters() {
     document.querySelectorAll('[data-b]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.b === S.board)); b.onclick = function () { S.board = b.dataset.b; S.lesson = ''; filters(); if (location.hash) location.hash = ''; else route(); }; });
-    $('fsort').onchange = function () { S.sort = this.value; list(); };
-    $('fq').onkeydown = function (e) { if (e.key === 'Enter') { S.q = this.value.trim(); list(); } };
     $('more').onclick = function () { S.page++; list(true); };
+    $('fq').onkeydown = function (e) { if (e.key === 'Enter') { S.q = this.value.trim(); S.page = 0; list(); } };
     $('wlesson').innerHTML = '<option value="">차시 없음</option>' + LESSONS.map(function (l) { return '<option value="' + esc(l.path) + '">' + esc(l.unit + ' ' + l.n + '차시 ' + l.title) + '</option>'; }).join('');
   }
 
   // ---- 글 쓰기: 목록 위 칸에 바로 쓴다(제목·종류 없음). 오류·요청에서만 차시·장을 붙인다. edit 이면 그 글 수정(사진은 그대로) ----
   var WP = picker($('wfile'), $('wpv'), function (t) { $('wmsg').textContent = t; });
   grow($('wbody'));
-  function compose(edit) {
+  var FIRST = !!qs.get('lesson');   // 차시 «의견» 단추로 왔을 때만 글 칸이 처음부터 열려 있다
+  function compose(edit, open) {
+    var on = !!edit || !!open || (FIRST && S.board === 'help'); FIRST = false;   // 평소엔 목록만 — ✏️를 눌러야 글 칸이 펼쳐진다(스레드처럼)
     var help = edit ? edit.kind === 'bug' || edit.kind === 'ask' : S.board === 'help';
-    $('write').hidden = S.board === 'notes' && !edit; $('wl').hidden = !help || !!edit; $('wcancel').hidden = !edit; $('wpick').hidden = !!edit; $('wmsg').textContent = ''; WP.clear();
+    $('write').hidden = !on; $('wl').hidden = !help || !!edit; $('wcancel').hidden = !on; $('wpick').hidden = !!edit; $('wmsg').textContent = ''; WP.clear();
     $('wbody').maxLength = 6000; $('wbody').placeholder = help ? '어느 차시 몇 장에서 무엇이 어떻게 보였는지 적어 주세요.' : '수업 이야기, 궁금한 것. 편하게 남겨 주세요.';
     $('wbody').value = edit ? edit.body : ''; $('wsend').textContent = edit ? '수정' : '올리기'; $('wbody').oninput();
-    if (edit) { $('detail').hidden = true; $('listv').hidden = true; $('wbody').focus(); }
-    else { $('wlesson').value = S.lesson || ''; $('wslide').value = S.lesson ? parseInt(qs.get('slide'), 10) || '' : ''; }
+    if (on) { $('detail').hidden = true; $('listv').hidden = true; $('nnew').hidden = true; $('wbody').focus(); }
+    if (!edit) { $('wlesson').value = S.lesson || ''; $('wslide').value = S.lesson ? parseInt(qs.get('slide'), 10) || '' : ''; }
     $('wform').onsubmit = function (e) {
       e.preventDefault();
       var body = $('wbody').value;
@@ -1455,7 +1457,7 @@ const BOARD_JS = String.raw`
   // ---- 글 보기: 글 → 답글 칸 → 답글(답글의 답글은 한 단계, 세로 선 아래) ----
   var CP;
   function openPost(id, again) {
-    CUR = id; $('listv').hidden = true; $('write').hidden = true;
+    CUR = id; $('listv').hidden = true; $('write').hidden = true; $('nnew').hidden = true;
     if (!again) { $('detail').hidden = false; $('detail').innerHTML = '<p class="muted">불러오는 중…</p>'; }
     call('get', { id: id }).then(function (j) { return mdReady.then(function () { return j; }); }).then(function (j) {
       if (CUR !== id) return;
@@ -1727,8 +1729,6 @@ export function boardPage(site, units) {
   return `${head('선생님 게시판 · ' + site.name)}
 <style>
 .kinds { display: flex; flex-wrap: wrap; gap: 6px; }
-.bfil { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.bfil input { flex: 1 1 200px; } .bfil[hidden] { display: none; }
 .rm { cursor: pointer; } .rm .hd .meta { margin-left: auto; } .rl { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 15px; } .rl span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rn { font-style: normal; padding: 2px 7px; border-radius: 99px; background: var(--stamp); color: var(--paper-2); font: 700 12px/1.2 var(--f-body); }
 #detail.chat { display: grid; gap: 0; padding: 0; overflow: hidden; }
@@ -1756,7 +1756,7 @@ body.inroom #board, body.inroom #detail.chat { flex: 1; min-height: 0; display: 
 /* 움직임은 AX 메신저 것을 따른다: 새 말풍선이 올라오고, 대화방이 옆에서 들어오고, 판이 떠오르고, 안 읽은 수가 톡 */
 @keyframes rin { from { opacity: 0; transform: translateY(10px); } } @keyframes rrise { from { opacity: 0; transform: translateY(6px); } } @keyframes rpop { from { transform: scale(.6); } } @keyframes rslide { from { opacity: 0; transform: translateX(18px); } }
 .rb.in { animation: rin .24s cubic-bezier(.22, .8, .3, 1); } #rplusp, #rstk { animation: rrise .18s ease-out; } .rn { animation: rpop .2s cubic-bezier(.22, .8, .3, 1); } .card.chat { animation: rslide .22s cubic-bezier(.22, .8, .3, 1); }
-@media (prefers-reduced-motion: reduce) { .rb.in, #rplusp, #rstk, .rn, .card.chat { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rb.in, #rplusp, #rstk, .rn, .card.chat, #write { animation: none; } }
 .rplus { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px 2px; padding: 0 12px 12px; } .rplus[hidden], .rstk[hidden] { display: none; }
 .rplus button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; border: 0; border-radius: 10px; background: none; color: var(--ink); font: 400 12px/1.2 var(--f-body); cursor: pointer; } .rplus button span { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
 .rstk { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 4px; max-height: 216px; overflow-y: auto; padding: 0 12px 12px; } .rstk button { display: grid; place-items: center; min-height: 64px; padding: 4px; border: 0; border-radius: 10px; background: none; cursor: pointer; } .rstk button:hover { background: var(--accent-soft); } .rstk .stk { width: 48px; height: 48px; }
@@ -1771,11 +1771,11 @@ body.inroom #board, body.inroom #detail.chat { flex: 1; min-height: 0; display: 
 .meta { font-size: 13px; color: var(--ink-3); margin: 0; } .hd .meta { flex: 0 0 auto; } .meta.ltag a { color: var(--ink-3); }
 ul.plist { list-style: none; margin: 0; padding: 0 16px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; }
 ul.plist > li:last-child, .cl > :last-child { border-bottom: 0; }
-#write { padding: 6px 16px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; border-bottom-width: 2px; } #write[hidden] { display: none; }
+#write { padding: 6px 12px 6px 10px; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; border-bottom-width: 2px; } #write[hidden] { display: none; } #write { animation: rrise .2s ease-out; } #wbody { min-height: 34vh; } #write .av { width: 30px; height: 30px; font-size: 13px; margin-top: 4px; }
 #detail { display: block; padding: 4px 16px 8px; } #detail[hidden] { display: none; } .backp { margin: 10px 0 0; font-size: 14px; }
 .empty { color: var(--ink-3); padding: 14px 0; }
 button.av { border: 0; padding: 0; cursor: pointer; } .hd b[data-note] { cursor: pointer; }
-#nnew[hidden] { display: none; } #nnew { position: fixed; z-index: 5; right: max(16px, calc(50vw - 424px)); bottom: calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 3px 0 var(--ink); width: 52px; height: 52px; border: 2px solid var(--ink); border-radius: 50%; background: var(--paper-2); font-size: 20px; line-height: 1; cursor: pointer; }
+#nnew[hidden], #fq[hidden] { display: none; } #fq { width: 100%; } #nnew { position: fixed; z-index: 5; right: max(16px, calc(50vw - 424px)); bottom: calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 3px 0 var(--ink); width: 52px; height: 52px; border: 2px solid var(--ink); border-radius: 50%; background: var(--paper-2); font-size: 20px; line-height: 1; cursor: pointer; }
 #nfind { width: min(440px, calc(100vw - 32px)); padding: 20px; border: 2px solid var(--ink); border-radius: 16px; background: var(--paper-2); color: var(--ink); } #nfind::backdrop { background: rgba(0, 0, 0, .35); }
 #nfind h2 { margin: 0; font-size: 22px; } #nfq { width: 100%; box-sizing: border-box; margin: 14px 0 6px; padding: 12px 14px; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper); color: var(--ink); font: inherit; }
 #nfl { list-style: none; margin: 0; padding: 0; min-height: 96px; max-height: 50vh; overflow: auto; } #nfl button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 6px 4px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; } #nfl button:hover, #nfl button:focus-visible { background: var(--grid); }
@@ -1828,7 +1828,7 @@ button.av { border: 0; padding: 0; cursor: pointer; } .hd b[data-note] { cursor:
       </div>
     </form>
     <div id="listv" class="stack">
-      <div class="bfil" id="bfil"><select id="fsort" aria-label="정렬"><option value="new">최신순</option><option value="top">공감순</option></select><input type="text" id="fq" placeholder="찾기(엔터)" aria-label="찾기"></div>
+      <input type="text" id="fq" placeholder="내 글·답글 단 글에서 찾기" aria-label="찾기" enterkeyhint="search" hidden>
       <p class="small" id="lessonf" hidden></p>
       <ul class="plist" id="plist"></ul>
       <button class="btn" type="button" id="more" hidden>더 보기</button>
