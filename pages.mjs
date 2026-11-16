@@ -93,7 +93,7 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 .topnav .brand { margin-left: auto; }   /* 단추는 왼쪽에 모으고 이름만 오른쪽 */
 .pmenu { position: relative; border: 0; padding: 0; } .pmenu summary { list-style: none; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper-2); color: var(--ink); cursor: pointer; } .pmenu summary::-webkit-details-marker { display: none; }
 .pdot { font-style: normal; padding: 2px 7px; border-radius: 99px; background: var(--stamp); color: var(--paper-2); font: 700 12px/1.2 var(--f-body); } .pmenu summary .pdot { position: absolute; top: -8px; right: -8px; }
-.pmenu .pwho { min-height: 36px; font-size: 13px; color: var(--ink-3); border-bottom: 1px solid var(--rule); cursor: default; } .pmenu .pwho:hover { background: none; }
+.pmenu [hidden] { display: none; } .pmenu .pwho { min-height: 36px; padding-block: 8px; max-width: 230px; font-size: 13px; color: var(--ink-3); border-bottom: 1px solid var(--rule); cursor: default; } .pmenu .pwho:hover { background: none; }
 .pmenu > div { position: absolute; right: 0; top: 50px; z-index: 9; display: grid; min-width: 168px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
 .pmenu > div > * { min-height: 44px; padding: 0 16px; border: 0; background: none; display: flex; align-items: center; gap: 8px; font: 700 15px/1.2 var(--f-body); color: var(--ink); text-decoration: none; text-align: left; cursor: pointer; } .pmenu > div > *:hover { background: var(--accent-soft); }
 .pagehead { display: grid; gap: 8px; }
@@ -179,12 +179,39 @@ const AUTH_JS = String.raw`
   // 로그아웃: 이 기기의 진행 열쇠도 서버에서 못 쓰게 한다(공용 컴퓨터)
   function logout() {
     var s = sess(), done = function () { signedOut(); try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {} };
-    return api('/auth/logout', { session: s && s.token, have: have() }).then(done, done);
+    return pushOff().then(function () { return api('/auth/logout', { session: s && s.token, have: have() }); }).then(done, done);
   }
+  // ---- 푸시 알림(2026-11-16, 수업방 src/push.mjs): 쪽지·내 글 답글/공감·가입 승인. 아이폰은 홈 화면에 추가한 앱에서만 된다 ----
+  var PUSHFOR = 'kk-push-for', pushIs = null;   // pushIs: null 모름 · 'none' 못 씀 · 'off' · 'on'
+  function pushReg() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window ? navigator.serviceWorker.ready : Promise.reject(new Error('none')); }
+  function pushSend(sub) { var o = sub.toJSON(), s = sess(); return api('/push/sub', { session: s.token, endpoint: o.endpoint, p256dh: o.keys.p256dh, auth: o.keys.auth }).then(function (j) { if (j.error) throw new Error(j.error); store(PUSHFOR, s.email); }); }
+  function pushOn() {
+    return pushReg().then(function (reg) {
+      return Notification.requestPermission().then(function (p) { if (p !== 'granted') throw new Error('브라우저 설정에서 이 사이트의 알림을 허용해 주세요.'); return api('/push/key', {}); })
+        .then(function (j) { if (!j.key) throw new Error('알림은 아직 준비하고 있어요.'); var raw = atob(j.key.replace(/-/g, '+').replace(/_/g, '/')), key = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) key[i] = raw.charCodeAt(i); return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }); })
+        .then(pushSend).then(function () { pushIs = 'on'; });
+    });
+  }
+  // 끄기: 이 브라우저의 알림 주소를 없애고 서버에서도 지운다(로그아웃 때도 — 공용 컴퓨터에 남의 알림이 뜨지 않게)
+  function pushOff() {
+    return pushReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      if (!sub) return; var s = sess(); store(PUSHFOR, null); pushIs = 'off';
+      return Promise.all([sub.unsubscribe(), s ? api('/push/off', { session: s.token, endpoint: sub.endpoint }) : 0]);
+    }).catch(function () {});
+  }
+  // 지금 켜져 있나. 켜져 있는데 다른 계정이 켠 것이면(로그아웃 없이 계정이 바뀜) 지금 계정 것으로 다시 적는다
+  function pushCheck() {
+    return pushReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      var s = sess(); pushIs = sub ? 'on' : 'off';
+      if (sub && s && stored(PUSHFOR) !== s.email) return pushSend(sub).catch(function () {});
+    }, function () { pushIs = 'none'; }).then(function () { return pushIs; });
+  }
+  function pushItem() { return pushIs === 'none' ? '<span class="pwho">알림은 홈 화면에 추가한 앱에서 켤 수 있어요</span>' : '<button type="button" data-go="push">' + (pushIs === 'on' ? '알림 끄기' : '알림 켜기') + '</button>'; }
   // ---- 짝대기 세 개 메뉴(오른쪽 위, 선생님 페이지·이야기 쪽 공통, 2026-11-16 «선생님 페이지랑 분리»): 수업 일은 선생님 페이지, 선생님끼리의 일(이야기·내 글·쪽지)은 이야기 쪽 ----
   function profCard() {
     var s = sess(), el = document.getElementById('prof'); if (!el) return;
     if (!s) { el.innerHTML = ''; return; }
+    if (pushIs === null) { pushIs = 'off'; pushCheck().then(profCard); }
     var n = String(s.name || s.email), ok = s.status === 'approved', tm = (s.talk || 0) + (s.mine || 0), all = (s.notes || 0) + tm;   // 새 소식: 쪽지 + 이야기 새 글 + 내 글 반응
     function pd(n) { return n ? '<i class="pdot">' + n + '</i>' : ''; }
     var dot = pd(s.notes);
@@ -193,10 +220,15 @@ const AUTH_JS = String.raw`
     el.innerHTML = '<details class="pmenu"><summary aria-label="내 메뉴' + (all ? ', 새 소식 ' + all + '개' : '') + '"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' + pd(all) + '</summary><div>'
       + '<span class="pwho">' + esc(n.replace(/\s*선생님$/, '')) + ' 선생님</span>' + a('rooms', 'teach', '선생님 페이지')
       + (ok ? a('talk', 'board', '이야기' + pd(tm)) + a('notes', 'board', '쪽지' + dot) : '') + a('me', 'teach', '내 정보')
-      + '<a href="policy.html">약관·개인정보</a><button type="button" data-go="out">로그아웃</button></div></details>';
+      + (ok || s.status === 'pending' ? pushItem() : '') + '<a href="policy.html">약관·개인정보</a><button type="button" data-go="out">로그아웃</button><span class="pwho" id="pmsg" role="status" hidden></span></div></details>';
   }
   document.addEventListener('click', function (e) {
     var m = document.querySelector('.pmenu[open]'), b = m && e.target.closest('.pmenu [data-go]');
+    if (b && b.dataset.go === 'push') {   // 메뉴는 연 채로 두고 결과를 그 자리에 알린다
+      var say = function (t) { profCard(); var d = document.querySelector('.pmenu'), p = document.getElementById('pmsg'); d.open = true; p.textContent = t; p.hidden = false; };
+      (pushIs === 'on' ? pushOff().then(function () { say('알림을 껐어요.'); }) : pushOn().then(function () { say('알림을 켰어요. 쪽지·답글·공감이 오면 알려 드려요.'); }, function (err) { say(err && err.message !== 'none' ? err.message : '이 브라우저에서는 알림을 켤 수 없어요.'); }));
+      return;
+    }
     if (m && (b || !m.contains(e.target))) m.open = false;
     if (b && b.dataset.go === 'out') { if (window.kkOut) kkOut(); logout().then(function () { location.reload(); }); }
   });
@@ -964,7 +996,8 @@ ${AUTH_JS}
         api('/profile', b).then(function (j) { if (j.login) { signedOut(); renderAll(); return; } if (j.error) { meMsg(j.error); return; } keep(j); renderAll(); meMsg('저장했어요. 다음에 여는 슬라이드부터 바뀐 학교 이름이 나와요.'); }, function () { meMsg('저장하지 못했어요. 인터넷 연결을 확인해 주세요.'); });
       };
     } else if (s.status === 'pending') {
-      box.innerHTML = '<p class="muted">' + who + ' · <b class="tag next">승인 기다림</b></p><p class="muted">가입 신청을 보냈어요. 관리하는 선생님이 승인하면 이 페이지가 저절로 바뀌어요(30초마다 확인해요).</p><div class="row"><button class="btn main" type="button" id="recheck">승인됐는지 다시 보기</button>' + out + '</div>';
+      box.innerHTML = '<p class="muted">' + who + ' · <b class="tag next">승인 기다림</b></p><p class="muted">가입 신청을 보냈어요. 관리하는 선생님이 승인하면 이 페이지가 저절로 바뀌어요(30초마다 확인해요).</p><div class="row"><button class="btn main" type="button" id="recheck">승인됐는지 다시 보기</button><button class="btn small" type="button" id="pushme">승인되면 알림 받기</button>' + out + '</div>';
+      document.getElementById('pushme').onclick = function () { meMsg('알림을 켜는 중…'); pushOn().then(function () { meMsg('승인되면 이 기기로 알려 드릴게요.'); profCard(); }, function (err) { meMsg(err && err.message !== 'none' ? err.message : '이 브라우저에서는 알림을 켤 수 없어요. 아이폰은 홈 화면에 추가한 앱에서 켤 수 있어요.'); }); };
       document.getElementById('recheck').onclick = function () { meMsg('확인하는 중…'); syncMe().then(function () { meMsg(sess() && sess().status === 'approved' ? '승인됐어요!' : '아직 승인 전이에요.'); renderAll(); }); };
     } else {
       box.innerHTML = '<p class="muted">' + who + ' · <b class="tag">' + (ST[s.status] || '가입 전') + '</b></p>'
@@ -1628,6 +1661,7 @@ export function policyPage(site) {
       <tr><th>누구</th><th>받는 정보</th><th>쓰는 곳</th></tr>
       <tr><td>선생님(가입)</td><td>구글 계정의 이메일·이름, 학교, 가입 때 적은 과목·한 마디</td><td>본인 확인, 가입 승인, 게시판·수업 화면의 이름·학교 표시</td></tr>
       <tr><td>선생님(이용)</td><td>수업방 설정(과목·반 이름), 내 수업(고친 슬라이드), 게시판 글·답글·사진·공감, 쪽지, 수업 통계(숫자)</td><td>수업 진행, 선생님 사이 자료·의견 나눔</td></tr>
+      <tr><td>선생님(알림을 켰을 때)</td><td>알림을 켠 기기의 알림 주소와 암호 열쇠(브라우저가 만들어 줘요)</td><td>쪽지·내 글의 답글과 공감·가입 승인을 그 기기에 알리기. 알림을 끄거나 로그아웃하면 지워요</td></tr>
       <tr><td>학생</td><td>선생님이 수업방을 «번호만»·«번호와 이름»으로 정했을 때만 번호(와 이름), 수업 중 낸 답. «익명» 방은 받지 않아요</td><td>수업 중 선생님 화면에 참여·응답을 보여 주기</td></tr>
     </table></div>
     <ul>
@@ -1646,6 +1680,7 @@ export function policyPage(site) {
       <tr><td>Cloudflare, Inc.(미국 등)</td><td>수업방·게시판 서버와 저장</td><td>위 1의 모든 정보</td></tr>
       <tr><td>Google LLC(미국)</td><td>선생님 구글 로그인, 글꼴</td><td>로그인하는 선생님의 계정 확인, 접속 기록</td></tr>
       <tr><td>GitHub, Inc.(미국)</td><td>자료실 화면(웹 쪽) 제공</td><td>접속 기록(IP 주소 등)</td></tr>
+      <tr><td>쓰는 브라우저의 알림 서버(Google·Apple·Mozilla·Microsoft)</td><td>알림을 켠 기기로 알림 전달</td><td>암호로 잠근 알림 글(«○○ 선생님이 쪽지를 보냈어요» 같은 한 줄. 쪽지·글 내용은 넣지 않아요)</td></tr>
       <tr><td>Telegram</td><td>관리자에게 가입 신청·새 글 알림</td><td>신청한 선생님의 이름·학교·이메일, 새 글 앞부분</td></tr>
     </table></div>
     <p class="small">이 밖의 곳에 팔거나 넘기지 않아요. 법에 따른 요청이 있을 때만 예외예요.</p>

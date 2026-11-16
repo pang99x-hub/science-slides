@@ -19,6 +19,16 @@ const kept = async (req) => {
   const net = fetch(req).then((r) => { if (r.ok || r.type === 'opaque') c.put(req, r.clone()); return r; }).catch(() => hit);
   return hit || net;
 };
+// 푸시 알림(수업방 src/push.mjs가 보낸다): 한 줄 글을 띄우고, 누르면 그 화면을 연다(이 앱 안의 주소만)
+self.addEventListener('push', (e) => {
+  let d = {}; try { d = e.data.json(); } catch (err) { /* 빈 알림 */ }
+  e.waitUntil(self.registration.showNotification(String(d.title || '꿈틀'), { body: String(d.body || '새 소식이 있어요.'), tag: d.tag ? String(d.tag) : undefined, icon: new URL('icons/icon-192.png', self.registration.scope).href, data: { url: String(d.url || 'teach.html') } }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const scope = self.registration.scope; let u = new URL((e.notification.data || {}).url || '', scope).href; if (!u.startsWith(scope)) u = scope;
+  e.waitUntil(self.clients.matchAll({ type: 'window' }).then((cs) => { const c = cs.find((x) => x.url.startsWith(scope) && 'navigate' in x); return c ? c.navigate(u).then((w) => (w || c).focus()) : self.clients.openWindow(u); }));
+});
 self.addEventListener('fetch', (e) => {
   const req = e.request; if (req.method !== 'GET') return;
   const u = new URL(req.url);

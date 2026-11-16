@@ -84,7 +84,7 @@ input[type=password] { font: 600 18px/1.3 var(--f-body); padding: 10px 12px; bor
 .topnav .brand { margin-left: auto; }   /* 단추는 왼쪽에 모으고 이름만 오른쪽 */
 .pmenu { position: relative; border: 0; padding: 0; } .pmenu summary { list-style: none; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper-2); color: var(--ink); cursor: pointer; } .pmenu summary::-webkit-details-marker { display: none; }
 .pdot { font-style: normal; padding: 2px 7px; border-radius: 99px; background: var(--stamp); color: var(--paper-2); font: 700 12px/1.2 var(--f-body); } .pmenu summary .pdot { position: absolute; top: -8px; right: -8px; }
-.pmenu .pwho { min-height: 36px; font-size: 13px; color: var(--ink-3); border-bottom: 1px solid var(--rule); cursor: default; } .pmenu .pwho:hover { background: none; }
+.pmenu [hidden] { display: none; } .pmenu .pwho { min-height: 36px; padding-block: 8px; max-width: 230px; font-size: 13px; color: var(--ink-3); border-bottom: 1px solid var(--rule); cursor: default; } .pmenu .pwho:hover { background: none; }
 .pmenu > div { position: absolute; right: 0; top: 50px; z-index: 9; display: grid; min-width: 168px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
 .pmenu > div > * { min-height: 44px; padding: 0 16px; border: 0; background: none; display: flex; align-items: center; gap: 8px; font: 700 15px/1.2 var(--f-body); color: var(--ink); text-decoration: none; text-align: left; cursor: pointer; } .pmenu > div > *:hover { background: var(--accent-soft); }
 .pagehead { display: grid; gap: 8px; }
@@ -164,6 +164,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
       <tr><th>누구</th><th>받는 정보</th><th>쓰는 곳</th></tr>
       <tr><td>선생님(가입)</td><td>구글 계정의 이메일·이름, 학교, 가입 때 적은 과목·한 마디</td><td>본인 확인, 가입 승인, 게시판·수업 화면의 이름·학교 표시</td></tr>
       <tr><td>선생님(이용)</td><td>수업방 설정(과목·반 이름), 내 수업(고친 슬라이드), 게시판 글·답글·사진·공감, 쪽지, 수업 통계(숫자)</td><td>수업 진행, 선생님 사이 자료·의견 나눔</td></tr>
+      <tr><td>선생님(알림을 켰을 때)</td><td>알림을 켠 기기의 알림 주소와 암호 열쇠(브라우저가 만들어 줘요)</td><td>쪽지·내 글의 답글과 공감·가입 승인을 그 기기에 알리기. 알림을 끄거나 로그아웃하면 지워요</td></tr>
       <tr><td>학생</td><td>선생님이 수업방을 «번호만»·«번호와 이름»으로 정했을 때만 번호(와 이름), 수업 중 낸 답. «익명» 방은 받지 않아요</td><td>수업 중 선생님 화면에 참여·응답을 보여 주기</td></tr>
     </table></div>
     <ul>
@@ -182,6 +183,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
       <tr><td>Cloudflare, Inc.(미국 등)</td><td>수업방·게시판 서버와 저장</td><td>위 1의 모든 정보</td></tr>
       <tr><td>Google LLC(미국)</td><td>선생님 구글 로그인, 글꼴</td><td>로그인하는 선생님의 계정 확인, 접속 기록</td></tr>
       <tr><td>GitHub, Inc.(미국)</td><td>자료실 화면(웹 쪽) 제공</td><td>접속 기록(IP 주소 등)</td></tr>
+      <tr><td>쓰는 브라우저의 알림 서버(Google·Apple·Mozilla·Microsoft)</td><td>알림을 켠 기기로 알림 전달</td><td>암호로 잠근 알림 글(«○○ 선생님이 쪽지를 보냈어요» 같은 한 줄. 쪽지·글 내용은 넣지 않아요)</td></tr>
       <tr><td>Telegram</td><td>관리자에게 가입 신청·새 글 알림</td><td>신청한 선생님의 이름·학교·이메일, 새 글 앞부분</td></tr>
     </table></div>
     <p class="small">이 밖의 곳에 팔거나 넘기지 않아요. 법에 따른 요청이 있을 때만 예외예요.</p>
