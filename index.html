@@ -41,7 +41,8 @@ header { position: relative; }
 .pmenu { position: relative; } .pmenu summary { list-style: none; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper-2); color: var(--ink); cursor: pointer; } .pmenu summary::-webkit-details-marker { display: none; }
 .pdot { font-style: normal; padding: 2px 7px; border-radius: 99px; background: var(--stamp); color: var(--paper-2); font: 700 12px/1.2 var(--f-body); } .pmenu summary .pdot { position: absolute; top: -8px; right: -8px; }
 .pmenu > div { position: absolute; right: 0; top: 50px; display: grid; min-width: 168px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
-.pmenu > div > a { min-height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 8px; font: 700 15px/1.2 var(--f-body); color: var(--ink); text-decoration: none; } .pmenu > div > a:hover { background: var(--accent-soft); }
+.pmenu > div > * { min-height: 44px; padding: 0 16px; border: 0; background: none; display: flex; align-items: center; gap: 8px; font: 700 15px/1.2 var(--f-body); color: var(--ink); text-decoration: none; text-align: left; cursor: pointer; } .pmenu > div > *:hover { background: var(--accent-soft); }
+.pmenu .pwho { min-height: 36px; padding-block: 8px; max-width: 230px; font-size: 13px; color: var(--ink-3); border-bottom: 1px solid var(--rule); cursor: default; } .pmenu .pwho:hover { background: none; }
 h1 .nm { display: inline-block; margin: -1.1em 0 -.35em .12em; vertical-align: -.2em; transform: rotate(-5deg); line-height: 0; }
 h1 .nm img { height: 2em; display: block; }
 @media (max-width: 760px) { h1 .nm { margin: -.2em 0 -.2em .1em; vertical-align: -.35em; } h1 .nm img { height: 1.7em; } }
@@ -1296,8 +1297,18 @@ footer a { color: var(--accent); }
     function pd(n) { return n ? '<i class="pdot">' + esc(n) + '</i>' : ''; }   // 새 소식: 쪽지 + 이야기 새 글 + 내 글 반응(저장해 둔 값)
     var dot = pd(sess.notes);
     document.getElementById('prof').innerHTML = '<details class="pmenu"><summary aria-label="내 메뉴"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' + pd((sess.notes || 0) + tm) + '</summary><div>'
-      + '<a href="' + tp + '">선생님 페이지</a><a href="' + bp + '#talk">이야기' + pd(tm) + '</a><a href="' + bp + '#notes">쪽지' + dot + '</a><a href="policy.html">약관·개인정보</a></div></details>';
+      + '<span class="pwho">' + esc(String(sess.name || sess.email).replace(/\s*선생님$/, '')) + ' 선생님</span>'
+      + '<a href="' + tp + '#rooms">선생님 페이지</a><a href="' + bp + '#talk">이야기' + pd(tm) + '</a><a href="' + bp + '#notes">쪽지' + dot + '</a><a href="' + tp + '#me">내 정보</a>'
+      + '<a href="policy.html">약관·개인정보</a><button type="button" id="pout">로그아웃</button></div></details>';
     document.addEventListener('click', function (e) { var m = document.querySelector('.pmenu[open]'); if (m && !m.contains(e.target)) m.open = false; });
+    // 로그아웃(선생님 페이지 메뉴와 같게, 2026-11-17 «이것도 고쳐줘»): 이 기기 알림을 끄고, 서버의 로그인·진행 열쇠를 못 쓰게 한 뒤 이 기기 기록을 지운다
+    document.getElementById('pout').onclick = function () {
+      var have = rooms.filter(function (c) { return c && c.code && c.key; }).map(function (c) { return { code: c.code, key: c.key }; });
+      var push = ('serviceWorker' in navigator && 'PushManager' in window ? navigator.serviceWorker.ready.then(function (r) { return r.pushManager.getSubscription(); }) : Promise.resolve(null))
+        .then(function (sub) { if (sub) return Promise.all([sub.unsubscribe(), api('/push/off', { session: sess.token, endpoint: sub.endpoint })]); }).catch(function () {});
+      var done = function () { try { ['science-room:session', 'science-room:classes', 'kk-push-for'].forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {} location.reload(); };
+      push.then(function () { return api('/auth/logout', { session: sess.token, have: have }); }).then(done, done);
+    };
     var tg = document.getElementById('tgo'); tg.textContent = rooms.length ? '새 수업방 만들기 · 선생님 페이지' : '새 수업방 만들기'; tg.href = 'teach.html' + (pass ? '?' + pass : '') + '#makecard';
     if (rooms.length) tg.classList.remove('main');
   }

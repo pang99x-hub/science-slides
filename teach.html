@@ -393,7 +393,20 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     if (b && b.dataset.go === 'out') { if (window.kkOut) kkOut(); logout().then(function () { location.reload(); }); }
   });
   // 구글 로그인 단추. 구글 스크립트는 이 단추를 띄울 때만 불러온다(학생 화면은 구글에 연결하지 않는다)
+  // 앱 속 브라우저(카카오톡·인스타·스레드·밴드 등)에서는 구글이 로그인을 막는다(403 disallowed_useragent, 2026-11-17 «구글 로그인이 안된다는데»). 바깥 브라우저로 넘기는 안내를 띄운다
+  function inApp() {
+    var ua = navigator.userAgent || '';
+    if (!/KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|Barcelona|Threads|NAVER\(inapp|BAND\/|Line\/|DaumApps|everytimeApp|; wv\)/i.test(ua)) return '';
+    var u = location.href, ios = /iPhone|iPad|iPod/i.test(ua), go = '';
+    if (/KAKAOTALK/i.test(ua)) go = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(u);
+    else if (/Android/i.test(ua)) go = 'intent://' + u.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+    return '<p class="small"><b>이 앱 안에서는 구글 로그인이 되지 않아요.</b> 구글이 카카오톡·인스타그램 같은 앱 속 화면에서는 로그인을 막아 두었어요.</p>'
+      + (go ? '<p style="margin:10px 0"><a class="btn main" href="' + esc(go) + '">' + (ios ? 'Safari로' : '크롬으로') + ' 열기</a></p>'
+            : '<p class="small" style="margin:8px 0">화면 위나 아래의 <b>···</b> 메뉴에서 <b>' + (ios ? 'Safari로 열기' : '다른 브라우저로 열기') + '</b>를 눌러 주세요.</p>')
+      + '<p><button type="button" class="btn small" onclick="var b=this;(navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(function(){b.textContent=\'주소를 복사했어요\'},function(){b.textContent=location.href})">주소 복사</button></p>';
+  }
   function googleButton(box, onDone) {
+    var ia = inApp(); if (ia) { box.innerHTML = ia; return; }
     if (!GID) { box.innerHTML = '<p class="small">구글 로그인을 준비하고 있어요. 조금 뒤에 다시 와 주세요.</p>'; return; }
     var go = function () {
       if (!window.google || !google.accounts || !google.accounts.id) { box.innerHTML = '<p class="small">구글 로그인을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>'; return; }
