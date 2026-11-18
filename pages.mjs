@@ -483,6 +483,7 @@ ${AUTH_JS}
   }
   function check() {
     fetch(API + '/rooms/' + code).then(function (r) { return r.json(); }).then(function (info) {
+      if (info.open && info.wall) { location.replace('wall.html?room=' + code + pass); return; }   // 의견판만 따로 쓰는 방(연수·학급회의)은 그 판으로
       if (!info.open) { show('<h2>이 반 수업방은 닫혔어요</h2><p class="muted">' + (teacher ? '선생님 페이지에서 새로 만들어 주세요.' : '선생님께 새 링크를 받아 주세요. 아래 차시는 혼자 볼 수 있어요.') + '</p>'); library(false); return; }
       $('title').textContent = (info.name || '반') + ' 수업방' + (teacher ? ' · 선생님' : '');
       if (teacher) { if (sess()) teacherView(info); else loginView(true); return; }

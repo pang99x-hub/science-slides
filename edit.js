@@ -35,6 +35,17 @@
   const toned = (html, t) => (t && t !== '모눈' ? html.replace('<section', `<section style="${toneVars(t)}"`) : html);
   // 꿈틀 꾸밈 묶음: AI가 짠 문서(움직이는 장·체험 칸·그림) 앞에 넣어 다른 장과 색·글꼴이 어울리게 한다. 문서의 제 꾸밈이 뒤에 와서 이긴다
   const KIT = /<!--kit-->[\s\S]*?<!--\/kit-->/;
+  // 학생 발표(엔진/src/present.js)와 잇기: 바깥이 {pr:번호, sq} 하면 kkumteul.state.get()을, {sset} 하면 set을, {snap, w} 하면 이 틀을 그림 한 장(PNG)으로 찍어 {re:번호, …}로 답한다.
+  // 문서가 kkumteul.state = { get(){…}, set(s){…} }를 만들어 두면 상태로, 없으면 그림으로 발표한다
+  const KIT_PRES = 'const SNAP=(w)=>new Promise((ok,no)=>{const W=innerWidth||1280,H=innerHeight||720,c=document.documentElement.cloneNode(true),two=(q)=>[[...document.querySelectorAll(q)],[...c.querySelectorAll(q)]];' +
+    'const[cs,cc]=two("canvas");cs.forEach((x,i)=>{try{const m=document.createElement("img");m.src=x.toDataURL();m.className=x.className;m.setAttribute("style",x.getAttribute("style")||"");const k=getComputedStyle(x);for(const p of["border","borderRadius","backgroundColor","boxSizing"])m.style[p]=k[p];m.style.width=x.offsetWidth+"px";m.style.height=x.offsetHeight+"px";cc[i].replaceWith(m)}catch(e){}});' +
+    'const[fs,fc]=two("input,textarea,select");fs.forEach((x,i)=>{const y=fc[i];if(x.type==="checkbox"||x.type==="radio")x.checked?y.setAttribute("checked",""):y.removeAttribute("checked");else if(x.tagName==="TEXTAREA")y.textContent=x.value;else y.setAttribute("value",x.value)});' +
+    'c.querySelectorAll("script,link,iframe").forEach((x)=>x.remove());const b=c.querySelector("body");if(b)b.style.cssText+=";margin:0;width:"+W+"px;height:"+H+"px;overflow:hidden";' +
+    'const svg=\'<svg xmlns="http://www.w3.org/2000/svg" width="\'+W+\'" height="\'+H+\'"><foreignObject width="100%" height="100%">\'+new XMLSerializer().serializeToString(c)+"</foreignObject></svg>",im=new Image();' +
+    'im.onload=()=>{try{const k=Math.min(1,w/W),v=document.createElement("canvas");v.width=Math.round(W*k);v.height=Math.round(H*k);v.getContext("2d").drawImage(im,0,0,v.width,v.height);ok(v.toDataURL("image/png"))}catch(e){no(e)}};im.onerror=no;im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)});' +
+    'addEventListener("message",(e)=>{const d=e.data;if(e.source!==parent||!d||d.kkumteul!==1||!d.pr)return;const S=kkumteul.state,R=(m)=>P(Object.assign({re:d.pr},m));' +
+    'if(d.sq){let s=null;try{s=S&&S.get?S.get():null}catch(x){}return R({has:!!(S&&S.get&&S.set),s})}if(d.sset){try{S&&S.set&&S.set(d.sset)}catch(x){}return R({ok:1})}' +
+    'if(d.snap)SNAP(d.w||1280).then((img)=>R({img}),()=>R({img:null}))});';
   const kit = (doc, t) => { const m = /^\s*<!doctype[^>]*>/i.exec(doc = doc.replace(KIT, '')) || [''];
     return '<!doctype html><!--kit--><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Pen+Script&display=swap">' +
       `<style>:root{${toneVars(t, true)};--f-display:"Hahmlet","Apple SD Gothic Neo","Malgun Gothic",serif;--f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-pen:"Nanum Pen Script","Apple SD Gothic Neo",cursive}` +
@@ -50,7 +61,7 @@
       'addEventListener("click",(e)=>{const b=e.target.closest&&e.target.closest("[data-q][data-v]");if(!b)return;B(b.dataset.q).forEach((x)=>x.classList.toggle("on",x===b));kkumteul.answer(b.dataset.q,b.dataset.v)});' +
       'addEventListener("message",(e)=>{const d=e.data;if(e.source!==parent||!d||d.kkumteul!==1)return;if(d.clear)return B().forEach((b)=>{b.classList.remove("on");const n=b.querySelector(":scope>.n");if(n)n.remove()});' +
       'if(d.counts)B(d.q).forEach((b)=>{let n=b.querySelector(":scope>.n");if(!n){n=document.createElement("span");n.className="n";b.append(n)}n.textContent=d.counts[b.dataset.v]||0})});' +
-      'addEventListener("DOMContentLoaded",()=>P({ready:1}))})()</scr' + 'ipt><!--/kit-->' + doc.slice(m[0].length); };
+      KIT_PRES + 'addEventListener("DOMContentLoaded",()=>P({ready:1}))})()</scr' + 'ipt><!--/kit-->' + doc.slice(m[0].length); };
   const PAPERS = ['#ffffff', '#fff8dc', '#e8f1fb', '#e9f5ec', '#fdecef', '#f1f3f5'];
   const FONTS = [['기본', ''], ['고딕', 'var(--f-body)'], ['명조', 'var(--f-display)'], ['손글씨', 'var(--f-pen)']];   // 틀이 이미 불러오는 글씨체만
   const SHAPES = [['화살표', 360, 160, 'M0 35H60V10L100 50L60 90V65H0Z'], ['양쪽 화살표', 400, 160, 'M0 50L30 15V37H70V15L100 50L70 85V63H30V85Z'], ['세모', 260, 240, 'M50 0L100 100H0Z'],
@@ -143,6 +154,15 @@
     .ed-ai .mini { margin: 0; padding-left: 18px; line-height: 2.4; white-space: normal; } .ed-ai .mini button { height: 30px; font-size: 13px; }
     .ed-ai #ed-ai-out { font-size: 13px; font-weight: 600; } .ed-ai #ed-ai-out:empty { display: none; }
     .ed-guide { position: fixed; z-index: 989; background: #e11d48; pointer-events: none; display: none; }
+    .ed-wall { position: fixed; inset: 0; z-index: 1003; display: flex; align-items: center; justify-content: center; background: rgba(16, 24, 40, .45); color: #1b1f24; }
+    .ed-wall form { display: flex; flex-direction: column; gap: 14px; width: min(640px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow-y: auto; padding: 20px 22px; background: #fff; border-radius: 14px; box-shadow: 0 20px 50px rgba(16, 24, 40, .3); }
+    .ed-wall h2 { margin: 0; font-size: 18px; font-weight: 700; } .ed-wall p.cap { margin: -8px 0 0; color: #5b6573; font-size: 13px; word-break: keep-all; }
+    .ed-wall fieldset { margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .ed-wall legend, .ed-wall label > span { display: block; width: 100%; margin-bottom: 6px; font-weight: 700; color: #3b4452; }
+    .ed-wall input[type=text], .ed-wall select { width: 100%; height: 40px; padding: 0 10px; border: 1px solid #98a2b3; border-radius: 8px; color: #1b1f24; background: #fff; }
+    .ed-wall .chips button[aria-pressed="true"] { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .ed-wall .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .ed-wall .ck { display: flex; gap: 8px; align-items: center; font-weight: 600; } .ed-wall .ck input { width: 18px; height: 18px; }
+    .ed-wall .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; } .ed-wall .err { color: #b42318; font-weight: 600; min-height: 1em; margin: 0; }
+    @media (max-width: 560px) { .ed-wall .two { grid-template-columns: 1fr; } }
     /* 폰(좁은 화면): 장 목록을 아래 가로 띠로 내려 장이 화면 너비를 다 쓰게 한다. 위 단추 줄은 옆으로 민다 */
     @media (max-width: 760px) {
       .ed-ui.ed-top { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; } .ed-ui.ed-top > * { flex: none; } .ed-top .say { max-width: calc(100% - 24px); }
@@ -175,10 +195,12 @@
   const ask = (e, text, yes, fn) => pop(e, h('span', { className: 'ask', textContent: text }), btn(yes, yes, fn, 'warn'), btn('취소', '그만두기', () => {}));
   const icon = (d, title, fn, cls = '') => { const b = btn('', title, fn, cls); b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`; b.setAttribute('aria-label', title); return b; };
   const resetB = btn('이 장 원래대로', '이 장에서 고친 것을 모두 버립니다', (e) => (e.stopPropagation(), src.slides[at()].src ? ask(e, '이 장에서 고친 것을 모두 버릴까요?', '원래대로', () => { localStorage.removeItem(key(at())); touch(); location.reload(); }) : tell('새로 만든 장은 돌아갈 원래 모습이 없습니다. 필요 없으면 왼쪽 휴지통으로 빼세요') || shut()), 'warn line');   // 새로 만든 장은 저장분이 곧 장이라 지우면 빈 장이 된다
+  // 의견판: 의견판 장에서는 «의견판 설정»(질문·칸·설정 고치기), 다른 장에서는 «＋ 의견판»(지금 장 뒤에 새 의견판 장)
+  const wallB = btn('＋ 의견판', '학생이 글 카드를 붙이는 의견판 장 넣기 · 의견판 장에서는 그 판의 질문·칸·설정 고치기', () => wallMenu(isWall(at())));
   const top = h('div', { className: 'ed-ui ed-top' },
     h('b', { textContent: '수정 · ' + src.title }), undoB, redoB, h('span', { className: 'sep' }),
     btn('＋ 글 상자', '글 상자 넣기', () => addBox('text')), btn('＋ 그림', '내 컴퓨터의 그림 넣기 (복사한 그림은 Ctrl+V, 파일은 끌어다 놓아도 됩니다)', () => { bgNext = false; file.click(); }),
-    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), btn('＋ 슬라이드', '자료실의 슬라이드를 카드로 보고 골라 넣기', pickPanel), h('span', { className: 'sep' }), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('색 조합', '이 장의 색·배경 조합 고르기', (e) => toneMenu(e)), h('span', { className: 'sep' }), btn('AI로 수정', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
+    btn('＋ 도형', '네모·동그라미·선·화살표·별·말풍선 넣기', (e) => shapeMenu(e)), btn('＋ 표', '표 넣기 · 줄과 칸 수를 고릅니다', (e) => tableMenu(e)), btn('＋ 슬라이드', '자료실의 슬라이드를 카드로 보고 골라 넣기', pickPanel), wallB, h('span', { className: 'sep' }), btn('배경', '이 장의 배경 바꾸기', (e) => bgMenu(e)), btn('색 조합', '이 장의 색·배경 조합 고르기', (e) => toneMenu(e)), h('span', { className: 'sep' }), btn('AI로 수정', 'AI에게 말로 시켜 수업을 고치는 방법 안내', () => aiOpen(ai.style.display !== 'flex')),
     say, h('span', { className: 'gap' }), btn('쓰는 법', '편집기 쓰는 법을 짧게 봅니다', (e) => helpMenu(e)), btn('더 보기', '다른 차시 열기 · 이 장 원래대로 · 내려받기', (e) => moreMenu(e)), btn('내 수업에 저장', '고친 수업을 내 수업에 저장합니다 · 선생님 페이지에서 어느 컴퓨터로든 엽니다', () => boxSave()), btn('수업 화면으로 보기', '고친 수업을 새 창에서 엽니다', () => window.open(`${location.pathname}?d=${src.d}&mine#/${Reveal.getIndices().h}`), 'go'), file);
   // 가끔 쓰는 것은 «더 보기»에 모은다
   const moreMenu = (e) => pop(e, btn('다른 차시 열기', '다른 단원·차시를 골라 편집기로 엽니다', (ev) => { ev.stopPropagation(); openOther(ev); }, 'line'), resetB,
@@ -234,6 +256,7 @@
   }
   const clean = (m) => { const c = m.cloneNode(true); for (const e of [c, ...c.querySelectorAll('[data-eid]')]) e.removeAttribute('data-eid'); return c.outerHTML; };
   function after(i) {
+    const ws = Reveal.getSlides()[i]; if (ws && ws.dataset.wall != null && window.Wall && Wall._rescan) Wall._rescan(ws);   // 의견판 장: 고친 질문·칸으로 다시 그린다
     try { localStorage.setItem(key(i), clean(models[i])); touch(); tell('저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })); }
     catch (e) { tell('저장하지 못했습니다(그림이 너무 큽니다)'); }
     shut(); undoB.disabled = !hist.length; redoB.disabled = !redo.length;
@@ -468,6 +491,7 @@
   function blankSlide() { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, blankHtml('제목', '내용을 입력하세요')); o.splice(i + 1, 0, { id }); reorder(o, i + 1); }
   function addMenu(e) {   // 빈 장·꿈틀 꼴 장, 또는 자료실 슬라이드 고르기
     pop(e, btn('빈 장', '지금 장 뒤에 빈 장 넣기', blankSlide, 'line'), h('span', { className: 'cap', textContent: '꿈틀 꼴 (글은 넣은 뒤 눌러서 고칩니다)' }), ...Object.keys(TPLS).map((n) => btn(n, '지금 장 뒤에 이 꼴의 장 넣기', () => tplSlide(n), 'line')),
+      h('span', { className: 'cap', textContent: '수업방 활동' }), btn('의견판…', '학생이 글 카드를 칸에 붙이고 공감하는 판 · 질문·칸·쓰기 시간을 고릅니다', () => wallMenu(false), 'line'),
       h('span', { className: 'cap', textContent: '자료실에서 가져오기' }), btn('슬라이드 고르기…', '자료실의 슬라이드을 카드로 보고 골라 넣기', pickPanel, 'line'));
   }
   const own = src.d.startsWith('my/');   // 새로 만든 수업
@@ -531,6 +555,7 @@
   }
   function marks() {
     const slides = Reveal.getSlides(), i = at(), off = (b, v) => { b.disabled = v; return b; };
+    wallB.textContent = isWall(i) ? '의견판 설정' : '＋ 의견판';
     list.replaceChildren(h('div', { className: 'ed-tools', role: 'toolbar', ariaLabel: '장 다루기' },
       icon('M12 5v14M5 12h14', '장 넣기', addMenu), icon('M9 9h11v11H9zM5 15V5a1 1 0 0 1 1-1h9', '이 장 복제', copySlide), h('span', { className: 'sep' }),
       off(icon('M12 19V5M5 12l7-7 7 7', '이 장을 앞으로 옮기기', () => moveSlide(-1)), i === 0), off(icon('M12 5v14M5 12l7 7 7-7', '이 장을 뒤로 옮기기', () => moveSlide(1)), i === slides.length - 1),
@@ -539,7 +564,7 @@
       off(icon('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3', '이 장 빼기', (e) => ask(e, `${i + 1}번 장을 수업에서 뺄까요?`, '빼기', dropSlide), 'warn'), slides.length < 2)),
     ...slides.map((s, n) => {
       const t = s.querySelector('h1, h2, [data-ed-add="text"]');
-      const b = h('button', { type: 'button', draggable: true, onclick: () => Reveal.slide(n) }, h('i', { textContent: n + 1 }), h('span', { textContent: s.dataset.edLive || (t && t.textContent.trim()) || (s.dataset.state === 'blank' ? '빈 장' : s.dataset.state) || '장' }), h('em', { textContent: localStorage.getItem(key(n)) ? '고침' : '' }), thumb(s));
+      const b = h('button', { type: 'button', draggable: true, onclick: () => Reveal.slide(n) }, h('i', { textContent: n + 1 }), h('span', { textContent: isWall(n) ? '의견판 · ' + (wallOf(n).q || '') : s.dataset.edLive || (t && t.textContent.trim()) || (s.dataset.state === 'blank' ? '빈 장' : s.dataset.state) || '장' }), h('em', { textContent: localStorage.getItem(key(n)) ? '고침' : '' }), thumb(s));
       b.setAttribute('aria-current', n === i);
       if (n === i) requestAnimationFrame(() => b.scrollIntoView({ block: 'nearest', inline: 'nearest' }));   // 지금 장이 목록에 보이게(폰의 가로 띠 포함)
       // 끌어서 순서 바꾸기: 놓은 자리로 옮긴다(화살표 단추와 같은 reorder)
@@ -589,6 +614,11 @@
 {"do":"add","after":3,"title":"제목","cards":[{"title":"카드 제목","text":"설명 한두 줄","sub":"보기·덧붙임"}],"flip":true}  정리 장: 번호 카드 1~6개. flip을 주면 제목만 보이다가 누르면 뒤집힙니다
 {"do":"add","after":3,"title":"제목","ox":[{"q":"문장","a":"x","why":"까닭"}],"blanks":[{"q":"순간 반응 속도는 무엇의 기울기와 같은가","a":"접선"}]}  확인 장: ○× 1~6개와 빈칸 1~5개(둘 중 하나만 써도 됩니다). 빈칸은 q 뒤에 따로 그려지니 q에 괄호를 넣지 마세요
 수업방 잇기(live·sim 속 문제): 보기 단추에 data-q(문항 이름, 영문·숫자 20자 안)와 data-v(답 값, 영문·숫자)를 붙이면 학생이 누른 답이 선생님 화면에 모이고, 선생님 화면에는 단추마다 고른 학생 수가 붙습니다. 예: <button class="btn" data-q="q1" data-v="a">접선</button><button class="btn" data-q="q1" data-v="b">할선</button>. 누르기 말고 끌기·입력 결과를 보낼 때는 kkumteul.answer("q2","7")(값은 영문·숫자·쉼표). 한 장에 문항 20개까지. 정답·해설 표시는 문서가 스스로 하세요
+학생 발표(live·sim): 움직이는 장은 문서 안에 kkumteul.state = { get(){ return {c1:[120,300], pick:"b"} }, set(s){ … } }를 만들어 두세요. get은 지금 상태(항목 → 값의 평평한 객체, 120항목, 값 하나는 JSON 400자 안), set(s)는 받은 상태 그대로 화면을 다시 그립니다(없는 항목 = 처음 자리). 학생이 «완료»를 누르면 이 상태를 선생님 화면에 다시 그려 발표시킵니다. 만들지 않으면 그림 한 장으로 찍어 보내 움직이지는 않습니다
+{"do":"wall","after":3,"q":"북극 해빙이 모두 녹으면 해수면은?","cols":["올라간다","그대로다","잘 모르겠다"],"blind":true,"time":180,"likes":3,"approve":false}  3번 장 뒤에 의견판 장: 수업방에서 이 장으로 오면 학생이 휴대폰으로 짧은 글 카드(200자)를 칸에 붙이고 친구 카드에 공감한다. q 질문(120자, 꼭) · cols 칸 이름(6개까지, 칸마다 20자, 빼면 칸 없는 담벼락) · blind 먼저 쓰고 보기(내 카드를 붙여야 친구 카드가 보임) · time 쓰기 시간 칩 기본값(초: 60·180·300, 선생님이 눌러야 시작) · likes 1인 공감 수(0이면 제한 없음, 빼면 3) · approve 확인 뒤 공개(빼면 익명 반은 켬, 번호 반은 끔)
+  서식 예: 찬반 토론 ["찬성","반대","잘 모르겠다"] · 예측→관찰→설명 ["예측","관찰","설명"] · 출구 카드 ["오늘 배운 것","궁금한 것"] · 연수 소감 ["좋았던 점","바라는 점","실천할 것"] · 빈 담벼락 []
+  만들어지는 장: <section data-state="blank" class="std" id="wall-고유이름" data-wall='{"q":"…","cols":["…"],"likes":3}'><div class="sheet"></div><div class="frame"></div></section> (판은 꿈틀이 그린다. 의견판 장은 이 명령으로만 만들고 live·add로 흉내 내지 마세요)
+{"do":"wall","slide":4,"q":"새 질문","cols":["가","나"]}  개요에 «의견판»이라 적힌 장의 설정 바꾸기(준 값만 바뀐다)
 {"do":"box","slide":3,"text":"글","x":160,"y":760,"w":1600,"size":40}  글 상자 넣기 (장 크기 1920×1080)
 {"do":"notes","slide":3,"text":"발표자 메모"}
 {"do":"move","slide":3,"to":1}  3번 장을 1번 자리로
@@ -635,6 +665,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     aiUndo.disabled = !sessionStorage.getItem('ed-ai-back');
     aiMap.textContent = `수업: ${src.title} (${models.length}장)\n` + models.map((m, i) => {
       const t = m.querySelector('h1, h2, [data-ed-add="text"]'), a = noteOf(m);
+      if (isWall(i)) { const w = wallOf(i); return `[${i + 1}] 의견판 · ${cut(w.q || '')} (${(w.cols || []).length ? '칸: ' + w.cols.join('/') : '담벼락'}${w.blind ? ' · 먼저 쓰고 보기' : ''}${w.time ? ' · 쓰기 ' + w.time + '초' : ''} · 공감 ${w.likes ?? 3}${typeof w.approve === 'boolean' ? ' · 확인 뒤 공개 ' + (w.approve ? '켬' : '끔') : ''} — wall로 고칠 수 있음)\n` + (a ? `  메모: ${cut(a.textContent)}\n` : ''); }
       return `[${i + 1}] ${cut(m.dataset.edLive || (t ? t.textContent : m.dataset.state || '장'))}${liveOf(m) ? ' (움직이는 장 — live로 고칠 수 있음)' : src.slides[i].src ? '' : ' (새로 만든 장)'}\n` + fields(i).map((f, k) => `  ${i + 1}.${k + 1} ${cut(f.textContent)}\n`).join('') + (a ? `  메모: ${cut(a.textContent)}\n` : '');
     }).join('');
     const lv = models[at()].querySelector('iframe[srcdoc]'); aiSrc.textContent = lv ? lv.getAttribute('srcdoc').replace(KIT, '').replace(/^<!doctype html>(?=\s*<!doctype)/i, '') : '(지금 장은 움직이는 장이 아닙니다)';
@@ -670,6 +701,15 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
         if (c.slide != null) { need(sl(c.slide) && liveOf(models[c.slide - 1]), 'slide는 개요에 «움직이는 장»이라 적힌 장만 됩니다'); need(c.title == null || (str(c.title, 200) && c.title.trim()), 'title이 너무 깁니다'); }
         else { need(Number.isInteger(c.after) && c.after >= 0 && c.after <= n, 'after는 0~' + n); need(str(c.title, 200) && c.title.trim(), 'title이 없거나 너무 깁니다'); }
       }
+      else if (c.do === 'wall') {
+        if (c.slide != null) need(sl(c.slide) && isWall(c.slide - 1), 'slide는 개요에 «의견판»이라 적힌 장만 됩니다');
+        else need(Number.isInteger(c.after) && c.after >= 0 && c.after <= n, 'after는 0~' + n);
+        need(c.slide != null && c.q == null || (str(c.q, 120) && c.q.trim()), 'q(질문)가 없거나 120자를 넘습니다');
+        need(c.cols == null || (Array.isArray(c.cols) && c.cols.length <= 6 && c.cols.every((x) => str(x, 20) && x.trim())), 'cols는 6개까지, 칸 이름은 20자까지');
+        need(c.blind == null || typeof c.blind === 'boolean', 'blind는 true 또는 false'); need(c.approve == null || typeof c.approve === 'boolean', 'approve는 true 또는 false');
+        need(c.time == null || (Number.isInteger(c.time) && c.time >= 0 && c.time <= 1800), 'time은 0~1800초'); need(c.likes == null || (Number.isInteger(c.likes) && c.likes >= 0 && c.likes <= 20), 'likes는 0~20');
+        need(c.tone == null || isTone(c.tone), TONE_ERR);
+      }
       else if (c.do === 'remove') need(sl(c.slide), '없는 장입니다');
       else if (c.do === 'move') need(sl(c.slide) && sl(c.to), '없는 장입니다(slide·to)');
       else need(false, '모르는 명령입니다');
@@ -684,6 +724,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
       if (c.do === 'text') { const f = field(c.at); commit(htmlOp(f.dataset.eid, rich(c.text)), +c.at.split('.')[0] - 1); }
       else if (c.do === 'notes') { const op = memoOp(c.slide - 1, rich(c.text)); if (op) commit(op, c.slide - 1); }
       else if (c.do === 'tone') setTone(c.tone, c.slide === 'all' ? models.map((m, i) => i) : [].concat(c.slide).map((n) => n - 1));
+      else if (c.do === 'wall' && c.slide != null) { const k = c.slide - 1, pick = Object.fromEntries(['q', 'cols', 'blind', 'time', 'likes', 'approve'].filter((x) => c[x] != null).map((x) => [x, c[x]])); commit(attrOp(models[k].dataset.eid, 'data-wall', JSON.stringify(wallConf({ ...wallOf(k), ...pick }))), k); }
       else if (c.do === 'box') {
         const html = ADD.text.replace('left:560px;top:470px;width:800px;font-size:40px', `left:${c.x ?? 160}px;top:${c.y ?? 760 + 70 * boxes++}px;width:${c.w ?? 1600}px;font-size:${c.size ?? 40}px`).replace('글을 입력하세요', rich(c.text));
         commit(addOp(make(html), { parent: models[c.slide - 1].dataset.eid, before: null }), c.slide - 1);
@@ -691,6 +732,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
         shape = true; const pos = (id) => o.findIndex((x) => x.id === id);
         if (c.do === 'live' && c.slide != null) { const m = models[c.slide - 1], a = noteOf(m); localStorage.setItem('deck-edit:' + id0[c.slide - 1], liveHtml(c.title ? c.title.trim() : m.dataset.edLive, c.html, c.notes != null ? rich(c.notes) : a ? a.innerHTML : '', c.tone || toneOf(m))); }
         else if (c.do === 'live') { const id = newId(), anchor = last[c.after] || id0[c.after - 1]; localStorage.setItem('deck-edit:' + id, liveHtml(c.title.trim(), c.html, rich(c.notes || ''), c.tone)); o.splice(anchor ? pos(anchor) + 1 : 0, 0, { id }); last[c.after] = id; }
+        else if (c.do === 'wall') { const id = newId(), anchor = last[c.after] || id0[c.after - 1]; localStorage.setItem('deck-edit:' + id, wallHtml(c, c.tone)); o.splice(anchor ? pos(anchor) + 1 : 0, 0, { id }); last[c.after] = id; }
         else if (c.do === 'add') { const id = newId(), anchor = last[c.after] || id0[c.after - 1]; localStorage.setItem('deck-edit:' + id, toned((c.cards || c.points || c.sim || c.ox || c.blanks) ? tplHtml(c) : blankHtml(rich(c.title), rich(c.body || ''), rich(c.notes || '')), c.tone)); o.splice(anchor ? pos(anchor) + 1 : 0, 0, { id }); last[c.after] = id; }
         else if (pos(id0[c.slide - 1]) >= 0) { const [x] = o.splice(pos(id0[c.slide - 1]), 1); if (c.do === 'move') o.splice(c.to - 1, 0, x); }
       }
@@ -736,6 +778,67 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     '빈칸 확인 (3문제)': { blanks: [1, 2, 3].map(() => ({ q: '문제를 적으세요', a: '답' })) },
     '○× + 빈칸': { ox: [1, 2].map(() => ({ q: '문제를 적으세요', a: 'o', why: '까닭을 적으세요' })), blanks: [1, 2].map(() => ({ q: '문제를 적으세요', a: '답' })) } };
   function tplSlide(name) { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, toned(tplHtml({ eyebrow: '단원 · 차시', title: '제목', ...TPLS[name] }), toneOf(models[i]))); o.splice(i + 1, 0, { id }); reorder(o, i + 1); }
+  // ---------- 의견판 장(2026-11-18 1-나): 작은 설정 창 → <section data-wall='{…}'> 장(엔진/src/wall.js가 그린다. 수업방에서 이 장으로 오면 판이 저절로 열린다) ----------
+  // data-wall = { q 질문(120자), cols 칸 이름(6개·20자씩, 없으면 담벼락 한 칸), blind 먼저 쓰고 보기, time 쓰기 시간 칩(초), likes 1인 공감(0 = 제한 없음), approve 확인 뒤 공개(빼면 익명 반은 켬·번호 반은 끔) }
+  // 장 id(wall-…)가 판 열쇠가 된다: 장을 옮기거나 다른 장을 넣어도 같은 판을 다시 불러온다. 이미 넣은 장은 같은 창으로 고친다(되돌리기 됨)
+  const WALL_PRE = [['찬반 토론', ['찬성', '반대', '잘 모르겠다'], '이 주장에 찬성하나요, 반대하나요?'], ['예측 → 관찰 → 설명', ['예측', '관찰', '설명'], '어떤 일이 일어날까요? 왜 그럴까요?'],
+    ['출구 카드', ['오늘 배운 것', '궁금한 것'], '오늘 수업을 정리해요'], ['연수 소감', ['좋았던 점', '바라는 점', '실천할 것'], '오늘 연수는 어땠나요?'], ['빈 담벼락', [], '생각을 붙여 주세요']];
+  const isWall = (i) => !!models[i] && models[i].dataset.wall != null;
+  const wallOf = (i) => { try { return JSON.parse(models[i].dataset.wall || '{}') || {}; } catch (e) { return {}; } };
+  // 받은 값 → 장에 적는 모양(범위를 맞추고 쓸데없는 값은 뺀다)
+  function wallConf(c) {
+    const o = { q: String(c.q || '').replace(/\s+/g, ' ').trim().slice(0, 120) || '생각을 붙여 주세요', cols: (Array.isArray(c.cols) ? c.cols : []).map((x) => String(x).replace(/\s+/g, ' ').trim().slice(0, 20)).filter(Boolean).slice(0, 6) };
+    if (c.blind) o.blind = true;
+    const t = Math.round(+c.time || 0); if (t > 0) o.time = Math.min(1800, t);
+    o.likes = c.likes != null && c.likes !== '' && Number.isFinite(+c.likes) ? Math.max(0, Math.min(20, Math.round(+c.likes))) : 3;
+    if (typeof c.approve === 'boolean') o.approve = c.approve;
+    return o;
+  }
+  const wallHtml = (c, tone) => toned(`<section data-state="blank" class="std" id="wall-${Date.now().toString(36)}${(++seq).toString(36)}" data-wall="${attr(JSON.stringify(wallConf(c)))}"><div class="sheet"></div><div class="frame"></div></section>`, tone);
+  function wallSlide(c) { const i = at(), o = order(), id = newId(); localStorage.setItem('deck-edit:' + id, wallHtml(c, toneOf(models[i]))); o.splice(i + 1, 0, { id }); reorder(o, i + 1); }
+  function wallMenu(edit) {
+    shut(); endText(); select(null);
+    const i = at(), c0 = edit ? wallOf(i) : { q: '', cols: [], likes: 3 };
+    const pre0 = WALL_PRE.find((p) => p[1].join(',') === (c0.cols || []).join(',')) || (edit ? null : WALL_PRE[4]);
+    const field = (label, el) => h('label', {}, h('span', { textContent: label }), el);
+    const chips = (name, list, val) => { const f = h('fieldset', { className: 'chips' }, h('legend', { textContent: name })); list.forEach(([v, t]) => { const b = btn(t, name + ': ' + t, () => { f.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); f.value = v; f.onpick && f.onpick(v); }); b.setAttribute('aria-pressed', String(v === val)); f.append(b); }); f.value = val; return f; };
+    const q = h('input', { type: 'text', maxLength: 120, value: c0.q || '', placeholder: pre0 ? pre0[2] : '질문을 적어요', ariaLabel: '질문' });
+    const cols = h('input', { type: 'text', maxLength: 130, value: (c0.cols || []).join(', '), placeholder: '칸 이름을 쉼표로 나눠요 (비우면 담벼락 한 칸)', ariaLabel: '칸 이름' });
+    const pre = chips('서식', WALL_PRE.map((p) => [p[0], p[0]]), pre0 ? pre0[0] : null);
+    pre.onpick = (v) => { const p = WALL_PRE.find((x) => x[0] === v); cols.value = p[1].join(', '); q.placeholder = p[2]; };
+    cols.oninput = () => { const p = WALL_PRE.find((x) => x[1].join(',') === cols.value.split(',').map((t) => t.trim()).filter(Boolean).join(',')); pre.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(!!p && b.textContent === p[0]))); };
+    const time = chips('쓰기 시간 (수업에서 누르면 시작)', [[0, '없음'], [60, '1분'], [180, '3분'], [300, '5분']], [60, 180, 300].includes(+c0.time) ? +c0.time : 0);
+    const likes = h('select', { ariaLabel: '1인 공감 수' }); likes.append(...[[0, '제한 없음'], [1, '1개'], [3, '3개'], [5, '5개']].map(([v, t]) => h('option', { value: v, textContent: t })));
+    likes.value = String([0, 1, 3, 5].includes(+c0.likes) ? +c0.likes : c0.likes == null ? 3 : 3);
+    const appr = h('select', { ariaLabel: '확인 뒤 공개' }); appr.append(h('option', { value: '', textContent: '반 설정 따라(익명 반이면 켬)' }), h('option', { value: '1', textContent: '켬 · 선생님이 승인한 글만' }), h('option', { value: '0', textContent: '끔 · 바로 공개' }));
+    appr.value = typeof c0.approve === 'boolean' ? (c0.approve ? '1' : '0') : '';
+    const blind = h('input', { type: 'checkbox', checked: !!c0.blind });
+    const err = h('p', { className: 'err', role: 'alert' });
+    const done = (ev) => {
+      ev.preventDefault();
+      const list = cols.value.split(/[,，、\n]/).map((t) => t.trim()).filter(Boolean);
+      if (list.length > 6) { err.textContent = '칸은 6개까지예요'; cols.focus(); return; }
+      if (list.some((t) => t.length > 20)) { err.textContent = '칸 이름은 20자까지예요'; cols.focus(); return; }
+      const c = { q: q.value.trim() || q.placeholder, cols: list, blind: blind.checked, time: +time.value || 0, likes: +likes.value, ...(appr.value ? { approve: appr.value === '1' } : {}) };
+      close();
+      if (!edit) { wallSlide(c); return; }
+      commit(attrOp(models[i].dataset.eid, 'data-wall', JSON.stringify(wallConf(c))), i);
+      tell('의견판 설정을 고쳤습니다');
+    };
+    const form = h('form', { ariaLabel: edit ? '의견판 설정 고치기' : '의견판 장 넣기', onsubmit: done },
+      h('h2', { textContent: edit ? '의견판 설정 고치기' : '의견판 장 넣기' }),
+      h('p', { className: 'cap', textContent: '수업방에서 이 장으로 오면 판이 저절로 열리고 학생 휴대폰에 «내 생각 붙이기»가 떠요. 다음 장으로 가면 쓰기만 닫히고 판은 남아요.' }),
+      pre, field('질문', q), field('칸', cols), time,
+      h('div', { className: 'two' }, field('1인 공감', likes), field('확인 뒤 공개', appr)),
+      h('label', { className: 'ck' }, blind, '먼저 쓰고 보기 (내 카드를 붙여야 친구 카드가 보여요)'), err,
+      h('div', { className: 'acts' }, btn('취소', '그만두기', () => close()), h('button', { type: 'submit', className: 'go', textContent: edit ? '고치기' : '넣기' })));
+    const box = h('div', { className: 'ed-ui ed-wall', role: 'dialog', ariaModal: 'true', onclick: (e) => { if (e.target === box) close(); } }, form);
+    const esc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } else e.stopPropagation(); };   // 글 칸에서 누른 글쇠가 편집기 단축키로 가지 않게
+    const close = () => { box.remove(); removeEventListener('keydown', esc, true); };
+    addEventListener('keydown', esc, true);
+    document.body.append(box);
+    setTimeout(() => q.focus(), 30);
+  }
   const helpMenu = (e) => pop(e, ...['글 수정: 글을 두 번 누릅니다', '상자 넣기: 「＋ 도형」의 네모(글이 든 상자는 「＋ 글 상자」에 채움·테두리)', '옮기기·크기: 끌어서 옮기고, 모서리 점을 끌어 크기를 바꿉니다(위 동그란 점은 돌리기)', '새 장: 왼쪽 위 ＋ 를 누르고 꿈틀 꼴(이론·정리·확인)을 고릅니다', '카드·문제 늘리기: 하나를 고르고 「복제」(카드 통째는 「바깥 상자」로 고릅니다), 줄이기는 「삭제」', '○× 정답 바꾸기: 문제 옆 ○나 ×를 누르면 그것이 정답이 됩니다', '색 조합: 입힐 장을 고르고 조합을 누릅니다', '잘못했으면 ↶ (Ctrl+Z)'].map((t) => h('span', { className: 'ask', textContent: '· ' + t })));
   const setBg = (f) => readImage(f, (url) => commit(styleOp(sheetId(), { 'background-image': `url("${url}")`, 'background-size': 'cover', 'background-position': 'center' })));
   function shapeMenu(e) {
@@ -954,6 +1057,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     if (!(e.target.closest && e.target.closest('.ed-pop'))) shut();
     if (ours(e.target)) return;
     if (editing) { if (L(editing).contains(e.target)) return; endText(); }
+    if (isWall(at()) && e.target.closest && e.target.closest('.reveal .slides .wl')) { select(null); return tell('의견판 장 · 두 번 누르거나 위 «의견판 설정»으로 질문·칸·설정을 고칩니다'); }
     const hit = pick(e.target);
     const q = hit.lock && hit.lock.matches('button[data-v]') && hit.lock.closest('[data-tpl="ox"] li[data-a]');   // 새 확인 장: ○×를 누르면 정답이 된다
     if (q) { select(null); commit(attrOp(q.dataset.eid, 'data-a', hit.lock.dataset.v)); return tell(`정답을 ${hit.lock.dataset.v === 'o' ? '○' : '×'}로 정했습니다`); }
@@ -968,6 +1072,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     else if (hit.id !== sel) choose2([hit.id, ...ids().filter((x) => x !== hit.id)]);   // 누른 것을 기준으로
     startDrag(e, '');
   }, true);
+  window.addEventListener('dblclick', (e) => { if (!ours(e.target) && isWall(at()) && e.target.closest && e.target.closest('.reveal .slides .wl')) wallMenu(true); });
   window.addEventListener('pointermove', (e) => {
     if (drag) return moveDrag(e);
     if (lasso) { const x = Math.min(lasso.x, e.clientX), y = Math.min(lasso.y, e.clientY); lasso.r = { x, y, w: Math.abs(e.clientX - lasso.x), h: Math.abs(e.clientY - lasso.y) }; return Object.assign(band.style, { display: 'block', left: x + 'px', top: y + 'px', width: lasso.r.w + 'px', height: lasso.r.h + 'px' }); }
@@ -999,7 +1104,7 @@ text·add·box·notes의 글에 넣은 HTML·코드는 글자 그대로 들어�
     e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
   }, true);
   window.addEventListener('keydown', (e) => {
-    if (ours(e.target) && e.target.matches('input, textarea')) return;
+    if (ours(e.target) && e.target.matches('input, textarea, select')) return;
     const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase(), done = () => { e.preventDefault(); e.stopPropagation(); };
     if (editing) {
       e.stopPropagation();   // 글자 키로 장이 넘어가지 않게

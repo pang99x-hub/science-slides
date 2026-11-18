@@ -116,6 +116,13 @@ details.fold[open] > summary { margin-bottom: 12px; }
 input[type=text], input[type=email], select { min-height: 48px; }
 .opt { font-weight: 500; color: var(--ink-3); }
 .steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: var(--ink-2); }
+/* 의견판만 따로(연수·학급회의, 2026-11-18): 질문 한 줄로 바로 열고, 서식·설정은 접어 둔다 */
+.wallrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; border: 1px solid var(--rule, #c3cecd); border-radius: 14px; background: #fff; }
+.wallrow .wq { flex: 1 1 260px; min-width: 0; font-weight: 700; word-break: keep-all; }
+.wallrow .wq small { display: block; font-weight: 500; color: #4b566a; }
+.wallopts .row { flex-wrap: wrap; }
+.wallopts label.ck { display: inline-flex; align-items: center; gap: 6px; margin-right: 14px; font-weight: 600; }
+.wallopts input[type=checkbox] { width: 20px; height: 20px; }
 #msg:empty, .card p.small:empty { display: none; }
 .makeform .btn { min-height: 48px; }
 select { height: 48px; max-width: 100%; min-width: 0; }
@@ -258,6 +265,21 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     </form>
     <p class="small">가르치는 반은 쉼표로 나눠 적어요. 그러면 링크 하나를 여러 반이 함께 써요(비워 두면 반 하나). 번호를 받으면 수업 중 누가 들어왔는지 번호 칸으로 보여요(인원을 비우면 들어온 번호만). 모두 나중에 바꿀 수 있어요.</p>
   </div>
+  <div class="card" id="wallcard" hidden>
+    <h2>의견판 열기 <span class="tag">연수 · 학급회의</span></h2>
+    <p class="small">차시 없이 판 하나만 열어요. 참가자는 로그인 없이 참여 코드나 QR로 들어와 생각을 붙여요. 1년 동안 안 쓰면 저절로 닫혀요.</p>
+    <form class="form" id="wallmake"><label class="grow">질문<input type="text" id="wallq" maxlength="120" placeholder="예: 오늘 연수에서 가장 기억에 남는 것은?" autocomplete="off"></label><button class="btn main" type="submit" style="flex:0 0 auto;min-height:48px">의견판 열기</button></form>
+    <details class="fold wallopts" id="wallopt"><summary><span class="h2" style="font-size:16px">서식·설정</span><span class="opt" id="wallsum">담벼락 · 이름 없이 · 바로 공개</span></summary>
+      <div class="fold-body">
+        <div class="field"><span class="flabel">서식</span><div class="row" id="wallpre"></div></div>
+        <div class="field"><span class="flabel">칸</span><input type="text" id="wallcols" maxlength="130" placeholder="칸 이름을 쉼표로 나눠요 (비우면 담벼락 한 칸)" autocomplete="off" aria-label="칸 이름"></div>
+        <div class="field"><span class="flabel">참가자 이름</span><div class="row"><button class="btn small" type="button" data-wm="anon" aria-pressed="true">이름 없이</button><button class="btn small" type="button" data-wm="free" aria-pressed="false">이름 자유롭게 쓰기</button></div><span class="small">이름 자유롭게 쓰기: 참가자가 붙일 때 이름을 직접 적어요(20자까지). 연수처럼 서로 아는 자리에서 써요.</span></div>
+        <div class="field"><span class="flabel">설정</span><div class="row"><label class="ck"><input type="checkbox" id="wallblind">먼저 쓰고 보기</label><label class="ck"><input type="checkbox" id="wallok">확인 뒤 공개</label><label class="ck">1인 공감<select id="walllikes" aria-label="1인 공감 수"><option value="0">제한 없음</option><option value="1">1개</option><option value="3" selected>3개</option><option value="5">5개</option></select></label></div></div>
+      </div>
+    </details>
+    <p class="small" id="wallmsg" aria-live="polite"></p>
+    <div id="walls" class="stack"></div>
+  </div>
   <div class="card">
     <details class="fold"><summary><span class="h2">이렇게 써요</span></summary>
       <div class="fold-body">
@@ -327,7 +349,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   function keep(j, token) {
     var s = sess() || {};
     store(SESS, { token: token || s.token, email: j.email, name: j.name || s.name || '', status: j.status, admin: !!j.admin, pending: j.pending || 0, notes: j.notes || 0, talk: j.talk || 0, mine: j.mine || 0, school: j.school || s.school || '' });
-    if (j.rooms) store(ROOMS, j.rooms.map(function (r) { return { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; }));
+    if (j.rooms) store(ROOMS, j.rooms.map(function (r) { var o = { code: r.code, key: r.key, name: r.name, idMode: r.idMode, size: r.size, classes: r.classes }; if (r.wall) o.wall = true; return o; }));   // wall: 의견판만 따로 쓰는 방
     return sess();
   }
   function signedOut() { store(SESS, null); store(ROOMS, null); }
@@ -489,7 +511,8 @@ select { height: 48px; max-width: 100%; min-width: 0; }
   var openSet = {}, openCard = {};                                                  // 설정 칸을 연 수업방
   function update(code, patch) { save(load().map(function (x) { return x.code === code ? Object.assign(x, patch) : x; })); }
   function render() {
-    var list = load(), box = document.getElementById('classes');
+    var list = load().filter(function (c) { return !c.wall; }), box = document.getElementById('classes');   // 의견판만 따로 쓰는 방은 «의견판 열기» 카드에(wallList)
+    wallList();
     if (!list.length) { box.innerHTML = '<div class="card"><p class="muted">아직 만든 수업방이 없어요. 아래에서 과목 이름과 가르치는 반을 넣고 만들어 주세요. 다른 기기에서 만든 수업방은 로그인하면 여기에도 보여요.</p></div>'; return; }
     box.innerHTML = list.map(function (c, i) {
       var join = BASE + 'join.html?room=' + c.code, mode = c.idMode || 'anon', sub = (c.classes || []).length ? '과목' : '반';
@@ -511,7 +534,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
         + '</div></details></div></details>';
     }).join('');
     box.querySelectorAll('[data-i]').forEach(function (card) {
-      var c = load()[+card.dataset.i];
+      var c = list[+card.dataset.i];
       status(card, c);
       card.ontoggle = function (e) { if (e.target === card) openCard[c.code] = card.open; };   // 손으로 여닫은 것은 다시 그려도 그대로
       var set = card.querySelector('details.set');
@@ -676,6 +699,64 @@ select { height: 48px; max-width: 100%; min-width: 0; }
       document.getElementById('name').value = ''; document.getElementById('cls').value = '';
       msg(name + ' 수업방을 만들었어요. ' + (got.length ? '과목 링크를 ' + got.join(', ') + ' 클래스룸에 올려 두세요.' : '반 링크를 그 반 클래스룸에 올려 두세요.') + (got.length < cls.length ? ' (반 이름은 글자·숫자로 10자 안, 16개까지예요.)' : '')); render();
     }, function () { msg('만들지 못했어요. 인터넷 연결을 확인해 주세요.'); });
+  };
+
+  // ---------- 의견판만 따로(연수·학급회의, 2026-11-18): 질문 한 줄 → 바로 열림(새 창에 wall.html 선생님 화면 = 프로젝터용, 참여 코드·QR) ----------
+  // 서버는 반 방 틀(persist, 6자리, 1년 미사용 시 닫힘)에 wallOnly. 서식을 고르면 칸까지 채운다. «이름 자유롭게 쓰기»는 이 판에만 있다
+  var WALL_PRE = [['담벼락', []], ['찬반 토론', ['찬성', '반대', '잘 모르겠다']], ['예측 → 관찰 → 설명', ['예측', '관찰', '설명']], ['출구 카드', ['오늘 배운 것', '궁금한 것']], ['연수 소감', ['좋았던 점', '바라는 점', '실천할 것']]];
+  var wallMode = 'anon';
+  function wallMsg(t) { document.getElementById('wallmsg').textContent = t; }
+  function wallSum() {
+    var cols = parseCls(document.getElementById('wallcols').value), pre = WALL_PRE.filter(function (p) { return p[1].join(',') === cols.join(','); })[0];
+    document.getElementById('wallsum').textContent = [pre ? pre[0] : '칸 ' + cols.length + '개', wallMode === 'free' ? '이름 자유롭게' : '이름 없이', document.getElementById('wallok').checked ? '확인 뒤 공개' : '바로 공개'].concat(document.getElementById('wallblind').checked ? ['먼저 쓰고 보기'] : []).join(' · ');
+    document.querySelectorAll('#wallpre [data-pre]').forEach(function (b) { b.setAttribute('aria-pressed', String(!!pre && pre[0] === b.dataset.pre)); });
+  }
+  document.getElementById('wallpre').innerHTML = WALL_PRE.map(function (p) { return '<button class="btn small" type="button" data-pre="' + esc(p[0]) + '" aria-pressed="' + (p[0] === '담벼락') + '">' + esc(p[0]) + '</button>'; }).join('');
+  document.getElementById('wallpre').onclick = function (e) {
+    var b = e.target.closest('[data-pre]'); if (!b) return;
+    var p = WALL_PRE.filter(function (x) { return x[0] === b.dataset.pre; })[0];
+    document.getElementById('wallcols').value = p[1].join(', '); wallSum();
+  };
+  document.querySelectorAll('[data-wm]').forEach(function (b) { b.onclick = function () { wallMode = b.dataset.wm; document.querySelectorAll('[data-wm]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); wallSum(); }; });
+  ['wallcols', 'wallblind', 'wallok'].forEach(function (id) { document.getElementById(id).addEventListener('input', wallSum); document.getElementById(id).addEventListener('change', wallSum); });
+  function wallUrl(c) { return BASE + 'wall.html?room=' + c.code; }
+  function wallList() {
+    var box = document.getElementById('walls'), list = load().filter(function (c) { return c.wall; });
+    box.innerHTML = list.length ? '<p class="small" style="margin:6px 0 0">내 의견판</p>' + list.map(function (c) {
+      return '<div class="wallrow" data-code="' + esc(c.code) + '"><span class="wq">' + esc(c.name || '의견판') + '<small>참여 코드 <b>' + esc(c.code) + '</b>' + (c.idMode === 'free' ? ' · 이름 자유롭게' : '') + '</small></span>'
+        + '<a class="btn main small" href="' + esc(wallUrl(c) + pass) + '" target="_blank" rel="noopener" data-a="wopen">화면 열기</a><button class="btn small" type="button" data-a="wcopy">참여 링크 복사</button><button class="btn warn small" type="button" data-a="wdel">지우기</button></div>';
+    }).join('') : '';
+    box.querySelectorAll('.wallrow').forEach(function (row) {
+      var c = list.filter(function (x) { return x.code === row.dataset.code; })[0];
+      row.querySelector('[data-a="wcopy"]').onclick = function (e) { copy(wallUrl(c), e.currentTarget); };
+      row.querySelector('[data-a="wdel"]').onclick = function (e) {
+        var b = e.currentTarget;
+        if (!armed(b, '한 번 더 누르면 지워요(붙인 글도 모두)', '지우기')) return;
+        b.disabled = true;
+        post(c.code + '/delete', { key: c.key }).then(function (j) {
+          if (j.error) { wallMsg(j.error); b.disabled = false; return; }
+          save(load().filter(function (x) { return x.code !== c.code; })); wallMsg('«' + (c.name || '의견판') + '» 의견판을 지웠어요. 붙인 글도 함께 지웠어요.'); wallList();
+        }).catch(function () { wallMsg('지우지 못했어요. 인터넷 연결을 확인해 주세요.'); b.disabled = false; });
+      };
+    });
+  }
+  document.getElementById('wallmake').onsubmit = function (e) {
+    e.preventDefault();
+    var q = document.getElementById('wallq').value.replace(/\s+/g, ' ').trim(), s = sess();
+    if (!q) { wallMsg('질문을 한 줄 적어 주세요.'); document.getElementById('wallq').focus(); return; }
+    if (!s) { wallMsg('먼저 위에서 구글로 로그인해 주세요.'); return; }
+    var win = window.open('about:blank', '_blank');                  // 누른 바로 그때 창을 열어 둬야 막히지 않는다(만든 뒤 주소를 넣는다)
+    wallMsg('여는 중…');
+    var wall = { q: q, cols: parseCls(document.getElementById('wallcols').value).map(function (x) { return x.slice(0, 20); }).slice(0, 6), blind: document.getElementById('wallblind').checked, approve: document.getElementById('wallok').checked, likes: Number(document.getElementById('walllikes').value) };
+    api('/rooms', { session: s.token, persist: true, wallOnly: true, wall: wall, idMode: wallMode }).then(function (j) {
+      if (j.login) { if (win) win.close(); signedOut(); renderAll(); wallMsg('로그인이 풀렸어요. 다시 로그인해 주세요.'); return; }
+      if (!j.code || !j.key) { if (win) win.close(); wallMsg(j.error || '열지 못했어요.'); return; }
+      var l = load(); l.push({ code: j.code, key: j.key, name: j.name || q.slice(0, 30), idMode: j.idMode || wallMode, size: null, classes: [], wall: true }); save(l);
+      document.getElementById('wallq').value = '';
+      wallMsg('의견판을 열었어요. 참여 코드 ' + j.code + ' · 새 창(프로젝터 화면)에 QR이 떠요.');
+      if (win) win.location.href = wallUrl(j) + pass; else location.href = wallUrl(j) + pass;
+      wallList();
+    }, function () { if (win) win.close(); wallMsg('열지 못했어요. 인터넷 연결을 확인해 주세요.'); });
   };
 
   // 내 수업: 편집기(deck.html?…&edit)에서 저장한 내 수업 목록. 내 수업이 아직 없는 워커(404)면 카드를 숨긴다
@@ -983,6 +1064,7 @@ select { height: 48px; max-width: 100%; min-width: 0; }
     meCard(); adminCard(); profCard();
     if (ok) { boxCard(); browseCard(); statsCard(); } else { document.getElementById('boxcard').hidden = document.getElementById('newcard').hidden = true; document.getElementById('browsecard').hidden = true; document.getElementById('statscard').hidden = true; }
     document.getElementById('makecard').hidden = !ok;
+    document.getElementById('wallcard').hidden = !ok;
     document.getElementById('classes').hidden = !ok;
     if (ok) render(); else document.getElementById('classes').innerHTML = '';
   }

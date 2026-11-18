@@ -102,7 +102,7 @@ const JOIN_JS = String.raw`
     fetch(API + '/rooms/' + code).then(function (r) { return r.json(); }).then(function (info) {
       if (!info.open) { say('열려 있는 수업방이 아니에요. 코드를 다시 확인해 주세요.'); return; }
       if (info.locked) { say('선생님이 방을 잠갔어요.'); return; }
-      var go = info.persist ? 'join.html?room=' + code : info.path ? (info.path.indexOf('deck/') === 0 ? 'deck.html?d=' + info.path.slice(5) + '&role=student&' : info.path + '/student.html?') + 'room=' + code : '';
+      var go = info.wall ? 'wall.html?room=' + code : info.persist ? 'join.html?room=' + code : info.path ? (info.path.indexOf('deck/') === 0 ? 'deck.html?d=' + info.path.slice(5) + '&role=student&' : info.path + '/student.html?') + 'room=' + code : '';
       if (!go) { say('이 코드는 선생님이 띄운 차시 화면에서 넣어요. 그 차시의 체험하기를 열고 사람 모양 단추를 눌러 주세요.'); return; }
       location.href = go + (pass ? '&' + pass : '');
     }, function () { say('연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); });
